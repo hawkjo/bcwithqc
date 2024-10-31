@@ -20,12 +20,12 @@ def get_version(rel_path):
 
 if __name__ == '__main__':
     setup(
-        name='SDRranger',
-        packages=['SDRranger'],
-        version=get_version("SDRranger/__init__.py"),
+        name='bcwithqc',
+        packages=['bcwithqc'],
+        version=get_version("bcwithqc/__init__.py"),
         entry_points={
           'console_scripts': [
-              'SDRranger = SDRranger.main:main'
+              'bcwithqc = bcwithqc.main:main'
           ]
         },
         include_package_data=True,
@@ -43,7 +43,7 @@ if __name__ == '__main__':
         author='John Hawkins',
         author_email='hawkjo@gmail.com',
         description='A tool for processing Single-cell DNA and RNA sequencing data.',
-        url='https://github.com/hawkjo/SDRranger',
+        url='https://github.com/hawkjo/bcwithqc',
         download_url='',
         keywords=['DNA', 'NGS', 'bioinformatics', 'TAP-Seq', 'multiomics'],
         python_requires='>=3.0',

@@ -1,5 +1,5 @@
-# SDRranger
-A tool for processing SDR-seq (targeted Single-cell DNA and RNA sequencing) fastq files into annotated BAM files and count matrices.
+# bcwithqc
+An end-to-end tool for processing fastq files with barcoded sequences into annotated fastq, BAM, and count matrix files. Inspired by single-cell DNA and RNA sequencing data, but much more general.
 
 <p align="center">
   <img src="doc/SDRLoneRanger.png" width=50% alt="The Single-Cell DNA RNA Lone Ranger">
@@ -8,11 +8,11 @@ A tool for processing SDR-seq (targeted Single-cell DNA and RNA sequencing) fast
 
 ## Installation
 
-SDRranger works in Linux, and has been tested on el8 and CentOS 7. 
+bcwithqc works in Linux, and has been tested on el8 and CentOS 7. 
 
-You can install SDRranger from github directly into your local (conda or virtual) environment using pip:
+You can install bcwithqc from github directly into your local (conda or virtual) environment using pip:
 ```
-pip install git+https://github.com/hawkjo/SDRranger.git
+pip install git+https://github.com/hawkjo/bcwithqc.git
 ```
 This typically takes a few minutes. 
 
@@ -20,12 +20,12 @@ This typically takes a few minutes.
 
 ## Usage
 
-The basic usage for SDRranger can be displayed at any time via `SDRranger --help`:
+The basic usage for bcwithqc can be displayed at any time via `bcwithqc --help`:
 ```
-  SDRranger count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
-  SDRranger preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
-  SDRranger count_matrix     <SDR_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
-  SDRranger simulate_reads   --config=<> --fastq-prefix=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc simulate_reads   --config=<> --fastq-prefix=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [-v | -vv | -vvv]
 
 Options:
   --STAR-ref-dir=<>:              Path to directory with STAR index.
@@ -58,7 +58,7 @@ The barcode details are input via a json configuration file, of which standard g
 STAR references need to be prebuilt and their top directory input as a parameter.
 
 ### Outputs
-The primary outputs from SDR ranger are:
+The primary outputs from bcwithqc are:
 * An annotated BAM file
 * A read count matrix
 * A UMI count matrix

@@ -1,5 +1,5 @@
 #!/bin/sh
-SDRranger \
+bcwithqc \
 count \
 cDNA_fastqs \
 --STAR-ref-dir=SDR001_REF_index \
