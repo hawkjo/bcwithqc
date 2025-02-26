@@ -1,7 +1,7 @@
 *pyc
 *swp
 *pkl
-envSDRranger
+envbcwithqc
 build
 dist
-SDRranger.egg-info
+bcwithqc.egg-info
