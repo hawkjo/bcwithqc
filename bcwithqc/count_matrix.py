@@ -10,7 +10,7 @@ def build_count_matrices_from_bam(arguments):
         break
     if read.has_tag('UB'):
         log.info('Detected bam file with UMIs...')
-        RNA_count_matrix(arguments, arguments.bcwithqc_bam_file)
+        count_matrix(arguments, arguments.bcwithqc_bam_file)
     else:
         log.info('Detected bam file without UMIs...')
         gDNA_count_matrix(arguments, arguments.bcwithqc_bam_file)
