@@ -18,7 +18,8 @@ class CommandLineArgumentsBase:
         try:
             with gzip_friendly_open(arguments["--config"]) as f:
                 self._config = json.load(f)
-        except KeyError:
+        except TypeError:
+            # unspecified, arguments['--config'] is None which throws TypeError
             self._config = None
 
     def _comma_delimited_arg(self, key):
