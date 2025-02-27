@@ -192,7 +192,7 @@ def process_fastqs(arguments):
 
     if completed < 3:
         log.info('Correcting UMIs...')
-        correct_UMIs(arguments, star_w_bc_sorted_fpath, star_w_bc_umi_fpath)
+        correct_UMIs(star_w_bc_sorted_fpath, star_w_bc_umi_fpath, arguments.threads)
 
     if completed < 4:
         log.info('Sorting bam...')
@@ -311,13 +311,13 @@ def umi_parallel_wrapper(ref_and_input_bam_fpath):
     ref, input_bam_fpath = ref_and_input_bam_fpath
     return ref, get_umi_maps_from_bam_file(input_bam_fpath, chrm=ref)
 
-def correct_UMIs(arguments, input_bam_fpath, out_bam_fpath):
+def correct_UMIs(input_bam_fpath, out_bam_fpath, threads=1):
     with pysam.AlignmentFile(input_bam_fpath) as bamfile:
         reference_names = bamfile.references
     reference_names_with_input_bam = [(ref, input_bam_fpath) for ref in reference_names]
 
     with pysam.AlignmentFile(out_bam_fpath, 'wb', template=pysam.AlignmentFile(input_bam_fpath)) as bam_out, \
-            Pool(arguments.threads) as pool:
+            Pool(threads) as pool:
         for i, (ref, umi_map_given_bc_then_feature) in enumerate(pool.imap_unordered(
                 umi_parallel_wrapper,
                 reference_names_with_input_bam)):
