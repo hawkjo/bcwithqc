@@ -58,8 +58,8 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
         return self._arguments['<fastq_dir>']
 
     @property
-    def SDR_bam_file(self):
-        return self._arguments['<SDR_bam_file>']
+    def bcwithqc_bam_file(self):
+        return self._arguments['<bcwithqc_bam_file>']
 
     @property
     def star_ref_dir(self):
