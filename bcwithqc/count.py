@@ -1,9 +1,7 @@
 import logging
 import os
-import gzip
 import pysam
 import itertools
-import tempfile
 import numpy as np
 import pickle
 import subprocess
@@ -18,7 +16,6 @@ from multiprocessing import Pool
 from threading import BoundedSemaphore
 from scipy.sparse import lil_matrix
 from .bc_aligner import CustomBCAligner
-from .bc_decoders import BCDecoder, SBCDecoder
 from .umi import get_umi_maps_from_bam_file
 
 
