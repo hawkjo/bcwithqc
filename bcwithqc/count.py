@@ -329,12 +329,22 @@ def correct_UMIs(input_bam_fpath, out_bam_fpath, threads=1):
                     bam_out.write(read)
                     break # use the first one. Ideally same across all
 
+
 def build_tags_iter(tags_fpath):
     for line in open(tags_fpath):
         words = line.strip().split('\t')
         read_name = words[0]
         tags = [parse_tag_str(word) for word in words[1:]]
         yield read_name, tags
+
+
+def parse_tag_str(tag_str):
+    tag, tag_type, val = tag_str.split(':')
+    if tag_type == 'i':
+        # only worry about strings and ints
+        val = int(val)
+    return tag, val
+
 
 def merge_tags(tags1, tags2):
     if not len(tags2):
@@ -384,14 +394,6 @@ def tag_type_from_val(val):
     else:
         # no other types implemented
         raise ValueError('Unexpected tag type')
-
-
-def parse_tag_str(tag_str):
-    tag, tag_type, val = tag_str.split(':')
-    if tag_type == 'i':
-        # only worry about strings and ints
-        val = int(val)
-    return tag, val
 
 
 def output_rec_name_and_tags(rec, tags, out_fh):
