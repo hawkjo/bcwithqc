@@ -114,19 +114,13 @@ def process_fastqs(arguments):
     star_w_bc_umi_fpath = os.path.join(arguments.output_dir, 'with_bc_umi.bam')
     star_w_bc_umi_sorted_fpath = os.path.join(arguments.output_dir, 'with_bc_umi.sorted.bam')
     if os.path.exists(star_w_bc_umi_sorted_fpath):
-        log.info('Sorted bam with UMIs found. Skipping ahead...')
-        completed = 4
+        raise FileExistsError('Sorted bam with UMIs found. Run possibly previously completed.')
     elif os.path.exists(star_w_bc_umi_fpath):
-        log.info('Corrected UMI file found. Skipping ahead...')
-        completed = 3
+        raise FileExistsError('Partial results found: Corrected UMI file. Remove partial results and restart.')
     elif os.path.exists(star_w_bc_sorted_fpath):
-        log.info('Sorted STAR results found. Skipping ahead...')
-        completed = 2
+        raise FileExistsError('Partial results found: Sorted STAR results. Remove partial results and restart.')
     elif os.path.exists(star_w_bc_fpath):
-        log.info('STAR results found. Skipping ahead...')
-        completed = 1
-    else:
-        completed = 0
+        raise FileExistsError('Partial results found: STAR results. Remove partial results and restart.')
 
     if not os.path.exists(arguments.output_dir):
         os.makedirs(arguments.output_dir)
@@ -134,71 +128,67 @@ def process_fastqs(arguments):
     # map reads
     # Add barcodes etc to bam file
     # Sort, index
-    if completed < 1:
-        log.info('Writing output to:')
-        log.info(f'  {star_w_bc_fpath}')
-    
-        if not arguments.star_output_path:
-            paired_align_fqs_and_tags_fpaths, namepairidxs = preprocess_fastqs(arguments)
+    log.info('Writing output to:')
+    log.info(f'  {star_w_bc_fpath}')
 
-            log.info(f'Running STAR alignment...')
-            star_out_dirs = set()
-            star_bam_and_tags_fpaths = []
-            for R1_fpath, R2_fpath, tags1_fpath, tags2_fpath in paired_align_fqs_and_tags_fpaths:
-                if R1_fpath:
-                    log.info(f'  {R1_fpath}')
-                log.info(f'  {R2_fpath}')
-                if R1_fpath != paired_align_fqs_and_tags_fpaths[-1][0]:
-                    log.info('  -')
-                star_out_dir, star_out_fpath = run_STAR(arguments, R1_fpath, R2_fpath)
-                star_out_dirs.add(star_out_dir)
-                star_bam_and_tags_fpaths.append((star_out_fpath, tags1_fpath, tags2_fpath))
-        else:
-            log.info(f'Using STAR results from {arguments.star_output_path}')
-            bam_fpath = glob(os.path.join(arguments.star_output_path, "*Aligned.out.bam")).sort()
-            tag_fpaths = glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags_*.txt")).sort()
-            namepairidx_fpaths = glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags_*.pkl")).sort()
+    if not arguments.star_output_path:
+        paired_align_fqs_and_tags_fpaths, namepairidxs = preprocess_fastqs(arguments)
 
-            star_bam_and_tags_fpaths = list(zip(bam_fpath, tag_fpaths[::2], tag_fpaths[1::2]))
-            namepairidxs = [pickle.load(open(fpath, "rb")) for fpath in namepairidx_fpaths]
+        log.info(f'Running STAR alignment...')
+        star_out_dirs = set()
+        star_bam_and_tags_fpaths = []
+        for R1_fpath, R2_fpath, tags1_fpath, tags2_fpath in paired_align_fqs_and_tags_fpaths:
+            if R1_fpath:
+                log.info(f'  {R1_fpath}')
+            log.info(f'  {R2_fpath}')
+            if R1_fpath != paired_align_fqs_and_tags_fpaths[-1][0]:
+                log.info('  -')
+            star_out_dir, star_out_fpath = run_STAR(arguments, R1_fpath, R2_fpath)
+            star_out_dirs.add(star_out_dir)
+            star_bam_and_tags_fpaths.append((star_out_fpath, tags1_fpath, tags2_fpath))
+    else:
+        log.info(f'Using STAR results from {arguments.star_output_path}')
+        bam_fpath = glob(os.path.join(arguments.star_output_path, "*Aligned.out.bam")).sort()
+        tag_fpaths = glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags_*.txt")).sort()
+        namepairidx_fpaths = glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags_*.pkl")).sort()
 
-        log.info('Adding barcode tags to mapped reads...')
-        template_bam_fpath = star_bam_and_tags_fpaths[0][0]
-        with pysam.AlignmentFile(star_w_bc_fpath, 'wb', template=pysam.AlignmentFile(template_bam_fpath)) as bam_out:
-            for (star_out_fpath, tags1_fpath, tags2_fpath), namepairidx in zip(star_bam_and_tags_fpaths, namepairidxs):
-                if arguments.threads == 1 and not arguments.star_output_path:
-                    readsiter = iter(serial_add_tags_to_reads(tags1_fpath, tags2_fpath, star_out_fpath))
-                else:
-                    readsiter = iter(parallel_add_tags_to_reads(tags1_fpath, tags2_fpath, star_out_fpath, namepairidx, arguments.threads))
-                for read in readsiter:
-                    bam_out.write(read)
+        star_bam_and_tags_fpaths = list(zip(bam_fpath, tag_fpaths[::2], tag_fpaths[1::2]))
+        namepairidxs = [pickle.load(open(fpath, "rb")) for fpath in namepairidx_fpaths]
 
-        for fpaths in paired_align_fqs_and_tags_fpaths:
-            for fpath in fpaths:
-                if fpath and os.path.isfile(fpath):
-                    os.remove(fpath)
-        for star_out_dir in star_out_dirs:
-            shutil.rmtree(star_out_dir)  # clean up intermediate STAR files
-    
-    if completed < 2:
-        log.info('Sorting bam...')
-        pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_sorted_fpath, star_w_bc_fpath)
-        os.remove(star_w_bc_fpath)  #clean up unsorted bam
-        log.info('Indexing bam...')
-        pysam.index(star_w_bc_sorted_fpath)
+    log.info('Adding barcode tags to mapped reads...')
+    template_bam_fpath = star_bam_and_tags_fpaths[0][0]
+    with pysam.AlignmentFile(star_w_bc_fpath, 'wb', template=pysam.AlignmentFile(template_bam_fpath)) as bam_out:
+        for (star_out_fpath, tags1_fpath, tags2_fpath), namepairidx in zip(star_bam_and_tags_fpaths, namepairidxs):
+            if arguments.threads == 1 and not arguments.star_output_path:
+                readsiter = iter(serial_add_tags_to_reads(tags1_fpath, tags2_fpath, star_out_fpath))
+            else:
+                readsiter = iter(parallel_add_tags_to_reads(tags1_fpath, tags2_fpath, star_out_fpath, namepairidx, arguments.threads))
+            for read in readsiter:
+                bam_out.write(read)
 
-    if completed < 3:
-        log.info('Correcting UMIs...')
-        correct_UMIs(star_w_bc_sorted_fpath, star_w_bc_umi_fpath, arguments.threads)
+    for fpaths in paired_align_fqs_and_tags_fpaths:
+        for fpath in fpaths:
+            if fpath and os.path.isfile(fpath):
+                os.remove(fpath)
+    for star_out_dir in star_out_dirs:
+        shutil.rmtree(star_out_dir)  # clean up intermediate STAR files
 
-    if completed < 4:
-        log.info('Sorting bam...')
-        pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_umi_sorted_fpath, star_w_bc_umi_fpath)
-        log.info('Indexing bam...')
-        pysam.index(star_w_bc_umi_sorted_fpath)
-        os.remove(star_w_bc_umi_fpath)
-        os.remove(star_w_bc_sorted_fpath)
-        os.remove(star_w_bc_sorted_fpath + '.bai')
+    log.info('Sorting bam...')
+    pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_sorted_fpath, star_w_bc_fpath)
+    os.remove(star_w_bc_fpath)  #clean up unsorted bam
+    log.info('Indexing bam...')
+    pysam.index(star_w_bc_sorted_fpath)
+
+    log.info('Correcting UMIs...')
+    correct_UMIs(star_w_bc_sorted_fpath, star_w_bc_umi_fpath, arguments.threads)
+
+    log.info('Sorting bam...')
+    pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_umi_sorted_fpath, star_w_bc_umi_fpath)
+    log.info('Indexing bam...')
+    pysam.index(star_w_bc_umi_sorted_fpath)
+    os.remove(star_w_bc_umi_fpath)
+    os.remove(star_w_bc_sorted_fpath)
+    os.remove(star_w_bc_sorted_fpath + '.bai')
 
     count_matrix(arguments, star_w_bc_umi_sorted_fpath)
     log.info('Done')
