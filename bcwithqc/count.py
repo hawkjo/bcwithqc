@@ -421,7 +421,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
             SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq'),
             SeqIO.parse(misc.gzip_friendly_open(fq2_fpath), 'fastq'))):
             if i % 100000 == 0 and i > 0:
-                log.info(f'  {i:,d}')
+                log.info(f'  {i:,d} processed,  {total_out:,d} output')
 
             scores = [0, 0]
             sans_bc_rec = [None, True]
@@ -509,7 +509,7 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
         total_out = 0
         for i, (output_recs, output_tags) in enumerate(pool.imap(worker_process_read, read_iterator(fq1_fpath, fq2_fpath, sem), chunksize=chunksize)):
             if i % 100000 == 0 and i > 0:
-                log.info(f'  {i:,d}')
+                log.info(f'  {i:,d} processed,  {total_out:,d} output')
             sem.release()
 
             processed = False
