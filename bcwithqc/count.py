@@ -86,18 +86,18 @@ def preprocess_fastqs(arguments):
             log.info(f'  sans-bc fastq: {sans_bc_fq2_fpath}')
             log.info(f'  tags file:     {tags1_fpath}')
 
-        if all(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath] if fpath):
-            log.info('Barcode output found. Skipping barcode detection')
-        else:
-            process_fastqs_func(
-                    arguments,
-                    bc_fq1_fpath,
-                    bc_fq2_fpath,
-                    sans_bc_fq1_fpath,
-                    sans_bc_fq2_fpath,
-                    tags1_fpath,
-                    tags2_fpath,
-                    bcs_on_both_reads)
+        if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath] if fpath):
+            raise FileExistsError('Partial results found: Remove partial results and restart.')
+
+        process_fastqs_func(
+                arguments,
+                bc_fq1_fpath,
+                bc_fq2_fpath,
+                sans_bc_fq1_fpath,
+                sans_bc_fq2_fpath,
+                tags1_fpath,
+                tags2_fpath,
+                bcs_on_both_reads)
 
         if bc_fq_idx == 0:
             paired_align_fqs_and_tags_fpaths.append((sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath))
