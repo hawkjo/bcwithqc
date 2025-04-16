@@ -66,6 +66,15 @@ def write_stats_file_from_cntr(cntr, fpath):
 def config_has_barcodes_on_both_reads(config):
     return "barcode_struct_r2" in config and "blocks" in config["barcode_struct_r2"] and len(config["barcode_struct_r2"]["blocks"])
 
+def config_has_umis(config):
+    for read in range(2):
+        readconf = config.get(f"barcode_struct_r{read + 1}")
+        if readconf is not None and (blocks := readconf.get("blocks")):
+            for block in blocks:
+                if block["blockfunction"] == "UMI":
+                    return True
+    return False
+
 def find_paired_fastqs_in_dir(fq_dir):
     raw_prompts = ['*.fastq', '*.fq', '*.txt']
     glob_prompts = [os.path.join(fq_dir, prompt) for rp in raw_prompts for prompt in [rp, f'{rp}.gz']]
