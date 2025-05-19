@@ -194,7 +194,28 @@ def process_fastqs(arguments):
         os.remove(star_w_bc_fpath)  #clean up unsorted bam
         os.remove(star_w_bc_umi_fpath)
         os.remove(star_w_bc_sorted_fpath)
-        os.remove(star_w_bc_sorted_fpath + '.bai')    
+        os.remove(star_w_bc_sorted_fpath + '.bai')
+    else:
+        intermediary_dir = os.path.join(arguments.output_dir, "intermediary_files")
+        log.info('Preserving intermediary files in: %s', intermediary_dir)
+        os.makedirs(intermediary_dir, exist_ok=True)
+
+        # Move paired fastqs and tags
+        for fpaths in paired_align_fqs_and_tags_fpaths:
+            for fpath in fpaths:
+                if fpath and os.path.isfile(fpath):
+                    shutil.move(fpath, os.path.join(intermediary_dir, os.path.basename(fpath)))
+
+        # Move STAR output directories
+        for star_out_dir in star_out_dirs:
+            if os.path.isdir(star_out_dir):
+                dest_dir = os.path.join(intermediary_dir, os.path.basename(star_out_dir))
+                shutil.move(star_out_dir, dest_dir)
+
+        # Move bam files
+        for f in [star_w_bc_fpath, star_w_bc_umi_fpath, star_w_bc_sorted_fpath, star_w_bc_sorted_fpath + '.bai']:
+            if os.path.isfile(f):
+                shutil.move(f, os.path.join(intermediary_dir, os.path.basename(f)))    
 
     log.info('Done')
 
