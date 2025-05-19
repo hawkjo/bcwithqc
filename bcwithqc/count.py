@@ -182,6 +182,20 @@ def process_fastqs(arguments):
     pysam.index(star_w_bc_umi_sorted_fpath)
     count_matrix(arguments, star_w_bc_umi_sorted_fpath)
 
+    handle_intermediary_files(
+        arguments,
+        paired_align_fqs_and_tags_fpaths,
+        star_out_dirs,
+        star_w_bc_fpath,
+        star_w_bc_umi_fpath,
+        star_w_bc_sorted_fpath
+    )
+
+    log.info('Done')
+
+
+def handle_intermediary_files(arguments, paired_align_fqs_and_tags_fpaths, star_out_dirs,
+                              star_w_bc_fpath, star_w_bc_umi_fpath, star_w_bc_sorted_fpath):
     if not arguments.keep_intermediary_files:
         log.info('Deleting intermediary files...')
         for fpaths in paired_align_fqs_and_tags_fpaths:
@@ -189,9 +203,9 @@ def process_fastqs(arguments):
                 if fpath and os.path.isfile(fpath):
                     os.remove(fpath)
         for star_out_dir in star_out_dirs:
-            shutil.rmtree(star_out_dir)  # clean up intermediate STAR files
-        
-        os.remove(star_w_bc_fpath)  #clean up unsorted bam
+            shutil.rmtree(star_out_dir)
+
+        os.remove(star_w_bc_fpath)
         os.remove(star_w_bc_umi_fpath)
         os.remove(star_w_bc_sorted_fpath)
         os.remove(star_w_bc_sorted_fpath + '.bai')
@@ -200,24 +214,19 @@ def process_fastqs(arguments):
         log.info('Preserving intermediary files in: %s', intermediary_dir)
         os.makedirs(intermediary_dir, exist_ok=True)
 
-        # Move paired fastqs and tags
         for fpaths in paired_align_fqs_and_tags_fpaths:
             for fpath in fpaths:
                 if fpath and os.path.isfile(fpath):
                     shutil.move(fpath, os.path.join(intermediary_dir, os.path.basename(fpath)))
 
-        # Move STAR output directories
         for star_out_dir in star_out_dirs:
             if os.path.isdir(star_out_dir):
                 dest_dir = os.path.join(intermediary_dir, os.path.basename(star_out_dir))
                 shutil.move(star_out_dir, dest_dir)
 
-        # Move bam files
         for f in [star_w_bc_fpath, star_w_bc_umi_fpath, star_w_bc_sorted_fpath, star_w_bc_sorted_fpath + '.bai']:
             if os.path.isfile(f):
-                shutil.move(f, os.path.join(intermediary_dir, os.path.basename(f)))    
-
-    log.info('Done')
+                shutil.move(f, os.path.join(intermediary_dir, os.path.basename(f)))
 
 
 def run_STAR(arguments, R1_fpath, R2_fpath):
