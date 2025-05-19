@@ -166,16 +166,10 @@ def process_fastqs(arguments):
             for read in readsiter:
                 bam_out.write(read)
 
-    for fpaths in paired_align_fqs_and_tags_fpaths:
-        for fpath in fpaths:
-            if fpath and os.path.isfile(fpath):
-                os.remove(fpath)
-    for star_out_dir in star_out_dirs:
-        shutil.rmtree(star_out_dir)  # clean up intermediate STAR files
+
 
     log.info('Sorting bam...')
     pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_sorted_fpath, star_w_bc_fpath)
-    os.remove(star_w_bc_fpath)  #clean up unsorted bam
     log.info('Indexing bam...')
     pysam.index(star_w_bc_sorted_fpath)
 
@@ -186,11 +180,22 @@ def process_fastqs(arguments):
     pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_umi_sorted_fpath, star_w_bc_umi_fpath)
     log.info('Indexing bam...')
     pysam.index(star_w_bc_umi_sorted_fpath)
-    os.remove(star_w_bc_umi_fpath)
-    os.remove(star_w_bc_sorted_fpath)
-    os.remove(star_w_bc_sorted_fpath + '.bai')
-
     count_matrix(arguments, star_w_bc_umi_sorted_fpath)
+
+    if not arguments.keep_intermediary_files:
+        log.info('Deleting intermediary files...')
+        for fpaths in paired_align_fqs_and_tags_fpaths:
+            for fpath in fpaths:
+                if fpath and os.path.isfile(fpath):
+                    os.remove(fpath)
+        for star_out_dir in star_out_dirs:
+            shutil.rmtree(star_out_dir)  # clean up intermediate STAR files
+        
+        os.remove(star_w_bc_fpath)  #clean up unsorted bam
+        os.remove(star_w_bc_umi_fpath)
+        os.remove(star_w_bc_sorted_fpath)
+        os.remove(star_w_bc_sorted_fpath + '.bai')    
+
     log.info('Done')
 
 

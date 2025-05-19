@@ -77,6 +77,10 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
     def output_dir(self):
         return self._arguments['--output-dir']
 
+    @property
+    def keep_intermediary_files(self):
+        return self._arguments['--keep-intermediary']
+
 class SimulationCommandLineArguments(CommandLineArgumentsBase):
     def __init__(self, arguments):
         super().__init__(arguments)

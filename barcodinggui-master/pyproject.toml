@@ -1,0 +1,154 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs"]
+
+[project]
+name = "barcoding"
+dynamic = ["version"]
+description = "Barcode assignment for single-cell experiments"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Ilia Kats"},
+]
+maintainers = [
+    {name = "Ilia Kats", email = "ilia-kats@gmx.net"},
+]
+urls.Documentation = "https://barcoding.readthedocs.io/"
+urls.Source = "https://github.com/ilia-kats/barcoding"
+urls.Home-page = "https://github.com/ilia-kats/barcoding"
+dependencies = [
+    "numpy",
+    "pandas",
+    "pyside6",
+    # for debug logging (referenced from the issue template)
+    "session-info"
+]
+
+[project.optional-dependencies]
+barcodeimport = [
+    "odfpy",
+    "xlrd",
+    "pyxlsb",
+    "openpyxl"
+]
+dev = [
+    "pre-commit",
+    "twine>=4.0.2"
+]
+doc = [
+    "docutils>=0.8,!=0.18.*,!=0.19.*",
+    "sphinx>=4",
+    "sphinx-book-theme>=1.0.0",
+    "myst-nb",
+    "sphinxcontrib-bibtex>=1.0.0",
+    "sphinx-autodoc-typehints",
+    "sphinxext-opengraph",
+    # For notebooks
+    "ipykernel",
+    "ipython",
+    "sphinx-copybutton",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+
+[project.gui-scripts]
+barcodinggui = "barcoding.main:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build]
+include = ["/src"]
+exclude = ["/src/barcoding/ui/*.ui", "/src/barcoding/ui/*.sh"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["/src/barcoding"]
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/barcoding/_version.py"
+
+[tool.coverage.run]
+source = ["barcoding"]
+omit = [
+    "**/test_*.py",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+xfail_strict = true
+addopts = [
+    "--import-mode=importlib",  # allow using test files with same name
+]
+
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+
+[tool.ruff]
+src = ["src"]
+line-length = 120
+select = [
+    "F",  # Errors detected by Pyflakes
+    "E",  # Error detected by Pycodestyle
+    "W",  # Warning detected by Pycodestyle
+    "I",  # isort
+    "D",  # pydocstyle
+    "B",  # flake8-bugbear
+    "TID",  # flake8-tidy-imports
+    "C4",  # flake8-comprehensions
+    "BLE",  # flake8-blind-except
+    "T10", # flake8-debugger
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "S", #flake8-bandit
+    "NPY", # numpy-specific rules
+    "UP",  # pyupgrade
+    "RUF100",  # Report unused noqa directives
+    "RUF200", # invalid pyproject.toml
+]
+ignore = [
+    # line too long -> we accept long comment lines; black gets rid of long code lines
+    "E501",
+    # Do not assign a lambda expression, use a def -> lambda expression assignments are convenient
+    "E731",
+    # allow I, O, l as variable names -> I is the identity matrix
+    "E741",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in __init__
+    "D107",
+    # Errors from function calls in argument defaults. These are fine when the result is immutable.
+    "B008",
+    # __magic__ methods are are often self-explanatory, allow missing docstrings
+    "D105",
+    # first line should end with a period [Bug: doesn't work with single-line docstrings]
+    "D400",
+    # First line should be in imperative mood; try rephrasing
+    "D401",
+    ## Disable one in each pair of mutually incompatible rules
+    # We don’t want a blank line before a class docstring
+    "D203",
+    # We want docstrings to start immediately after the opening triple quote
+    "D213",
+    # having a proper branching structure makes the code more readable IMO
+    "RET505", "RET506", "RET507", "RET508",
+
+    # no docstrings for GUI
+    "D101",
+    "D102",
+    "D103",
+]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.per-file-ignores]
+"docs/*" = ["I"]
+"tests/*" = ["D"]
+"*/__init__.py" = ["F401"]
