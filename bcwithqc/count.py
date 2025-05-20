@@ -196,7 +196,7 @@ def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
 
     If the final output is updated, this needs to updated as well! 
     '''
-
+    
     output_dir = arguments.output_dir
     intermediary_dir = os.path.join(output_dir, "intermediary_files")
 

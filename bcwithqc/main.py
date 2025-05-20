@@ -2,7 +2,7 @@
 bcwithqc: Process sequencing barcodes and UMIs
 
 Usage:
-  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
   bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --fastq-prefix=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [-v | -vv | -vvv]
@@ -24,6 +24,7 @@ Options:
                                     always introduce as many errors as allowed by the configuration.
   --substitution-probability=<>:  Probability of generating a substitution as opposed to an indel [default: 0.7].
   --insertion-probability=<>:     Probability of generating an insertion as opposed to a deletion when generating an indel [default: 0.5].
+  --keep-intermediary             Keep intermediary files instead of deleting them [default: False].
   -h --help                       Show this screen.
   --version                       Show version.
 
