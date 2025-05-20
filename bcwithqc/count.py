@@ -182,51 +182,57 @@ def process_fastqs(arguments):
     pysam.index(star_w_bc_umi_sorted_fpath)
     count_matrix(arguments, star_w_bc_umi_sorted_fpath)
 
-    handle_intermediary_files(
-        arguments,
-        paired_align_fqs_and_tags_fpaths,
-        star_out_dirs,
-        star_w_bc_fpath,
-        star_w_bc_umi_fpath,
-        star_w_bc_sorted_fpath
-    )
+    handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath)
 
     log.info('Done')
 
 
-def handle_intermediary_files(arguments, paired_align_fqs_and_tags_fpaths, star_out_dirs,
-                              star_w_bc_fpath, star_w_bc_umi_fpath, star_w_bc_sorted_fpath):
+def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
+    '''
+    This function deletes/moves all files and subdirectories in output_dir, 
+    EXCEPT the final output defined in paths_to_keep. Currently:
+    raw_reads_bc_matrix
+    raw_umis_bc_matrix
+    with_bc_umi.sorted.bam
+    with_bc_umi.sorted.bam.bai
+
+    If the final output is updated, this needs to updated as well! 
+    '''
+
+    output_dir = arguments.output_dir
+    intermediary_dir = os.path.join(output_dir, "intermediary_files")
+
+    # Define paths to keep
+    paths_to_keep = {
+        star_w_bc_umi_sorted_fpath,
+        star_w_bc_umi_sorted_fpath + '.bai',
+        os.path.join(output_dir, 'raw_reads_bc_matrix'),
+        os.path.join(output_dir, 'raw_umis_bc_matrix')
+    }
+
+    # List all items in output_dir
+    all_items = [os.path.join(output_dir, item) for item in os.listdir(output_dir)]
+
     if not arguments.keep_intermediary_files:
         log.info('Deleting intermediary files...')
-        for fpaths in paired_align_fqs_and_tags_fpaths:
-            for fpath in fpaths:
-                if fpath and os.path.isfile(fpath):
-                    os.remove(fpath)
-        for star_out_dir in star_out_dirs:
-            shutil.rmtree(star_out_dir)
-
-        os.remove(star_w_bc_fpath)
-        os.remove(star_w_bc_umi_fpath)
-        os.remove(star_w_bc_sorted_fpath)
-        os.remove(star_w_bc_sorted_fpath + '.bai')
+        for item in all_items:
+            # Skip if item is in the keep list
+            if item in paths_to_keep:
+                continue
+            if os.path.isfile(item):
+                os.remove(item)
+            elif os.path.isdir(item):
+                shutil.rmtree(item)
     else:
-        intermediary_dir = os.path.join(arguments.output_dir, "intermediary_files")
         log.info('Preserving intermediary files in: %s', intermediary_dir)
         os.makedirs(intermediary_dir, exist_ok=True)
 
-        for fpaths in paired_align_fqs_and_tags_fpaths:
-            for fpath in fpaths:
-                if fpath and os.path.isfile(fpath):
-                    shutil.move(fpath, os.path.join(intermediary_dir, os.path.basename(fpath)))
-
-        for star_out_dir in star_out_dirs:
-            if os.path.isdir(star_out_dir):
-                dest_dir = os.path.join(intermediary_dir, os.path.basename(star_out_dir))
-                shutil.move(star_out_dir, dest_dir)
-
-        for f in [star_w_bc_fpath, star_w_bc_umi_fpath, star_w_bc_sorted_fpath, star_w_bc_sorted_fpath + '.bai']:
-            if os.path.isfile(f):
-                shutil.move(f, os.path.join(intermediary_dir, os.path.basename(f)))
+        for item in all_items:
+            # Skip if item is in the keep list
+            if item in paths_to_keep:
+                continue
+            # Move item to intermediary directory
+            shutil.move(item, os.path.join(intermediary_dir, os.path.basename(item)))
 
 
 def run_STAR(arguments, R1_fpath, R2_fpath):
