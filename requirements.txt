@@ -1,0 +1,6 @@
+numpy
+scipy
+pysam
+biopython
+docopt
+freebarcodes.decode
