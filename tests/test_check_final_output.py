@@ -61,7 +61,16 @@ def sample_dirs(request):
         "-vvv"
     ]
 
-    subprocess.run(command, check=True, env=env)
+    try:
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, text=True)
+        print(result.stdout)
+        print(result.stderr)
+    except subprocess.CalledProcessError as e:
+        print("Subprocess failed:")
+        print(e.stdout)
+        print(e.stderr)
+        raise
+
 
     yield sample_type, tmp_dir, expected_dir
 
