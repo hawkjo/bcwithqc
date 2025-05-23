@@ -32,8 +32,15 @@ def sample_dirs(request):
 
     # Set up env with STAR path as before
     env = os.environ.copy()
-    star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
-    if "GITHUB_ACTIONS" not in env:
+    if "GITHUB_ACTIONS" in env:
+        # On GitHub Actions, add the installed STAR path explicitly
+        github_star_dir = "/home/runner/work/bcwithqc/bcwithqc/STAR-2.7.10b/source"
+        star_executable = os.path.join(github_star_dir, "STAR")
+        if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
+            raise RuntimeError(f"STAR executable not found at GitHub Actions path '{star_executable}'")
+        env["PATH"] = f"{github_star_dir}:{env.get('PATH', '')}"
+    else:
+        star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
         star_executable = os.path.join(star_dir_local, "STAR")
         if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
             raise RuntimeError(
