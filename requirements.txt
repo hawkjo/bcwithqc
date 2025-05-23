@@ -3,3 +3,4 @@ scipy
 pysam
 biopython
 docopt
+pytest
