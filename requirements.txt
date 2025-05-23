@@ -1,0 +1,7 @@
+numpy
+scipy
+pysam
+biopython
+docopt
+pytest
+pywfa
