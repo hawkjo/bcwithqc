@@ -62,7 +62,7 @@ def sample_dirs(request):
     ]
 
     try:
-        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, text=True)
         print(result.stdout)
         print(result.stderr)
     except subprocess.CalledProcessError as e:
