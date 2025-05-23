@@ -4,3 +4,4 @@ pysam
 biopython
 docopt
 pytest
+pywfa
