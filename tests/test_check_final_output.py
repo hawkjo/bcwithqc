@@ -59,7 +59,6 @@ def sample_dirs(request):
         f"--output-dir={tmp_dir}",
         "--threads=1",
         "--keep-intermediary",
-        "--limitGenomeGenerateRAM=6000000000",
         "-vvv"
     ]
 
