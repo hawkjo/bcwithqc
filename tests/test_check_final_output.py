@@ -58,6 +58,7 @@ def sample_dirs(request):
         f"--output-dir={tmp_dir}",
         "--threads=1",
         "--keep-intermediary",
+        "--limitGenomeGenerateRAM=6000000000",
         "-vvv"
     ]
 
@@ -67,8 +68,8 @@ def sample_dirs(request):
         print(result.stderr)
     except subprocess.CalledProcessError as e:
         print("Subprocess failed:")
-        print(e.stdout)
-        print(e.stderr)
+        print("STDOUT:", e.stdout)
+        print("STDERR:", e.stderr)
         raise
 
 
