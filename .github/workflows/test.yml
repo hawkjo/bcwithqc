@@ -31,7 +31,7 @@ jobs:
           cd STAR-2.7.10b/source
           make STAR
           echo "$PWD" >> $GITHUB_PATH  # Add STAR binary directory to PATH
-          
+
       - name: Enable core dumps
         run: ulimit -c unlimited
 
@@ -49,4 +49,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest
+          pytest --capture=tee-sys -vv

@@ -67,9 +67,11 @@ def sample_dirs(request):
         print(result.stdout)
         print(result.stderr)
     except subprocess.CalledProcessError as e:
-        print("Subprocess failed:")
-        print("STDOUT:", e.stdout)
-        print("STDERR:", e.stderr)
+        sys.stderr.write("Subprocess failed:\n")
+        sys.stderr.write(f"Return code: {e.returncode}\n")
+        sys.stderr.write(f"STDOUT:\n{e.stdout}\n")
+        sys.stderr.write(f"STDERR:\n{e.stderr}\n")
+        sys.stderr.flush()
         raise
 
 
