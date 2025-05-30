@@ -1,12 +1,12 @@
-                                 Started job on |	May 20 13:44:48
-                             Started mapping on |	May 20 13:44:48
-                                    Finished on |	May 20 13:44:48
+                                 Started job on |	May 30 14:26:36
+                             Started mapping on |	May 30 14:26:36
+                                    Finished on |	May 30 14:26:36
        Mapping speed, Million of reads per hour |	inf
 
-                          Number of input reads |	19073
+                          Number of input reads |	19075
                       Average input read length |	46
                                     UNIQUE READS:
-                   Uniquely mapped reads number |	18230
+                   Uniquely mapped reads number |	18232
                         Uniquely mapped reads % |	95.58%
                           Average mapped length |	45.64
                        Number of splices: Total |	3

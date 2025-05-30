@@ -5,3 +5,4 @@ biopython
 docopt
 pytest
 pywfa
+regex

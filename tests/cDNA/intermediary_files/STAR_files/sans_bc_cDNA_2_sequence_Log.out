@@ -2,14 +2,14 @@ STAR version=2.7.11b
 STAR compilation time,server,dir=2025-05-14T08:52:47+00:00 jupyter-link:/home/link/local/lib/STAR-2.7.11b/source
 STAR git: 
 ##### Command Line:
-STAR --runThreadN 1 --genomeDir /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index --readFilesIn  /home/link/John_UMIs/test/cDNA/sans_bc_cDNA_2_sequence.fq --outFileNamePrefix /home/link/John_UMIs/test/cDNA/STAR_files/sans_bc_cDNA_2_sequence_ --outFilterMultimapNmax 1 --outSAMtype BAM Unsorted --outSAMattributes NH HI AS nM GX GN
+STAR --runThreadN 1 --genomeDir /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index --readFilesIn  /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_ --outFilterMultimapNmax 1 --outSAMtype BAM Unsorted --outSAMattributes NH HI AS nM GX GN
 ##### Initial USER parameters from Command Line:
-outFileNamePrefix                 /home/link/John_UMIs/test/cDNA/STAR_files/sans_bc_cDNA_2_sequence_
+outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_
 ###### All USER parameters from Command Line:
 runThreadN                    1     ~RE-DEFINED
 genomeDir                     /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index     ~RE-DEFINED
-readFilesIn                   /home/link/John_UMIs/test/cDNA/sans_bc_cDNA_2_sequence.fq        ~RE-DEFINED
-outFileNamePrefix             /home/link/John_UMIs/test/cDNA/STAR_files/sans_bc_cDNA_2_sequence_     ~RE-DEFINED
+readFilesIn                   /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq        ~RE-DEFINED
+outFileNamePrefix             /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_     ~RE-DEFINED
 outFilterMultimapNmax         1     ~RE-DEFINED
 outSAMtype                    BAM   Unsorted        ~RE-DEFINED
 outSAMattributes              NH   HI   AS   nM   GX   GN        ~RE-DEFINED
@@ -18,15 +18,15 @@ outSAMattributes              NH   HI   AS   nM   GX   GN        ~RE-DEFINED
 ##### Final user re-defined parameters-----------------:
 runThreadN                        1
 genomeDir                         /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index
-readFilesIn                       /home/link/John_UMIs/test/cDNA/sans_bc_cDNA_2_sequence.fq   
-outFileNamePrefix                 /home/link/John_UMIs/test/cDNA/STAR_files/sans_bc_cDNA_2_sequence_
+readFilesIn                       /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq   
+outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_
 outSAMtype                        BAM   Unsorted   
 outSAMattributes                  NH   HI   AS   nM   GX   GN   
 outFilterMultimapNmax             1
 
 -------------------------------
 ##### Final effective command line:
-STAR   --runThreadN 1   --genomeDir /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index   --readFilesIn /home/link/John_UMIs/test/cDNA/sans_bc_cDNA_2_sequence.fq      --outFileNamePrefix /home/link/John_UMIs/test/cDNA/STAR_files/sans_bc_cDNA_2_sequence_   --outSAMtype BAM   Unsorted      --outSAMattributes NH   HI   AS   nM   GX   GN      --outFilterMultimapNmax 1
+STAR   --runThreadN 1   --genomeDir /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index   --readFilesIn /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq      --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_   --outSAMtype BAM   Unsorted      --outSAMattributes NH   HI   AS   nM   GX   GN      --outFilterMultimapNmax 1
 ----------------------------------------
 
 Number of fastq files for each mate = 1
@@ -228,7 +228,7 @@ Number of real (reference) chromosomes= 173
 172	Amplicon_YWHAB_rs2072726_AMPL587798_withHDR_chrom	212	44826624
 173	Amplicon_YWHAB_rs6031849_AMPL587797_withHDR_chrom	225	45088768
 --sjdbOverhang = 99 taken from the generated genome
-Started loading the genome: Tue May 20 13:44:48 2025
+Started loading the genome: Fri May 30 14:26:36 2025
 
 Genome: size given as a parameter = 45350912
 SA: size given as a parameter = 799494
@@ -242,16 +242,16 @@ Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 45350912 bytes
 SA file size: 799494 bytes; state: good=1 eof=0 fail=0 bad=0
 Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 799494 bytes
 Loading SAindex ... done: 1539 bytes
-Finished loading the genome: Tue May 20 13:44:48 2025
+Finished loading the genome: Fri May 30 14:26:36 2025
 
 alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
 Loaded transcript database, nTr=173
 Loaded exon database, nEx=173
 Thread #0 end of input stream, nextChar=-1
 Completed: thread #0
-May 20 13:44:48 ..... finished mapping
+May 30 14:26:36 ..... finished mapping
 RAM after mapping:
-VmPeak:	  206200 kB; VmSize:	  204912 kB; VmHWM:	  157548 kB; VmRSS:	  156928 kB; 
+VmPeak:	  206200 kB; VmSize:	  204912 kB; VmHWM:	  157220 kB; VmRSS:	  156600 kB; 
 RAM after freeing genome index memory:
-VmPeak:	  206200 kB; VmSize:	  159836 kB; VmHWM:	  157548 kB; VmRSS:	  111852 kB; 
+VmPeak:	  206200 kB; VmSize:	  159836 kB; VmHWM:	  157220 kB; VmRSS:	  111524 kB; 
 ALL DONE!

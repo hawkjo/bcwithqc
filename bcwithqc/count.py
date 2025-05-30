@@ -27,9 +27,13 @@ n_first_seqs = 10000  # n seqs for finding score threshold
 
 def preprocess_fastqs(arguments):
     if not os.path.exists(arguments.output_dir):
-        os.makedirs(arguments.output_dir)
+        os.makedirs(arguments.output_dir)    
 
     paired_fpaths = misc.find_paired_fastqs_in_dir(arguments.fastq_dir)
+
+    if arguments.config["unknown_read_orientation"]:
+        paired_fpaths = misc.fix_unknown_read_orientation(arguments, paired_fpaths)        
+
     log.info('Files to process:')
     for i, (fpath1, fpath2) in enumerate(paired_fpaths):
         log.info(f'  {fpath1}')

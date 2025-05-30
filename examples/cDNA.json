@@ -1,5 +1,5 @@
 {
-    "unknown_read_orientation": true,
+    "unknown_read_orientation": false,
     "barcode_struct_r1": {
         "keep_nonbarcode": false,
         "blocks": [
