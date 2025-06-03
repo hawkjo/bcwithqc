@@ -3,6 +3,7 @@ import pytest
 import gzip
 from bcwithqc.misc import fix_unknown_read_orientation
 
+output_files_for_mismatched_reads = False #Set this to True for debugging, and it will create files with all mismatched reads.
 
 class DummyArgs:
     def __init__(self, output_dir, config):
@@ -186,7 +187,7 @@ EXPECTED_FASTQS = {
 
 # === Helper ===
 
-def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002):
+def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002, output_dir='output'):
     mismatched_reads = 0
     total_reads = 0
     first_mismatch_index = None
@@ -195,10 +196,20 @@ def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002):
     last_is_read1 = False
     last_is_read2 = False
 
-    with gzip.open(file1, 'rt', encoding='utf-8') as f1, gzip.open(file2, 'rt', encoding='utf-8') as f2:
+    # Prepare output file
+    os.makedirs(output_dir, exist_ok=True)
+    base_name = os.path.basename(file1).replace('.gz', '')
+    mismatch_output_path = os.path.join(output_dir, f"{base_name}_mismatched_reads.txt")
+
+    with gzip.open(file1, 'rt', encoding='utf-8') as f1, \
+         gzip.open(file2, 'rt', encoding='utf-8') as f2, \
+         open(mismatch_output_path, 'w', encoding='utf-8') as out:
+
         for i, (line1, line2) in enumerate(zip(f1, f2), 1):
             if line1.startswith('@') and line2.startswith('@'):
                 total_reads += 1
+                read_name1 = line1.strip()
+                read_name2 = line2.strip()
                 last_is_read1 = True
                 last_is_read2 = True
                 continue
@@ -208,22 +219,30 @@ def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002):
                     mismatched_reads += 1
                     if first_mismatch_index is None:
                         first_mismatch_index = i
+                    # Write mismatch information
+                    out.write(f"{read_name1}\n{line1.strip()}\n")
+                    out.write(f"{read_name2}\n{line2.strip()}\n\n")
 
             last_is_read1 = line1.startswith('@')
             last_is_read2 = line2.startswith('@')
 
-    # Compute mismatch rate
     mismatch_rate = mismatched_reads / total_reads if total_reads else 0
 
-    # Always print a summary for test logs
     print(f"Total reads compared: {total_reads}")
     print(f"Mismatched reads: {mismatched_reads}")
     print(f"Mismatch rate: {mismatch_rate:.4%}")
 
+    if not output_files_for_mismatched_reads and os.path.exists(mismatch_output_path):
+        os.remove(mismatch_output_path)
+    else:
+        print(f"Mismatched reads written to: {mismatch_output_path}")
+
     if mismatch_rate > mismatch_threshold:
-        raise AssertionError(f"Mismatch rate {mismatch_rate:.4%} exceeds threshold of {mismatch_threshold*100:.2f}%\n"
-                             f"Files: {file1} vs {file2}\n"
-                             f"First mismatch at line {first_mismatch_index}.")
+        raise AssertionError(
+            f"Mismatch rate {mismatch_rate:.4%} exceeds threshold of {mismatch_threshold*100:.2f}%\n"
+            f"Files: {file1} vs {file2}\n"
+            f"First mismatch at line {first_mismatch_index}."
+        )
 
 
 
@@ -252,10 +271,10 @@ def test_fix_unknown_read_orientation(sample_type):
 
     # Check if one of the files in the output matches the expected files
     assert any(
-        (compare_gzipped_text_files(first_path_tuple[0], expected_r1) == None and 
-        compare_gzipped_text_files(first_path_tuple[1], expected_r2) == None) or
-        (compare_gzipped_text_files(first_path_tuple[0], expected_r2) == None and 
-        compare_gzipped_text_files(first_path_tuple[1], expected_r1) == None)
+        (compare_gzipped_text_files(first_path_tuple[0], expected_r1, output_dir=OUTPUT_DIR) == None and 
+        compare_gzipped_text_files(first_path_tuple[1], expected_r2, output_dir=OUTPUT_DIR) == None) or
+        (compare_gzipped_text_files(first_path_tuple[0], expected_r2, output_dir=OUTPUT_DIR) == None and 
+        compare_gzipped_text_files(first_path_tuple[1], expected_r1, output_dir=OUTPUT_DIR) == None)
         for first_path_tuple in new_fpaths
     )
 
