@@ -37,6 +37,7 @@ if __name__ == '__main__':
             "pysam>=0.23.0",
             "scipy>=1.10.1",
             "freebarcodes>=3.1.0",
+            "regex>=2024.11.6",
             "pywfa @ git+https://github.com/kcleal/pywfa.git@master"
             ],
         zip_safe=False,
