@@ -1,8 +1,9 @@
-numpy
-scipy
-pysam
-biopython
-docopt
+numpy>=1.20.0,<2.0.0
+scipy>=1.10.1
+pysam>=0.23.0
+biopython==1.79
+matplotlib>=3.5.2
+docopt-ng
 pytest
 pywfa
 regex
