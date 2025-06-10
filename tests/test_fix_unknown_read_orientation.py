@@ -1,10 +1,11 @@
 import os
 import pytest
 import gzip
+import shutil
 from bcwithqc.misc import fix_unknown_read_orientation
 
 output_files_for_mismatched_reads = False #Set this to True for debugging, and it will create files with all mismatched reads.
-
+output_files_for_oriented_reads = False #Set this to True for debugging, and it will not remove the oriented reads at the end of the test.
 class DummyArgs:
     def __init__(self, output_dir, config):
         self.output_dir = output_dir
@@ -199,11 +200,18 @@ def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002, output_di
     # Prepare output file
     os.makedirs(output_dir, exist_ok=True)
     base_name = os.path.basename(file1).replace('.gz', '')
-    mismatch_output_path = os.path.join(output_dir, f"{base_name}_mismatched_reads.txt")
+
+    mismatched_refrence_dir = os.path.join(output_dir, "mismatched_reads")
+    tmp_dir = os.path.join(output_dir, "tmp")
+    os.makedirs(tmp_dir, exist_ok=True)  
+
+    base_name = os.path.basename(file1).replace('.txt.gz', '')
+    mismatch_tmp_path = os.path.join(tmp_dir, f"{base_name}_mismatched_reads.txt")
+    mismatch_output_path = os.path.join(mismatched_refrence_dir, f"{base_name}_mismatched_reads.txt")
 
     with gzip.open(file1, 'rt', encoding='utf-8') as f1, \
          gzip.open(file2, 'rt', encoding='utf-8') as f2, \
-         open(mismatch_output_path, 'w', encoding='utf-8') as out:
+         open(mismatch_tmp_path, 'w', encoding='utf-8') as out:
 
         for i, (line1, line2) in enumerate(zip(f1, f2), 1):
             if line1.startswith('@') and line2.startswith('@'):
@@ -232,17 +240,28 @@ def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002, output_di
     print(f"Mismatched reads: {mismatched_reads}")
     print(f"Mismatch rate: {mismatch_rate:.4%}")
 
-    if not output_files_for_mismatched_reads and os.path.exists(mismatch_output_path):
-        os.remove(mismatch_output_path)
-    else:
-        print(f"Mismatched reads written to: {mismatch_output_path}")
+    try:
+        with open(mismatch_output_path, "r") as expected_file, open(mismatch_tmp_path, "r") as actual_file:
+            expected_lines = expected_file.readlines()
+            actual_lines = actual_file.readlines()
 
-    if mismatch_rate > mismatch_threshold:
-        raise AssertionError(
-            f"Mismatch rate {mismatch_rate:.4%} exceeds threshold of {mismatch_threshold*100:.2f}%\n"
-            f"Files: {file1} vs {file2}\n"
-            f"First mismatch at line {first_mismatch_index}."
-        )
+        if expected_lines != actual_lines:
+            mismatch_index = next(
+                (i for i, (l1, l2) in enumerate(zip(expected_lines, actual_lines)) if l1 != l2),
+                None
+            )
+            raise AssertionError(
+                "Mismatch files do not match.\n"
+                f"First mismatch at line {mismatch_index + 1 if mismatch_index is not None else 'unknown'}.\n"
+                f"File 1: {mismatch_output_path}\n"
+                f"File 2: {mismatch_tmp_path}"
+            )
+    finally:
+        if not output_files_for_mismatched_reads and os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+        else:
+            print(f"Mismatched reads written to: {mismatch_tmp_path}")
+
 
 
 
@@ -282,3 +301,8 @@ def test_fix_unknown_read_orientation(sample_type):
     assert not dummy_args.config["unknown_read_orientation"]
     assert os.path.exists(first_path_tuple[0])  # Ensure the first file exists
     assert os.path.exists(first_path_tuple[1])  # Ensure the second file exists
+
+    # Now clean up the newly created files
+    if not output_files_for_oriented_reads:
+        os.remove(first_path_tuple[0])
+        os.remove(first_path_tuple[1])
