@@ -32,7 +32,7 @@ if __name__ == '__main__':
         install_requires=[
             "numpy>=2.0.0",
             "docopt-ng",
-            "biopython==1.79", #This is currently not building correctly
+            "biopython>=1.79", #This is currently not building correctly
             "matplotlib>=3.5.2",
             "pysam>=0.23.0",
             "scipy>=1.10.1",
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         url='https://github.com/hawkjo/bcwithqc',
         download_url='',
         keywords=['DNA', 'NGS', 'bioinformatics', 'TAP-Seq', 'multiomics'],
-        python_requires='>=3.0',
+        python_requires='>=3.0,<3.13',
         classifiers=['Development Status :: 3 - Alpha',
                      'Natural Language :: English',
                      'Intended Audience :: Science/Research',
