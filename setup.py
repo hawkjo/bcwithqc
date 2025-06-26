@@ -32,7 +32,7 @@ if __name__ == '__main__':
         install_requires=[
             "numpy>=2.0.0",
             "docopt-ng",
-            "biopython>=1.85", #This is currently not building correctly
+            "biopython==1.79", 
             "matplotlib>=3.5.2",
             "pysam>=0.23.0",
             "scipy>=1.10.1",
