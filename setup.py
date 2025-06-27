@@ -47,7 +47,7 @@ if __name__ == '__main__':
         url='https://github.com/hawkjo/bcwithqc',
         download_url='',
         keywords=['DNA', 'NGS', 'bioinformatics', 'TAP-Seq', 'multiomics'],
-        python_requires='>=3.0,<3.13',
+        python_requires='>=3.0,<3.12',
         classifiers=['Development Status :: 3 - Alpha',
                      'Natural Language :: English',
                      'Intended Audience :: Science/Research',
