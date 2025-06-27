@@ -3,6 +3,7 @@ import gzip
 import glob
 import logging
 import pysam
+import regex
 import json
 from itertools import product
 from bisect import bisect
@@ -113,6 +114,148 @@ def file_prefix_from_fpath(fpath):
     bname = os.path.splitext(fpath[:-3] if fpath.endswith('.gz') else fpath)[0]
     return os.path.basename(bname)
 
+def fix_unknown_read_orientation(arguments, paired_fpaths):
+    '''
+    If unkown_read_orientation is clicked in the gui
+    this function checks each readpair, and asigns it to one of the two 
+    files, based on which barcode_struct it matches better. 
+    '''
+    output_dir = arguments.output_dir
+    os.makedirs(output_dir, exist_ok=True)   
+    
+    r1_blocks = arguments.config.get("barcode_struct_r1", {}).get("blocks", [])
+    r2_blocks = arguments.config.get("barcode_struct_r2", {}).get("blocks", [])
+
+    new_paired_fpaths = []
+
+    for r1_path, r2_path in paired_fpaths:
+        basename_r1 = os.path.basename(r1_path).replace(".txt.gz", "")
+        basename_r2 = os.path.basename(r2_path).replace(".txt.gz", "")
+        out_r1 = os.path.join(output_dir, f"oriented_{basename_r1}.txt.gz")
+        out_r2 = os.path.join(output_dir, f"oriented_{basename_r2}.txt.gz")
+        new_paired_fpaths.append((out_r1, out_r2))
+
+        with gzip_friendly_open(r1_path) as f1, gzip_friendly_open(r2_path) as f2, \
+             gzip.open(out_r1, 'wt') as out1, gzip.open(out_r2, 'wt') as out2:
+            
+            iterations = 0
+            for read1, read2 in read_fastq_pair(f1, f2):
+                # THIS IS ONLY HERE FOR DEBUGGING
+                iterations += 1
+                if iterations > 20010:  # Stop and raise error if we exceed allowed iterations
+                    raise ValueError(f"Exceeded the maximum allowed number of reads. Processed {iterations} reads, expected at most {max_iterations}.")
+                # END OF DEBUGGING CODE
+                seq1 = read1[1].strip()
+                seq2 = read2[1].strip()
+
+                score1_r1 = get_read_pattern_match_score(seq1, r1_blocks)
+                score2_r1 = get_read_pattern_match_score(seq2, r1_blocks)
+                score1_r2 = get_read_pattern_match_score(seq1, r2_blocks)
+                score2_r2 = get_read_pattern_match_score(seq2, r2_blocks)
+
+                # Assign based on which fits better to r1 vs r2 pattern
+                if score1_r1 + score2_r2 >= score1_r2 + score2_r1:
+                    write_fastq(out1, read1)
+                    write_fastq(out2, read2)
+                else:
+                    write_fastq(out1, read2)
+                    write_fastq(out2, read1)
+
+    arguments.config["unknown_read_orientation"] = False
+    return new_paired_fpaths
+
+def get_read_pattern_match_score(seq, blocks):
+    '''
+    This function calculates the match score for a sequence (one read),
+    and the blocks from the config file, which define that sequence. 
+    Only the "constantRegion" blocks are taking into consideration. 
+    The score is calculated by using fuzy regex pattern matching for each block-sequence on the original sequence,
+    and adding the length of the block-sequence to the score if it was found on the read.
+    The number of allowed insertions/deletions/missmatches is 1. 
+    1: runtime 14s, incorrect reads: 6 gDNA, 22 cDNA (out of 20.000).
+    2: runtime 24s, incorrect reads: 6 gDNA, 19 cDNA (out of 20.000).
+    3: runtime 53s, incorrect reads: 5 gDNA, 18 cDNA (out of 20.000).
+    4: runtime 130s, incorrect reads: 226 gDNA, 19 cDNA (out of 20.000).
+    '''
+    scores = []
+
+    for block in blocks:
+        if block.get("blocktype") != "constantRegion":
+            continue
+
+        sequences = block.get("sequence", [])
+        maxerror = block.get("maxerrors", 1)
+        best_block_score = 0.0
+
+        # Iterate through each sequence in the block
+        for sequence in sequences:
+            sequence_len = len(sequence)
+            max_mismatches = maxerror  # Allow n mismatch
+            best_local_score = 0.0
+
+            # Create a regex pattern with 1 allowed mismatch (use . for 1 character mismatch)
+            regex_pattern = f"({sequence}){{e<={max_mismatches}}}" 
+    
+            # Use regex to search for the pattern with a maximum of 1 mismatch
+            if regex.search(regex_pattern, seq):
+                best_local_score = sequence_len  # Assign score as length of block sequence
+            
+            # Keep track of the best score for the block
+            best_block_score = max(best_block_score, best_local_score)
+
+        # Append the best score for the block
+        scores.append(best_block_score)
+
+    if not scores:
+        return 0.0
+
+    # Final score: sum the scores (and average them)
+    # I tested averaging and it doesn't really affect accuracy.  
+    final_score = sum(scores)# / len(scores)
+    return final_score
+
+def read_fastq_pair(handle1, handle2):
+    """
+    Yield validated paired-end FASTQ records (4 lines each),
+    skipping and logging malformed ones.
+    """
+    processed = 0
+    skipped = 0
+
+    while True:
+        lines1 = [handle1.readline() for _ in range(4)]
+        lines2 = [handle2.readline() for _ in range(4)]
+
+        if not lines1[0] or not lines2[0]:
+            break  # End of one of the files
+
+        if any(l == '' for l in lines1 + lines2):
+            skipped += 1
+            continue
+
+        if not (lines1[0].startswith('@') and lines1[2].startswith('+')):
+            skipped += 1
+            continue
+
+        if not (lines2[0].startswith('@') and lines2[2].startswith('+')):
+            skipped += 1
+            continue
+
+        if len(lines1[1].strip()) != len(lines1[3].strip()):
+            skipped += 1
+            continue
+
+        if len(lines2[1].strip()) != len(lines2[3].strip()):
+            skipped += 1
+            continue
+
+        yield lines1, lines2
+        processed += 1
+
+    log.info(f"Finished reading FASTQ pairs: {processed} valid reads processed, {skipped} skipped bad or malformed reads.")
+
+def write_fastq(handle, record):
+    handle.writelines(record)
 
 def determine_bc_and_paired_fastq_idxs(paired_fpaths, blocks, unknown_read_orientation):
     """Returns (bc_fq_idx, paired_fq_idx), based on first pair of fastqs"""

@@ -1,6 +1,8 @@
 *pyc
 *swp
 *pkl
+!tests/gDNA/intermediary_files/namepairidx_gDNA_1_sequence.pkl
+!tests/cDNA/intermediary_files/namepairidx_cDNA_1_sequence.pkl
 envbcwithqc
 build
 dist

@@ -1,0 +1,257 @@
+STAR version=2.7.11b
+STAR compilation time,server,dir=2025-05-14T08:52:47+00:00 jupyter-link:/home/link/local/lib/STAR-2.7.11b/source
+STAR git: 
+##### Command Line:
+STAR --runThreadN 1 --genomeDir /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index --readFilesIn  /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_ --outFilterMultimapNmax 1 --outSAMtype BAM Unsorted --outSAMattributes NH HI AS nM GX GN
+##### Initial USER parameters from Command Line:
+outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_
+###### All USER parameters from Command Line:
+runThreadN                    1     ~RE-DEFINED
+genomeDir                     /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index     ~RE-DEFINED
+readFilesIn                   /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq        ~RE-DEFINED
+outFileNamePrefix             /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_     ~RE-DEFINED
+outFilterMultimapNmax         1     ~RE-DEFINED
+outSAMtype                    BAM   Unsorted        ~RE-DEFINED
+outSAMattributes              NH   HI   AS   nM   GX   GN        ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runThreadN                        1
+genomeDir                         /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index
+readFilesIn                       /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq   
+outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_
+outSAMtype                        BAM   Unsorted   
+outSAMattributes                  NH   HI   AS   nM   GX   GN   
+outFilterMultimapNmax             1
+
+-------------------------------
+##### Final effective command line:
+STAR   --runThreadN 1   --genomeDir /home/link/John_UMIs/bcwithqc/examples/SDR001_REF_index   --readFilesIn /home/link/John_UMIs/bcwithqc/tests/cDNA/sans_bc_cDNA_2_sequence.fq      --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/cDNA/STAR_files/sans_bc_cDNA_2_sequence_   --outSAMtype BAM   Unsorted      --outSAMattributes NH   HI   AS   nM   GX   GN      --outFilterMultimapNmax 1
+----------------------------------------
+
+Number of fastq files for each mate = 1
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+Finished loading and checking parameters
+Reading genome generation parameters:
+### STAR   --runMode genomeGenerate      --runThreadN 1   --genomeDir SDR001_REF_index   --genomeFastaFiles /g/steinmetz/lindenho/DLI_NGS/SDR001_STAR/SDR001_REF.fa      --genomeSAindexNbases 4   --sjdbGTFfile /g/steinmetz/lindenho/DLI_NGS/SDR001_STAR/SDR001_REF.gtf   --sjdbOverhang 99
+### GstrandBit=32
+versionGenome                 2.7.4a     ~RE-DEFINED
+genomeType                    Full     ~RE-DEFINED
+genomeFastaFiles              /g/steinmetz/lindenho/DLI_NGS/SDR001_STAR/SDR001_REF.fa        ~RE-DEFINED
+genomeSAindexNbases           4     ~RE-DEFINED
+genomeChrBinNbits             18     ~RE-DEFINED
+genomeSAsparseD               1     ~RE-DEFINED
+genomeTransformType           None     ~RE-DEFINED
+genomeTransformVCF            -     ~RE-DEFINED
+sjdbOverhang                  99     ~RE-DEFINED
+sjdbFileChrStartEnd           -        ~RE-DEFINED
+sjdbGTFfile                   /g/steinmetz/lindenho/DLI_NGS/SDR001_STAR/SDR001_REF.gtf     ~RE-DEFINED
+sjdbGTFchrPrefix              -     ~RE-DEFINED
+sjdbGTFfeatureExon            exon     ~RE-DEFINED
+sjdbGTFtagExonParentTranscripttranscript_id     ~RE-DEFINED
+sjdbGTFtagExonParentGene      gene_id     ~RE-DEFINED
+sjdbInsertSave                Basic     ~RE-DEFINED
+genomeFileSizes               45350912   799494        ~RE-DEFINED
+Genome version is compatible with current STAR
+Number of real (reference) chromosomes= 173
+1	cDNA_ROR1_chrom	1026	0
+2	cDNA_TSTD1_chrom	1021	262144
+3	cDNA_NME7_chrom	1024	524288
+4	cDNA_ATP1B1_chrom	1026	786432
+5	cDNA_PDLIM1_chrom	1021	1048576
+6	cDNA_NANOG_chrom	1021	1310720
+7	cDNA_LTA4H_chrom	1021	1572864
+8	cDNA_KLF5_chrom	1025	1835008
+9	cDNA_PSME1_chrom	1021	2097152
+10	cDNA_EMC9_chrom	1021	2359296
+11	cDNA_PSME2_chrom	1021	2621440
+12	cDNA_ESRRB_chrom	1021	2883584
+13	cDNA_KATNBL1_chrom	1024	3145728
+14	cDNA_EMC4_chrom	1020	3407872
+15	cDNA_GOT2_chrom	1021	3670016
+16	cDNA_MYH10_chrom	1022	3932160
+17	cDNA_STAT3_chrom	1021	4194304
+18	cDNA_CNN2_chrom	1021	4456448
+19	cDNA_TCF3_chrom	1021	4718592
+20	cDNA_CARM1_chrom	1021	4980736
+21	cDNA_SPINT2_chrom	1021	5242880
+22	cDNA_ACTN4_chrom	1021	5505024
+23	cDNA_SOX11_chrom	1022	5767168
+24	cDNA_RTN4_chrom	1022	6029312
+25	cDNA_GULP1_chrom	1027	6291456
+26	cDNA_GBX2_chrom	1021	6553600
+27	cDNA_SOX12_chrom	1021	6815744
+28	cDNA_DNMT3B_chrom	1022	7077888
+29	cDNA_ERGIC3_chrom	1021	7340032
+30	cDNA_CPNE1_chrom	1021	7602176
+31	cDNA_RBM12_chrom	1025	7864320
+32	cDNA_ROMO1_chrom	1021	8126464
+33	cDNA_RBM39_chrom	1022	8388608
+34	cDNA_PHF20_chrom	1021	8650752
+35	cDNA_YWHAB_chrom	1021	8912896
+36	cDNA_STAU1_chrom	1021	9175040
+37	cDNA_DDX27_chrom	1021	9437184
+38	cDNA_COL18A1_chrom	1021	9699328
+39	cDNA_ATF4_chrom	1021	9961472
+40	cDNA_UBE2E1_chrom	1023	10223616
+41	cDNA_SOX2_chrom	1022	10485760
+42	cDNA_ANXA5_chrom	1022	10747904
+43	cDNA_TUBB2B_chrom	1021	11010048
+44	cDNA_SOX4_chrom	1021	11272192
+45	cDNA_POU5F1_chrom	1021	11534336
+46	cDNA_EPB41L2_chrom	1021	11796480
+47	cDNA_AKAP7_chrom	1023	12058624
+48	1_CROP_AIF1L_dCas9_chrom	518	12320768
+49	2_CROP_ANXA5_dCas9_chrom	518	12582912
+50	3_CROP_ATP1B1_dCas9_chrom	518	12845056
+51	4_CROP_CARM1_dCas9_chrom	519	13107200
+52	5_CROP_CNN2_dCas9_chrom	519	13369344
+53	6_CROP_COL18A1_dCas9_chrom	519	13631488
+54	7_CROP_CPNE1_dCas9_chrom	519	13893632
+55	8_CROP_EMC4_dCas9_chrom	519	14155776
+56	9_CROP_EPB41L2_dCas9_chrom	519	14417920
+57	10_CROP_GOT2_dCas9_chrom	518	14680064
+58	11_CROP_GULP1_dCas9_chrom	519	14942208
+59	12_CROP_LTA4H_dCas9_chrom	518	15204352
+60	13_CROP_PDLIM1_dCas9_chrom	518	15466496
+61	14_CROP_PSME2_dCas9_chrom	518	15728640
+62	15_CROP_ROR1_dCas9_chrom	518	15990784
+63	16_CROP_RTN4_dCas9_chrom	519	16252928
+64	17_CROP_SPINT2_dCas9_chrom	518	16515072
+65	18_CROP_STAU1_dCas9_chrom	518	16777216
+66	19_CROP_TSTD1_dCas9_chrom	519	17039360
+67	20_CROP_UBE2E1_dCas9_chrom	519	17301504
+68	21_CROP_YWHAB_dCas9_chrom	518	17563648
+69	22_CROP_nC1_dCas9_chrom	518	17825792
+70	23_CROP_nC2_dCas9_chrom	518	18087936
+71	24_CROP_nC3_dCas9_chrom	518	18350080
+72	25_CROP_nC4_dCas9_chrom	518	18612224
+73	26_CROP_nC5_dCas9_chrom	518	18874368
+74	27_CROP_nC6_dCas9_chrom	518	19136512
+75	1_CROP_ANXA5_rs2306413_dCas9-pegRNA_chrom	519	19398656
+76	2_CROP_ATP1B1_rs10800424_dCas9-pegRNA_chrom	519	19660800
+77	3_CROP_CARM1_rs67987899_dCas9-pegRNA_chrom	519	19922944
+78	4_CROP_CNN2_rs4807440_dCas9-pegRNA_chrom	518	20185088
+79	5_CROP_COL18A1_rs78667666_dCas9-pegRNA_chrom	518	20447232
+80	6_CROP_COL18A1_rs35205716_dCas9-pegRNA_chrom	519	20709376
+81	7_CROP_CPNE1_rs2104417_dCas9-pegRNA_chrom	518	20971520
+82	8_CROP_CPNE1_rs73905926_dCas9-pegRNA_chrom	519	21233664
+83	9_CROP_CPNE1_rs6121020_dCas9-pegRNA_chrom	519	21495808
+84	10_CROP_CPNE1_rs2295355_dCas9-pegRNA_chrom	519	21757952
+85	11_CROP_EMC4_rs6495621_dCas9-pegRNA_chrom	518	22020096
+86	12_CROP_EPB41L2_rs3903759_dCas9-pegRNA_chrom	519	22282240
+87	13_CROP_GOT2_rs11558171_dCas9-pegRNA_chrom	519	22544384
+88	14_CROP_GOT2_rs727484_dCas9-pegRNA_chrom	518	22806528
+89	15_CROP_GULP1_rs6712056_dCas9-pegRNA_chrom	519	23068672
+90	16_CROP_LTA4H_rs3834482_dCas9-pegRNA_chrom	518	23330816
+91	17_CROP_PDLIM1_rs10218877_dCas9-pegRNA_chrom	519	23592960
+92	18_CROP_PSME2_rs2236352_dCas9-pegRNA_chrom	518	23855104
+93	19_CROP_ROR1_rs7517350_dCas9-pegRNA_chrom	519	24117248
+94	20_CROP_RTN4_rs2968787_dCas9-pegRNA_chrom	519	24379392
+95	21_CROP_RTN4_rs2044291_dCas9-pegRNA_chrom	518	24641536
+96	22_CROP_SPINT2_rs17554832_dCas9-pegRNA_chrom	519	24903680
+97	23_CROP_STAU1_rs7266044_dCas9-pegRNA_chrom	519	25165824
+98	24_CROP_STAU1_rs2252259_dCas9-pegRNA_chrom	519	25427968
+99	25_CROP_STAU1_rs3818066_dCas9-pegRNA_chrom	519	25690112
+100	26_CROP_TSTD1_rs10908821_dCas9-pegRNA_chrom	519	25952256
+101	27_CROP_UBE2E1_rs7651576_dCas9-pegRNA_chrom	519	26214400
+102	28_CROP_YWHAB_rs6031849_dCas9-pegRNA_chrom	519	26476544
+103	29_CROP_YWHAB_rs2072726_dCas9-pegRNA_chrom	519	26738688
+104	30_CROP_ATF4_control_PE_chrom	519	27000832
+105	31_CROP_SOX11_control_PE_chrom	519	27262976
+106	32_CROP_SOX12_control_PE_chrom	518	27525120
+107	33_CROP_MYH10_control_PE_chrom	519	27787264
+108	34_CROP_SOX4_control_PE_chrom	519	28049408
+109	Puro_GFP_chrom	2505	28311552
+110	Amplicon_ATF4_control_AMPL590829_noHDR_chrom	240	28573696
+111	Amplicon_ATP1B1_rs10800424_AMPL587857_noHDR_chrom	207	28835840
+112	Amplicon_CARM1_rs67987899_AMPL587792_noHDR_chrom	235	29097984
+113	Amplicon_CNN2_rs4807440_AMPL587791_noHDR_chrom	261	29360128
+114	Amplicon_COL18A1_rs35205716_AMPL590828_noHDR_chrom	226	29622272
+115	Amplicon_COL18A1_rs78667666_AMPL587799_noHDR_chrom	251	29884416
+116	Amplicon_CPNE1_rs2104417_AMPL587794_noHDR_chrom	205	30146560
+117	Amplicon_CPNE1_rs2295355_AMPL587796_noHDR_chrom	195	30408704
+118	Amplicon_CPNE1_rs73905926_CPNE1_rs6121020_AMPL587795_noHDR_chrom	259	30670848
+119	Amplicon_EMC4_rs6495621_AMPL587790_noHDR_chrom	226	30932992
+120	Amplicon_EPB41L2_rs3903759_AMPL587789_noHDR_chrom	210	31195136
+121	Amplicon_GOT2_rs11558171_AMPL587820_noHDR_chrom	206	31457280
+122	Amplicon_GOT2_rs727484_AMPL587821_noHDR_chrom	235	31719424
+123	Amplicon_GULP1_rs6712056_AMPL587815_noHDR_chrom	233	31981568
+124	Amplicon_LTA4H_rs3834482_AMPL587865_noHDR_chrom	237	32243712
+125	Amplicon_MYH10_control_AMPL590826_noHDR_chrom	206	32505856
+126	Amplicon_PDLIM1_rs10218877_AMPL587864_noHDR_chrom	241	32768000
+127	Amplicon_PSME2_rs2236352_AMPL587866_noHDR_chrom	220	33030144
+128	Amplicon_ROR1_rs7517350_AMPL587855_noHDR_chrom	223	33292288
+129	Amplicon_RTN4_rs2044291_AMPL587813_noHDR_chrom	220	33554432
+130	Amplicon_RTN4_rs2968787_AMPL587814_noHDR_chrom	236	33816576
+131	Amplicon_SOX11_control_AMPL590824_noHDR_chrom	209	34078720
+132	Amplicon_SOX12_control_AMPL590827_noHDR_chrom	190	34340864
+133	Amplicon_SOX4_control_AMPL590825_noHDR_chrom	216	34603008
+134	Amplicon_SPINT2_rs17554832_AMPL587824_noHDR_chrom	267	34865152
+135	Amplicon_STAU1_rs2252259_AMPL587830_noHDR_chrom	233	35127296
+136	Amplicon_STAU1_rs3818066_AMPL587832_noHDR_chrom	252	35389440
+137	Amplicon_STAU1_rs7266044_AMPL587831_noHDR_chrom	222	35651584
+138	Amplicon_TSTD1_rs10908821_AMPL587856_noHDR_chrom	265	35913728
+139	Amplicon_UBE2E1_rs7651576_AMPL587787_noHDR_chrom	258	36175872
+140	Amplicon_YWHAB_rs2072726_AMPL587798_noHDR_chrom	212	36438016
+141	Amplicon_YWHAB_rs6031849_AMPL587797_noHDR_chrom	574	36700160
+142	Amplicon_ATF4_control_AMPL590829_withHDR_chrom	240	36962304
+143	Amplicon_ATP1B1_rs10800424_AMPL587857_withHDR_chrom	207	37224448
+144	Amplicon_CARM1_rs67987899_AMPL587792_withHDR_chrom	235	37486592
+145	Amplicon_CNN2_rs4807440_AMPL587791_withHDR_chrom	261	37748736
+146	Amplicon_COL18A1_rs35205716_AMPL590828_withHDR_chrom	226	38010880
+147	Amplicon_COL18A1_rs78667666_AMPL587799_withHDR_chrom	250	38273024
+148	Amplicon_CPNE1_rs2104417_AMPL587794_withHDR_chrom	205	38535168
+149	Amplicon_CPNE1_rs2295355_AMPL587796_withHDR_chrom	195	38797312
+150	Amplicon_CPNE1_rs73905926_CPNE1_rs6121020_AMPL587795_withHDR_chrom	259	39059456
+151	Amplicon_EMC4_rs6495621_AMPL587790_withHDR_chrom	226	39321600
+152	Amplicon_EPB41L2_rs3903759_AMPL587789_withHDR_chrom	210	39583744
+153	Amplicon_GOT2_rs11558171_AMPL587820_withHDR_chrom	206	39845888
+154	Amplicon_GOT2_rs727484_AMPL587821_withHDR_chrom	235	40108032
+155	Amplicon_GULP1_rs6712056_AMPL587815_withHDR_chrom	233	40370176
+156	Amplicon_LTA4H_rs3834482_AMPL587865_withHDR_chrom	240	40632320
+157	Amplicon_MYH10_control_AMPL590826_withHDR_chrom	206	40894464
+158	Amplicon_PDLIM1_rs10218877_AMPL587864_withHDR_chrom	241	41156608
+159	Amplicon_PSME2_rs2236352_AMPL587866_withHDR_chrom	220	41418752
+160	Amplicon_ROR1_rs7517350_AMPL587855_withHDR_chrom	223	41680896
+161	Amplicon_RTN4_rs2044291_AMPL587813_withHDR_chrom	220	41943040
+162	Amplicon_RTN4_rs2968787_AMPL587814_withHDR_chrom	236	42205184
+163	Amplicon_SOX11_control_AMPL590824_withHDR_chrom	209	42467328
+164	Amplicon_SOX12_control_AMPL590827_withHDR_chrom	190	42729472
+165	Amplicon_SOX4_control_AMPL590825_withHDR_chrom	216	42991616
+166	Amplicon_SPINT2_rs17554832_AMPL587824_withHDR_chrom	267	43253760
+167	Amplicon_STAU1_rs2252259_AMPL587830_withHDR_chrom	233	43515904
+168	Amplicon_STAU1_rs3818066_AMPL587832_withHDR_chrom	252	43778048
+169	Amplicon_STAU1_rs7266044_AMPL587831_withHDR_chrom	222	44040192
+170	Amplicon_TSTD1_rs10908821_AMPL587856_withHDR_chrom	265	44302336
+171	Amplicon_UBE2E1_rs7651576_AMPL587787_withHDR_chrom	258	44564480
+172	Amplicon_YWHAB_rs2072726_AMPL587798_withHDR_chrom	212	44826624
+173	Amplicon_YWHAB_rs6031849_AMPL587797_withHDR_chrom	225	45088768
+--sjdbOverhang = 99 taken from the generated genome
+Started loading the genome: Fri May 30 14:26:36 2025
+
+Genome: size given as a parameter = 45350912
+SA: size given as a parameter = 799494
+SAindex: size given as a parameter = 1
+Read from SAindex: pGe.gSAindexNbases=4  nSAi=340
+nGenome=45350912;  nSAbyte=799494
+GstrandBit=32   SA number of indices=193816
+Shared memory is not used for genomes. Allocated a private copy of the genome.
+Genome file size: 45350912 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 45350912 bytes
+SA file size: 799494 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 799494 bytes
+Loading SAindex ... done: 1539 bytes
+Finished loading the genome: Fri May 30 14:26:36 2025
+
+alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
+Loaded transcript database, nTr=173
+Loaded exon database, nEx=173
+Thread #0 end of input stream, nextChar=-1
+Completed: thread #0
+May 30 14:26:36 ..... finished mapping
+RAM after mapping:
+VmPeak:	  206200 kB; VmSize:	  204912 kB; VmHWM:	  157220 kB; VmRSS:	  156600 kB; 
+RAM after freeing genome index memory:
+VmPeak:	  206200 kB; VmSize:	  159836 kB; VmHWM:	  157220 kB; VmRSS:	  111524 kB; 
+ALL DONE!
