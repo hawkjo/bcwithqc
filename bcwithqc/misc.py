@@ -184,12 +184,13 @@ def get_read_pattern_match_score(seq, blocks):
             continue
 
         sequences = block.get("sequence", [])
+        maxerror = block.get("maxerrors", 1)
         best_block_score = 0.0
 
         # Iterate through each sequence in the block
         for sequence in sequences:
             sequence_len = len(sequence)
-            max_mismatches = 1  # Allow n mismatch
+            max_mismatches = maxerror  # Allow n mismatch
             best_local_score = 0.0
 
             # Create a regex pattern with 1 allowed mismatch (use . for 1 character mismatch)
