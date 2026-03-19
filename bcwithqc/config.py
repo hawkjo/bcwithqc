@@ -80,6 +80,10 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
     @property
     def keep_intermediary_files(self):
         return self._arguments['--keep-intermediary']
+    
+    @property
+    def single_end_reads(self):
+        return self._arguments['--single-end-reads']
 
 class SimulationCommandLineArguments(CommandLineArgumentsBase):
     def __init__(self, arguments):

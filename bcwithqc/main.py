@@ -2,8 +2,8 @@
 bcwithqc: Process sequencing barcodes and UMIs
 
 Usage:
-  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--single-end-reads] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--single-end-reads] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --fastq-prefix=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [-v | -vv | -vvv]
 

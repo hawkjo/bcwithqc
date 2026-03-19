@@ -32,7 +32,7 @@ def preprocess_fastqs(arguments):
     # For single end reads
     if arguments.single_end_reads:
         single_fpaths = misc.find_single_fastqs_in_dir(arguments.fastq_dir)
-        if arguments.config("unknown_read_orientation"):
+        if arguments.config["unknown_read_orientation"]:
             warnings.warn(
                 "`unknown_read_orientation` has no effect for single-end reads; ignoring it.",
                 category=UserWarning)
@@ -87,7 +87,7 @@ def preprocess_fastqs(arguments):
     else:
         paired_fpaths = misc.find_paired_fastqs_in_dir(arguments.fastq_dir)
 
-        if arguments.config("unknown_read_orientation"):
+        if arguments.config["unknown_read_orientation"]:
             paired_fpaths = misc.fix_unknown_read_orientation(arguments, paired_fpaths)
    
         log.info('Files to process:')
