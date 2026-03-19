@@ -7,6 +7,7 @@ import pickle
 import subprocess
 import shutil
 import scipy
+import warnings
 from . import misc
 from Bio import SeqIO
 from collections import defaultdict, Counter
@@ -36,7 +37,7 @@ def preprocess_fastqs(arguments):
             warnings.warn(
                 "`unknown_read_orientation` has no effect for single-end reads; ignoring it.",
                 category=UserWarning)
-        if bcs_on_both_reads:
+        if misc.config_has_barcodes_on_both_reads(arguments.config):
             warnings.warn(
                 "`Barcodes on both reads` option has no effect for single-end reads; ignoring it.",
                 category=UserWarning)  
@@ -49,7 +50,13 @@ def preprocess_fastqs(arguments):
 
         process_fastqs_func = serial_process_fastqs_single_end if arguments.threads == 1 else parallel_process_fastqs_single_end 
         keep_r1 = arguments.config["barcode_struct_r1"]["keep_nonbarcode"]
-
+        if not keep_r1:
+            warnings.warn(
+                "`keep_nonbarcode = false` is not supported for single-end reads; "
+                "overriding to true so the remaining sequence can be aligned.",
+                category=UserWarning,
+            )
+            keep_r1 = True
         for fpath in single_fpaths:
             bc_fq1_fpath = fpath
             bc_fq2_fpath = None

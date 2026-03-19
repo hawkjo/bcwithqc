@@ -21,7 +21,7 @@ cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA.json")
 @pytest.fixture(scope="module", params=["gDNA", "cDNA"])
 def sample_dirs(request):
     sample_type = request.param
-    tmp_dir = os.path.join(SCRIPT_DIR, f"tmp_{sample_type}")
+    tmp_dir = os.path.join(SCRIPT_DIR, f"tmp_{sample_type}_single_end")
     expected_dir = os.path.join(SCRIPT_DIR, f"{sample_type}_single_end")
     input_dir = gDNA_input if sample_type == "gDNA" else cDNA_input
     config = gDNA_config if sample_type == "gDNA" else cDNA_config
