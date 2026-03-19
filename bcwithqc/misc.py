@@ -82,6 +82,15 @@ def find_paired_fastqs_in_dir(fq_dir):
         paired_names.append((fpath1, fpath2))
     return paired_names
 
+def find_single_fastqs_in_dir(fq_dir):
+    raw_prompts = ['*.fastq', '*.fq', '*.txt']
+    glob_prompts = [os.path.join(fq_dir, prompt) for rp in raw_prompts for prompt in [rp, f'{rp}.gz']]
+    fq_fpaths = [fpath for glob_prompt in glob_prompts for fpath in glob.glob(glob_prompt)]
+    fq_fpaths.sort()
+
+    if not fq_fpaths:
+        raise FileNotFoundError(f'No FASTQ files found in directory: {fq_dir}')
+    return fq_fpaths
 
 def names_pair(s1, s2):
     """
@@ -378,6 +387,33 @@ def sort_and_index_readname_bam(input_bam_fpath, output_bam_fpath, namepairidx, 
 
     return i_readnames, i_offsets, namepairidx
 
+def sort_and_index_readname_bam_single_end(input_bam_fpath, output_bam_fpath, threads=1):
+    pysam.sort("-N", "-@", str(threads), "-o", output_bam_fpath, input_bam_fpath)
+    with pysam.AlignmentFile(output_bam_fpath, "r", threads=threads) as bam:
+        i_readnames = []
+        i_offsets = []
+        lastblock = -1
+        offset = bam.tell()
+        lastreadname = ""
+        lastreadoffset = offset
+
+        for read in bam.fetch(until_eof=True):
+            block = offset >> 16
+            readname = read.query_name
+
+            if block > lastblock:
+                i_readnames.append(readname)
+                i_offsets.append(offset if readname != lastreadname else lastreadoffset)
+                lastblock = block
+
+            if readname != lastreadname:
+                lastreadname = readname
+                lastreadoffset = offset
+
+            offset = bam.tell()
+
+    return i_readnames, i_offsets
+
 def get_bam_read_by_name(name, bam, index, threads=1):
     i_readnames, i_offsets, namepairidx = index
     name = make_paired_name(name, namepairidx)
@@ -398,5 +434,29 @@ def get_bam_read_by_name(name, bam, index, threads=1):
             yield bread
         elif haveread or bam.tell() >> 16 > startblock:
             break
+    if needclose:
+        bam.close()
+        
+def get_bam_read_by_name_single_end(name, bam, index, threads=1):
+    i_readnames, i_offsets = index
+
+    idx = bisect(i_readnames, name) - 1
+    needclose = False
+    if not isinstance(bam, pysam.AlignmentFile):
+        bam = pysam.AlignmentFile(bam, "r", threads=threads)
+        needclose = True
+
+    bam.seek(i_offsets[idx])
+    startblock = None
+    haveread = False
+    for bread in bam.fetch(until_eof=True):
+        if startblock is None:
+            startblock = bam.tell() >> 16
+        if bread.query_name == name:
+            haveread = True
+            yield bread
+        elif haveread or bam.tell() >> 16 > startblock:
+            break
+
     if needclose:
         bam.close()

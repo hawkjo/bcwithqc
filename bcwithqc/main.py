@@ -25,6 +25,7 @@ Options:
   --substitution-probability=<>:  Probability of generating a substitution as opposed to an indel [default: 0.7].
   --insertion-probability=<>:     Probability of generating an insertion as opposed to a deletion when generating an indel [default: 0.5].
   --keep-intermediary             Keep intermediary files instead of deleting them [default: False].
+  --single-end-reads:             Option for using single end instead of paired end reads [default: False]. 
   -h --help                       Show this screen.
   --version                       Show version.
 
