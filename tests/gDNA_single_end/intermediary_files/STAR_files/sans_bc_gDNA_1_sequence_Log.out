@@ -228,7 +228,7 @@ Number of real (reference) chromosomes= 173
 172	Amplicon_YWHAB_rs2072726_AMPL587798_withHDR_chrom	212	44826624
 173	Amplicon_YWHAB_rs6031849_AMPL587797_withHDR_chrom	225	45088768
 --sjdbOverhang = 99 taken from the generated genome
-Started loading the genome: Thu Mar 19 14:50:49 2026
+Started loading the genome: Mon Mar 23 14:59:23 2026
 
 Genome: size given as a parameter = 45350912
 SA: size given as a parameter = 799494
@@ -242,16 +242,16 @@ Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 45350912 bytes
 SA file size: 799494 bytes; state: good=1 eof=0 fail=0 bad=0
 Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 799494 bytes
 Loading SAindex ... done: 1539 bytes
-Finished loading the genome: Thu Mar 19 14:50:49 2026
+Finished loading the genome: Mon Mar 23 14:59:23 2026
 
 alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
 Loaded transcript database, nTr=173
 Loaded exon database, nEx=173
 Thread #0 end of input stream, nextChar=-1
 Completed: thread #0
-Mar 19 14:50:50 ..... finished mapping
+Mar 23 14:59:24 ..... finished mapping
 RAM after mapping:
-VmPeak:	  206276 kB; VmSize:	  204984 kB; VmHWM:	  153616 kB; VmRSS:	  153616 kB; 
+VmPeak:	  206280 kB; VmSize:	  204988 kB; VmHWM:	  153348 kB; VmRSS:	  153348 kB; 
 RAM after freeing genome index memory:
-VmPeak:	  206276 kB; VmSize:	  159908 kB; VmHWM:	  151536 kB; VmRSS:	  108540 kB; 
+VmPeak:	  206280 kB; VmSize:	  159912 kB; VmHWM:	  153244 kB; VmRSS:	  108272 kB; 
 ALL DONE!
