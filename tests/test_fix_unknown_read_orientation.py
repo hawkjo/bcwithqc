@@ -202,7 +202,7 @@ def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002, output_di
     base_name = os.path.basename(file1).replace('.gz', '')
 
     mismatched_refrence_dir = os.path.join(output_dir, "mismatched_reads")
-    tmp_dir = os.path.join(output_dir, "tmp")
+    tmp_dir = os.path.join(output_dir, "tmp_shuffle")
     os.makedirs(tmp_dir, exist_ok=True)  
 
     base_name = os.path.basename(file1).replace('.txt.gz', '')
