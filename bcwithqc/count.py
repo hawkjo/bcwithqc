@@ -472,15 +472,22 @@ def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
     tags.append(("UR", ".".join(bam_umis)))
 
     ### WORKK IN PROGERESS BEGINS HERE
+    valid_star_block_modes = {"undefined_only", "constant", "constant_mask"}
+
+    if arguments.block_type_for_STAR_alignment not in valid_star_block_modes:
+        raise ValueError(
+            "Invalid value for --block-type-for-STAR-alignment: "
+            f"{arguments.block_type_for_STAR_alignment!r}. "
+            "Valid options are: undefined_only, constant, constant_mask."
+        )
     # Current processing for single end, example:
     #   barcode | constantRegion | UMI
     #  CCTTAACAT|GGGTCAGTACGTACGAGTCCC|AAAAAA
-    #  NNNNNNNNN|GGGTCAGTACGTACGAGTCCC|NNNNNN
+    #  NNNNNNNNN|GGGTCAGTACGTACGAGTCCC|NNNNNN    with "constant_mask"
+    # or         GGGTCAGTACGTACGAGTCCC           with "constant"
     # ^ this is the read that is then created and used for STAR alignment. 
     # Everything about the tags and the barcode processing is unchanged. 
-    if arguments.single_end_reads:
-        keep_mode = "constant_only"     # "mask" -> NNN...constant...NNN
-                                        # "constant_only" -> just constant regions
+    if arguments.single_end_reads and arguments.block_type_for_STAR_alignment != "undefined_only":
 
         keep_seq_parts = []
         keep_qual_parts = []
@@ -496,13 +503,11 @@ def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
                 keep_seq_parts.append(piece)
                 keep_qual_parts.extend(piece_qual)
             else:
-                if keep_mode == "mask":
+                if arguments.block_type_for_STAR_alignment == "constant_mask":
                     keep_seq_parts.append("N" * piece_len)
                     keep_qual_parts.extend(piece_qual)
-                elif keep_mode == "constant_only":
+                elif arguments.block_type_for_STAR_alignment == "constant":
                     pass
-                else:
-                    raise ValueError(f"Unknown keep_mode: {keep_mode}")
 
             pos += piece_len
 

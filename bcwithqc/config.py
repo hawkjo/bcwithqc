@@ -84,6 +84,11 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
     @property
     def single_end_reads(self):
         return self._arguments['--single-end-reads']
+    
+    @property
+    def block_type_for_STAR_alignment(self):
+        value = self._arguments['--block-type-for-STAR-alignment']
+        return "undefined_only" if value is None else value
 
 class SimulationCommandLineArguments(CommandLineArgumentsBase):
     def __init__(self, arguments):
