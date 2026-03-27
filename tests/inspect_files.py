@@ -1,126 +1,164 @@
-from pathlib import Path
 import gzip
-import csv
-from scipy.io import mmread
-
-
-def read_tsv_gz(filepath):
-    rows = []
-    with gzip.open(filepath, "rt", newline="") as f:
-        reader = csv.reader(f, delimiter="\t")
-        for row in reader:
-            rows.append(row)
-    return rows
-
-
-def load_diagonal_matrix_dir(directory):
-    """
-    Load a directory containing exactly:
-      - 1 .mtx.gz file
-      - 2 .tsv.gz files
-
-    Only keep TSV files whose length matches the matrix diagonal length.
-
-    Returns
-    -------
-    dict with:
-      - diagonal: list/array of diagonal values
-      - matched_tsvs: dict of {filename: rows}
-      - result: list of dicts, one per diagonal entry
-    """
-    directory = Path(directory)
-
-    if not directory.is_dir():
-        raise ValueError(f"Not a directory: {directory}")
-
-    files = [f for f in directory.iterdir() if f.is_file()]
-    if len(files) != 3:
-        raise ValueError(f"Expected exactly 3 files in {directory}, found {len(files)}")
-
-    mtx_files = [f for f in files if f.name.endswith(".mtx.gz")]
-    tsv_files = sorted([f for f in files if f.name.endswith(".tsv.gz")])
-
-    if len(mtx_files) != 1:
-        raise ValueError(f"Expected exactly 1 .mtx.gz file, found {len(mtx_files)}")
-    if len(tsv_files) != 2:
-        raise ValueError(f"Expected exactly 2 .tsv.gz files, found {len(tsv_files)}")
-
-    # load matrix
-    with gzip.open(mtx_files[0], "rb") as f:
-        matrix = mmread(f)
-
-    diagonal = matrix.diagonal()
-    n = len(diagonal)
-
-    # load and keep only matching TSVs
-    matched_tsvs = {}
-    for tsv_file in tsv_files:
-        rows = read_tsv_gz(tsv_file)
-        if len(rows) == n:
-            matched_tsvs[tsv_file.name] = rows
-        else:
-            print(f"Skipping {tsv_file.name}: length {len(rows)} does not match diagonal length {n}")
-
-    if not matched_tsvs:
-        raise ValueError(f"No TSV file matched diagonal length {n}")
-
-    # build row-wise result
-    result = []
-    for i, value in enumerate(diagonal):
-        row = {
-            "index": i,
-            "diagonal_value": value,
-        }
-        for fname, rows in matched_tsvs.items():
-            row[fname] = rows[i]
-        result.append(row)
-
-    return {
-        "diagonal": diagonal,
-        "matched_tsvs": matched_tsvs,
-        "result": result,
-    }
-
 import os
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-print(SCRIPT_DIR)
-gDNA_input_ser = os.path.join(SCRIPT_DIR, "../tests/gDNA_single_end/raw_reads_bc_matrix")
-gDNA_input = os.path.join(SCRIPT_DIR, "../tests/gDNA/raw_reads_bc_matrix")
-print("##############File Paths##############")
-print(gDNA_input_ser)
-print(gDNA_input)
-gDNA_ser = load_diagonal_matrix_dir(gDNA_input_ser)["result"]
-gDNA = load_diagonal_matrix_dir(gDNA_input)["result"]
-
-# print first 10 rows from both
-for i, (row1, row2) in enumerate(zip(gDNA_ser[:10], gDNA[:10])):
-    print(f"Row {i}")
-    print("ser: ", row1)
-    print("inp: ", row2)
-    print()
-
-print("----")
-
-# then only print mismatches
-for i, (row1, row2) in enumerate(zip(gDNA_ser, gDNA)):
-    if row1 != row2:
-        print(f"Mismatch at row {i}")
-        print("ser: ", row1)
-        print("inp: ", row2)
-        print()
+import re
+from pathlib import Path
+import regex
 
 
-from collections import Counter
-import pysam
+BASE_DIR = Path("/home/link/John_UMIs/bcwithqc/examples")
+GDNA_MOTIF = "GTACTCGCAGTAGTC"
 
-def count_bam_querynames(bam_path, n=100000):
-    c = Counter()
-    with pysam.AlignmentFile(bam_path, "r") as bam:
-        for i, read in enumerate(bam.fetch(until_eof=True)):
-            c[read.query_name] += 1
-            if i + 1 >= n:
+
+def normalize_header(header: str) -> str:
+    """
+    Normalize FASTQ header so R1 and R2 from the same cluster compare equal.
+    Example:
+      @... 1:N:0:INDEX
+      @... 2:N:0:INDEX
+    becomes:
+      @... N:0:INDEX
+    """
+    header = header.rstrip("\n")
+    m = re.match(r"^(.*)\s+([12]):(.*)$", header)
+    if not m:
+        return header
+    return f"{m.group(1)} {m.group(3)}"
+
+
+def trim_r1_after_motif(seq: str, qual: str, motif: str = GDNA_MOTIF, max_errors: int = 1):
+    """
+    Keep R1 only up to and including the first fuzzy match of motif.
+    Allows up to max_errors total edits.
+    If no match is found, keep the full read unchanged.
+    """
+    pattern = f"({motif}){{e<={max_errors}}}"
+    match = regex.search(pattern, seq, regex.BESTMATCH)
+
+    if match is None:
+        return seq, qual, False
+
+    end = match.end()
+    return seq[:end], qual[:end], True
+
+
+def merge_fastq_pair(r1_path: Path, r2_path: Path, out_path: Path, trim_gdna_r1: bool = False) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with gzip.open(r1_path, "rt") as f1, gzip.open(r2_path, "rt") as f2, open(out_path, "w") as out:
+        rec_num = 0
+
+        while True:
+            h1 = f1.readline()
+            if not h1:
                 break
-    return Counter(c.values())
 
-print(count_bam_querynames("../examples/.bam"))
+            s1 = f1.readline()
+            p1 = f1.readline()
+            q1 = f1.readline()
+
+            h2 = f2.readline()
+            s2 = f2.readline()
+            p2 = f2.readline()
+            q2 = f2.readline()
+
+            rec_num += 1
+
+            if not all([s1, p1, q1, h2, s2, p2, q2]):
+                raise ValueError(
+                    f"Incomplete FASTQ record near record {rec_num}:\n"
+                    f"R1={r1_path}\nR2={r2_path}"
+                )
+
+            h1s = h1.rstrip("\n")
+            s1s = s1.rstrip("\n")
+            p1s = p1.rstrip("\n")
+            q1s = q1.rstrip("\n")
+
+            h2s = h2.rstrip("\n")
+            s2s = s2.rstrip("\n")
+            p2s = p2.rstrip("\n")
+            q2s = q2.rstrip("\n")
+
+            if not h1s.startswith("@") or not h2s.startswith("@"):
+                raise ValueError(f"Bad FASTQ header at record {rec_num}")
+
+            if not p1s.startswith("+") or not p2s.startswith("+"):
+                raise ValueError(f"Bad FASTQ plus line at record {rec_num}")
+
+            if len(s1s) != len(q1s):
+                raise ValueError(f"R1 seq/qual length mismatch at record {rec_num}")
+            if len(s2s) != len(q2s):
+                raise ValueError(f"R2 seq/qual length mismatch at record {rec_num}")
+
+            if normalize_header(h1s) != normalize_header(h2s):
+                raise ValueError(
+                    f"Header mismatch at record {rec_num}\n"
+                    f"R1: {h1s}\n"
+                    f"R2: {h2s}"
+                )
+
+            if trim_gdna_r1:
+                s1s, q1s, found = trim_r1_after_motif(s1s, q1s)
+                # Uncomment for debugging:
+                # if not found:
+                #     print(f"Warning: motif not found in {r1_path.name}, record {rec_num}")
+
+            merged_header = h1s
+            merged_seq = s1s + s2s
+            merged_qual = q1s + q2s
+
+            if len(merged_seq) != len(merged_qual):
+                raise ValueError(
+                    f"Merged seq/qual length mismatch at record {rec_num}: "
+                    f"{len(merged_seq)} vs {len(merged_qual)}"
+                )
+
+            out.write(merged_header + "\n")
+            out.write(merged_seq + "\n")
+            out.write("+\n")
+            out.write(merged_qual + "\n")
+
+
+def find_pairs(input_dir: Path):
+    gz_files = sorted(input_dir.glob("*.txt.gz"))
+    r1_files = [p for p in gz_files if "_1" in p.name or "R1" in p.name or "1.txt.gz" in p.name]
+
+    pairs = []
+    for r1 in r1_files:
+        candidates = [
+            Path(str(r1).replace("_1", "_2")),
+            Path(str(r1).replace("R1", "R2")),
+            Path(str(r1).replace("1.txt.gz", "2.txt.gz")),
+        ]
+        r2 = next((c for c in candidates if c.exists()), None)
+        if r2 is None:
+            raise FileNotFoundError(f"Could not find matching R2 for {r1}")
+        pairs.append((r1, r2))
+    return pairs
+
+
+def process_dataset(dataset_name: str):
+    input_dir = BASE_DIR / dataset_name
+    output_dir = BASE_DIR / f"{dataset_name}_single_end"
+
+    print(f"\nProcessing {dataset_name}")
+    print(f"Input:  {input_dir}")
+    print(f"Output: {output_dir}")
+
+    pairs = find_pairs(input_dir)
+    if not pairs:
+        raise FileNotFoundError(f"No FASTQ pairs found in {input_dir}")
+
+    trim_gdna_r1 = dataset_name == "gDNA_fastqs"
+
+    for r1, r2 in pairs:
+        out_name = r1.name.replace(".gz", "")
+        out_path = output_dir / out_name
+        print(f"Merging:\n  {r1.name}\n  {r2.name}\n  -> {out_path.name}")
+        merge_fastq_pair(r1, r2, out_path, trim_gdna_r1=trim_gdna_r1)
+
+
+if __name__ == "__main__":
+    process_dataset("cDNA_fastqs")
+    process_dataset("gDNA_fastqs")
+    print("\nDone.")
