@@ -10,6 +10,8 @@ import scipy
 import warnings
 from . import misc
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from collections import defaultdict, Counter
 from contextlib import nullcontext
 from glob import glob
@@ -397,16 +399,25 @@ def run_STAR_single_end(arguments, R1_fpath):
 
     return star_out_dir, star_out_fpath
 
-def process_bc_rec(blocks, bc_rec, aligners, decoders):
+def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
     """
     Find barcodes etc in bc_rec 
     """
-    scores_pieces_end_pos = [al.find_norm_score_pieces_and_end_pos(bc_rec.seq, return_seq=True) for al in aligners]
+    
+    scores_pieces_end_bounds = [al.find_norm_score_pieces_and_boundaries(bc_rec.seq, return_seq=True) for al in aligners]
+    scores_pieces_end_pos = [(s, p, bounds[-1], sq) for s, p, bounds, sq in scores_pieces_end_bounds]       
+
     raw_score, raw_pieces, raw_end_pos, raw_seq = max(scores_pieces_end_pos)
+    raw_bounds = next(
+        bounds for s, p, bounds, sq in scores_pieces_end_bounds
+        if s == raw_score and p == raw_pieces
+    )
+
     raw_bcs = [raw_piece.upper().replace('N', 'A') for raw_piece, block in zip(raw_pieces, blocks) if block["blocktype"] == "barcodeList"]
     bcs = [decoder.decode(raw_bc) for raw_bc, decoder in zip(raw_bcs, decoders)]
 
     best_aligner = next(al for al, (s, p, e, sq) in zip(aligners, scores_pieces_end_pos) if s == raw_score)
+
     commonseqs = [best_aligner.prefixes[i] for i, block in enumerate(blocks) if block["blocktype"] == "constantRegion"]
 
     bc_idx = commonseq_idx = 0
@@ -460,9 +471,54 @@ def process_bc_rec(blocks, bc_rec, aligners, decoders):
     # And raw UMI
     tags.append(("UR", ".".join(bam_umis)))
 
-    new_rec = bc_rec[raw_end_pos:]
-    new_rec.id = bc_rec.id
-    new_rec.description = bc_rec.description
+    ### WORKK IN PROGERESS BEGINS HERE
+    # Current processing for single end, example:
+    #   barcode | constantRegion | UMI
+    #  CCTTAACAT|GGGTCAGTACGTACGAGTCCC|AAAAAA
+    #  NNNNNNNNN|GGGTCAGTACGTACGAGTCCC|NNNNNN
+    # ^ this is the read that is then created and used for STAR alignment. 
+    # Everything about the tags and the barcode processing is unchanged. 
+    if arguments.single_end_reads:
+        keep_mode = "constant_only"     # "mask" -> NNN...constant...NNN
+                                        # "constant_only" -> just constant regions
+
+        keep_seq_parts = []
+        keep_qual_parts = []
+
+        pos = 0
+        quals = bc_rec.letter_annotations["phred_quality"]
+
+        for block, piece in zip(blocks, raw_pieces):
+            piece_len = len(piece)
+            piece_qual = quals[pos:pos + piece_len]
+
+            if block["blocktype"] == "constantRegion":
+                keep_seq_parts.append(piece)
+                keep_qual_parts.extend(piece_qual)
+            else:
+                if keep_mode == "mask":
+                    keep_seq_parts.append("N" * piece_len)
+                    keep_qual_parts.extend(piece_qual)
+                elif keep_mode == "constant_only":
+                    pass
+                else:
+                    raise ValueError(f"Unknown keep_mode: {keep_mode}")
+
+            pos += piece_len
+
+        new_seq = "".join(keep_seq_parts)
+
+        new_rec = SeqRecord(
+            Seq(new_seq),
+            id=bc_rec.id,
+            description=bc_rec.description,
+        )
+        new_rec.letter_annotations["phred_quality"] = keep_qual_parts
+            ### WORKK IN PROGERESS ENDS HERE
+    else:
+        new_rec = bc_rec[raw_end_pos:]
+        new_rec.id = bc_rec.id
+        new_rec.description = bc_rec.description
 
     return raw_score, new_rec, tags
 
@@ -606,7 +662,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
     for i, (fq_fpath, bblocks, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, aligners, decoders, strict=False)):
         first_scores_recs_tags = []
         for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq_fpath), 'fastq')):
-            first_scores_recs_tags.append(process_bc_rec(bblocks, bc_rec, baligners, bdecoders))
+            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders))
             if j >= n_first_seqs:
                 break
 
@@ -631,7 +687,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
             sans_bc_rec = [None, True]
             tags = [None, None]
             for j, (bblocks, bc_rec, baligners, bdecoders) in enumerate(zip(blocks, (bc_rec1, bc_rec2), aligners, decoders, strict=False)):
-                scores[j], sans_bc_rec[j], tags[j] = process_bc_rec(bblocks, bc_rec, baligners, bdecoders)
+                scores[j], sans_bc_rec[j], tags[j] = process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders)
             if all(score >= cthresh for score, cthresh in zip(scores, thresh)) and all(sans_bc_rec):
                 total_out += 1
                 for bc_rec, bc_fq_fh, csans_bc_rec, ctags, tag_fh in zip((bc_rec1, bc_rec2), (bc_fq1_fh, bc_fq2_fh), sans_bc_rec, tags, (tag1_fh, tag2_fh)):
@@ -656,7 +712,7 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
 
     first_scores_recs_tags = []
     for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq')):
-        first_scores_recs_tags.append(process_bc_rec(blocks, bc_rec, aligners, decoders))
+        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, bc_rec, aligners, decoders))
         if j >= n_first_seqs:
             break
 
@@ -677,7 +733,7 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
             if i % 100000 == 0 and i > 0:
                 log.info(f'  {i:,d} processed,  {total_out:,d} output')
 
-            score, sans_bc_rec, tags = process_bc_rec(blocks, bc_rec, aligners, decoders)
+            score, sans_bc_rec, tags = process_bc_rec(arguments, blocks, bc_rec, aligners, decoders)
 
             if score >= thresh and sans_bc_rec:
                 total_out += 1
@@ -692,14 +748,14 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
     log.info(f'{total_out:,d} records output')
 
 def worker_build_aligners(ablocks, unknown_read_orientation, athresh):
-    global blocks, aligners, decoders, thresh
+    global blocks, aligners, decoders, thresh, arguments
     blocks = ablocks
     thresh = athresh
     aligners = tuple(misc.build_bc_aligners(bblocks, unknown_read_orientation) for bblocks in blocks)
     decoders = tuple(misc.build_bc_decoders(bblocks) for bblocks in blocks)
 
 def worker_build_aligners_single_end(ablocks, athresh):
-    global blocks, aligners, decoders, thresh
+    global blocks, aligners, decoders, thresh, arguments
     blocks = ablocks
     thresh = athresh
     aligners = misc.build_bc_aligners(blocks, unknown_read_orientation = False)
@@ -712,7 +768,7 @@ def worker_process_read(bc_recs):
     sans_bc_rec = [None, True]
     tags = [None, None]
     for i, (bblocks, bc_rec, baligners, bdecoders) in enumerate(zip(blocks, (bc_rec1, bc_rec2), aligners, decoders, strict=False)):
-        scores[i], sans_bc_rec[i], tags[i] = process_bc_rec(bblocks, bc_rec, baligners, bdecoders)
+        scores[i], sans_bc_rec[i], tags[i] = process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders)
 
     output_recs = [None, None]
     output_tags = [None, None]
@@ -725,7 +781,7 @@ def worker_process_read(bc_recs):
     return output_recs, output_tags
 
 def worker_process_read_single_end(bc_rec):
-    score, sans_bc_rec, tags = process_bc_rec(blocks, bc_rec, aligners, decoders)
+    score, sans_bc_rec, tags = process_bc_rec(arguments, blocks, bc_rec, aligners, decoders)
 
     output_rec = None
     output_tags = None
@@ -763,7 +819,7 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
     for i, (fq_fpath, bblocks, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, aligners, decoders, strict=False)):
         first_scores_recs_tags = []
         for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq_fpath), 'fastq')):
-            first_scores_recs_tags.append(process_bc_rec(bblocks, bc_rec, baligners, bdecoders))
+            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders))
             if j >= n_first_seqs:
                 break
 
@@ -810,7 +866,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
 
     first_scores_recs_tags = []
     for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq')):
-        first_scores_recs_tags.append(process_bc_rec(blocks, bc_rec, aligners, decoders))
+        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, bc_rec, aligners, decoders))
         if j >= n_first_seqs:
             break
 
