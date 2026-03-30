@@ -414,7 +414,8 @@ def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
     )
 
     raw_bcs = [raw_piece.upper().replace('N', 'A') for raw_piece, block in zip(raw_pieces, blocks) if block["blocktype"] == "barcodeList"]
-    bcs = [decoder.decode(raw_bc) for raw_bc, decoder in zip(raw_bcs, decoders)]
+    decode_results = [decoder.decode_with_status(raw_bc) for raw_bc, decoder in zip(raw_bcs, decoders)]
+    bcs, statuses, overlapping_bcs = map(list, zip(*decode_results))
 
     best_aligner = next(al for al, (s, p, e, sq) in zip(aligners, scores_pieces_end_pos) if s == raw_score)
 
