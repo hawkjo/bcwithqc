@@ -303,6 +303,7 @@ def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
     raw_umis_bc_matrix
     with_bc_umi.sorted.bam
     with_bc_umi.sorted.bam.bai
+    QC_metrics.tsv
 
     If the final output is updated, this needs to updated as well! 
     '''
@@ -315,7 +316,8 @@ def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
         star_w_bc_umi_sorted_fpath,
         star_w_bc_umi_sorted_fpath + '.bai',
         os.path.join(output_dir, 'raw_reads_bc_matrix'),
-        os.path.join(output_dir, 'raw_umis_bc_matrix')
+        os.path.join(output_dir, 'raw_umis_bc_matrix'),
+        os.path.join(output_dir, 'QC_metrics.tsv')
     }
 
     # List all items in output_dir
@@ -668,11 +670,81 @@ def output_rec_name_and_tags(rec, tags, out_fh):
 
 def generate_qc_metrics(arguments, read_qcs):
     log.info(f"Collected {len(read_qcs):,d} read QC entries")
-    qc_metrics_fpath = os.path.join(arguments.output_dir, "QC_metrics.tsv")
+
+    output_file = os.path.join(arguments.output_dir, "QC_metrics.tsv")
+
+    # Normalize input so we always iterate over per-read QC dicts
     if arguments.single_end_reads:
-        pass
+        qc_iter = read_qcs
     else:
-        pass
+        qc_iter = (
+            read_qc
+            for read_qc_pair in read_qcs
+            for read_qc in read_qc_pair
+            if read_qc is not None
+        )
+
+    # Always include these columns, even if all counts are zero
+    status_columns = ["exact", "corrected", "ambiguous", "no_match"]
+
+    # key: (barcode_block, barcode_label)
+    # val: Counter of statuses
+    counts = defaultdict(Counter)
+
+    # key: (barcode_block, barcode_label)
+    # val: Counter of ambiguous conflict barcode entries
+    conflict_counts = defaultdict(Counter)
+
+    for read_qc in qc_iter:
+        raw_bcs = read_qc["raw_bcs"]
+        decoded_bcs = read_qc["decoded_bcs"]
+        statuses = read_qc["statuses"]
+        conflict_bcs = read_qc["conflict_bcs"]
+
+        for block_idx, (raw_bc, decoded_bc, status, conflicts) in enumerate(
+            zip(raw_bcs, decoded_bcs, statuses, conflict_bcs),
+            start=1,
+        ):
+            # Choose row label
+            if decoded_bc is not None:
+                barcode_label = decoded_bc
+            else:
+                barcode_label = raw_bc
+
+            counts[(block_idx, barcode_label)][status] += 1
+
+            # For ambiguous entries, collect all candidate conflict barcodes
+            if status == "ambiguous" and conflicts:
+                for conflict_bc in conflicts:
+                    conflict_counts[(block_idx, barcode_label)][conflict_bc] += 1
+
+    with open(output_file, "w") as out_fh:
+        header = ["barcode_block", "barcode"] + status_columns + ["total", "conflict_bcs"]
+        out_fh.write("\t".join(header) + "\n")
+
+        for (block_idx, barcode_label) in sorted(counts.keys(), key=lambda x: (x[0], x[1])):
+            status_counter = counts[(block_idx, barcode_label)]
+            total = sum(status_counter.values())
+
+            conflict_counter = conflict_counts.get((block_idx, barcode_label), Counter())
+            if conflict_counter:
+                conflict_summary = ";".join(
+                    f"{entry}:{count}"
+                    for entry, count in sorted(conflict_counter.items())
+                )
+            else:
+                conflict_summary = ""
+
+            row = [
+                str(block_idx),
+                barcode_label,
+                *[str(status_counter.get(status, 0)) for status in status_columns],
+                str(total),
+                conflict_summary,
+            ]
+            out_fh.write("\t".join(row) + "\n")
+
+    log.info(f"Wrote QC metrics to: {output_file}")
 
 def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath, bcs_on_both_reads):
     blocks = [arguments.config["barcode_struct_r1"]["blocks"]]
