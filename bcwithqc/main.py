@@ -19,7 +19,7 @@ Options:
   --nreads=<>:                        Number of reads to simulate.
   --unique-umis=<>:                   Fraction of all reads that have unique UMIs [default: 0.5].
   --seed=<>:                          Random seed [default: 42].
-  --error-probability=<>:             Probability of an error occurring [default: 0.1]. Set to a negative number to
+  --error-probability=<>:             Probability of an error occurring per base [default: 0.1]. Set to a negative number to
                                         always introduce as many errors as allowed by the configuration.
   --substitution-probability=<>:      Probability of generating a substitution as opposed to an indel [default: 0.7].
   --insertion-probability=<>:         Probability of generating an insertion as opposed to a deletion when generating an indel [default: 0.5].
