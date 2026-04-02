@@ -7,11 +7,11 @@ from contextlib import nullcontext
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-se_test_config = os.path.join(SCRIPT_DIR, "../examples/se_test.json")
+se_test_config = os.path.join(SCRIPT_DIR, "../examples/se_test_lc.json")
 
 # Set to True to use a temp directory that is deleted automatically.
 # Set to False to write into the config directory under "se_test_lc" and keep the output.
-USE_TEMP_OUTPUT = True
+USE_TEMP_OUTPUT = False
 
 
 def test_single_end_simulation_runs():
@@ -33,8 +33,8 @@ def test_single_end_simulation_runs():
             f"--config={config}",
             f"--output-dir={output_dir}",
             "--nreads=10000",
-            "--error-probability=0.3",
-            "--substitution-probability=0.3",
+            "--error-probability=0.1",
+            "--substitution-probability=0.7",
             "--single-end-reads",
             "-vvv",
         ]

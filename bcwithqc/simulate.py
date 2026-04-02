@@ -21,32 +21,60 @@ alphabet_subsets = {"A": ("T", "G", "C"),
 def one_mutation(seq: str, position: int, substitutionprob: float, insertionprob: float, rng: np.random.Generator):
     if rng.random() < substitutionprob:
         seq = seq[:position] + rng.choice(alphabet_subsets[seq[position]]) + seq[position + 1:]
+        return seq, "substitution"
     else:
         if rng.random() < insertionprob:
-            seq = seq[:position] + rng.choice(alphabet) + seq[position:] # 1bp insertion
+            seq = seq[:position] + rng.choice(alphabet) + seq[position:]  # 1bp insertion
+            return seq, "insertion"
         else:
-            seq = seq[:position] + seq[position + 1:] # 1bp deletion
-    return seq
+            seq = seq[:position] + seq[position + 1:]  # 1bp deletion
+            return seq, "deletion"
 
 def mutate_read_probabilistic(seq: str, errorprob: float, substitutionprob: float, insertionprob: float, rng: np.random.Generator):
     pos = 0
+    n_subs = 0
+    n_dels = 0
+    n_ins = 0
+
     while pos < len(seq):
         if rng.random() < errorprob:
-            seq = one_mutation(seq, pos, substitutionprob, insertionprob, rng)
+            seq, mut_type = one_mutation(seq, pos, substitutionprob, insertionprob, rng)
+            if mut_type == "substitution":
+                n_subs += 1
+            elif mut_type == "deletion":
+                n_dels += 1
+            elif mut_type == "insertion":
+                n_ins += 1
         pos += 1
-    return seq
+
+    return seq, n_subs, n_dels, n_ins
 
 def mutate_read_maxerrors(seq: str, maxerrors: int, substitutionprob: float, insertionprob: float, rng: np.random.Generator):
     positions = rng.choice(len(seq), size=maxerrors, replace=False)
-    for pos in positions:
-        seq = one_mutation(seq, pos, substitutionprob, insertionprob, rng)
-    return seq
+    n_subs = 0
+    n_dels = 0
+    n_ins = 0
 
-def make_read(blocks: dict, name_prefix: str, mutate_umi: bool, mutatereadfun, error_probability: float, substitution_probability, insertion_probability: float, umis: dict[list[str]], rng: np.random.Generator):
+    for pos in positions:
+        seq, mut_type = one_mutation(seq, pos, substitutionprob, insertionprob, rng)
+        if mut_type == "substitution":
+            n_subs += 1
+        elif mut_type == "deletion":
+            n_dels += 1
+        elif mut_type == "insertion":
+            n_ins += 1
+
+    return seq, n_subs, n_dels, n_ins
+
+def make_read(blocks: dict, name_prefix: str, mutate_umi: bool, mutatereadfun,
+              error_probability: float, substitution_probability, insertion_probability: float,
+              umis: dict[list[str]], rng: np.random.Generator, random_tail_length: float):
     read = ""
     readname = name_prefix
 
     for blockidx, block in enumerate(blocks):
+        n_subs = n_dels = n_ins = 0
+
         if block["blocktype"] == "randomBarcode":
             if not mutate_umi:
                 blocksequence = "".join(rng.choice(alphabet, block["length"]))
@@ -54,16 +82,40 @@ def make_read(blocks: dict, name_prefix: str, mutate_umi: bool, mutatereadfun, e
                 umis[blockidx].append(blocksequence)
             else:
                 blockname = rng.choice(umis[blockidx])
-                blocksequence = mutatereadfun(blockname, block["maxerrors"], error_probability, substitution_probability, insertion_probability, rng)
+                blocksequence, n_subs, n_dels, n_ins = mutatereadfun(
+                    blockname,
+                    block["maxerrors"],
+                    error_probability,
+                    substitution_probability,
+                    insertion_probability,
+                    rng,
+                )
+
+            readname += f"_{blockname}"
+
         elif block["blocktype"] == "constantRegion" or block["blocktype"] == "barcodeList":
             seqidx = rng.choice(len(block["sequence"]))
             blockname = block["name"][seqidx] if "name" in block else block["sequence"][seqidx]
-            blocksequence = mutatereadfun(block["sequence"][seqidx], block["maxerrors"], error_probability, substitution_probability, insertion_probability, rng)
-        readname += f"_{blockname}"
+            blocksequence, n_subs, n_dels, n_ins = mutatereadfun(
+                block["sequence"][seqidx],
+                block["maxerrors"],
+                error_probability,
+                substitution_probability,
+                insertion_probability,
+                rng,
+            )
+
+            readname += f"_{blockname}_S{n_subs}D{n_dels}I{n_ins}"
+
+        else:
+            raise ValueError(f"Unsupported blocktype: {block['blocktype']}")
+
         read += blocksequence
 
-    nonbc_sequence = "".join(rng.choice(alphabet, rng.poisson(20)))
-    read += nonbc_sequence
+    if random_tail_length >= 0:
+        nonbc_sequence = "".join(rng.choice(alphabet, rng.poisson(random_tail_length)))
+        read += nonbc_sequence
+        readname += f"_randTail{len(nonbc_sequence)}"
 
     return readname, read
 
@@ -135,6 +187,7 @@ def simulate_reads(arguments):
             arguments.insertion_probability,
             read1_umis,
             rng,
+            arguments.random_tail_length,
         )
 
         revcomp = False
@@ -155,6 +208,7 @@ def simulate_reads(arguments):
                 arguments.insertion_probability,
                 read2_umis,
                 rng,
+                arguments.random_tail_length,
             )
             if revcomp:
                 read2 = read2.translate(complement)[::-1]

@@ -119,6 +119,13 @@ class SimulationCommandLineArguments(CommandLineArgumentsBase):
         return float(self._arguments['--insertion-probability'])
     
     @property
+    def random_tail_length(self):
+        val = self._arguments['--random-tail-length']
+        if val is None:
+            return 0.0
+        return float(val)
+    
+    @property
     def output_dir(self):
         return self._arguments['--output-dir']
         
