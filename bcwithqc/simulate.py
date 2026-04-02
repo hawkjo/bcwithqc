@@ -195,7 +195,7 @@ def simulate_reads(arguments):
             read1 = read1.translate(complement)[::-1]
             revcomp = True
 
-        print(read1name, read1, "+", "E" * len(read1), sep="\n", file=fq1)
+        print(f"@{read1name}", read1, "+", "E" * len(read1), sep="\n", file=fq1)
 
         if paired_end_mode:
             read2name, read2 = make_read(
@@ -212,7 +212,7 @@ def simulate_reads(arguments):
             )
             if revcomp:
                 read2 = read2.translate(complement)[::-1]
-            print(read2name, read2, "+", "E" * len(read2), sep="\n", file=fq2)
+            print(f"@{read2name}", read2, "+", "E" * len(read2), sep="\n", file=fq2)
 
     fq1.close()
     if paired_end_mode:
