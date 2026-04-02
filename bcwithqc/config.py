@@ -95,10 +95,6 @@ class SimulationCommandLineArguments(CommandLineArgumentsBase):
         super().__init__(arguments)
 
     @property
-    def fastq_prefix(self):
-        return self._arguments['--fastq-prefix']
-
-    @property
     def nreads(self):
         return int(self._arguments['--nreads'])
 

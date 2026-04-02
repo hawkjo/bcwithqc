@@ -2,9 +2,14 @@
 import sys
 import os
 import gzip
+import warnings
+import logging
 from collections import defaultdict
 
 import numpy as np
+
+log = logging.getLogger(__name__)
+pysam.set_verbosity(0)
 
 alphabet = ("A", "T", "G", "C")
 complement = {"A": "T", "T": "A", "G": "C", "C": "G"}
@@ -66,14 +71,48 @@ def make_read(blocks: dict, name_prefix: str, mutate_umi: bool, mutatereadfun, e
 def simulate_reads(arguments):
     rng = np.random.default_rng(arguments.seed)
 
-    if "barcode_struct_r2" in arguments.config:
-        fq1name = f"{arguments.fastq_prefix}_1.txt.gz"
-        fq2name = f"{arguments.fastq_prefix}_2.txt.gz"
+    has_r2 = "barcode_struct_r2" in arguments.config
+    force_single_end = arguments.single_end_reads
+
+    # Determine output prefix from config file name
+    config_basename = os.path.splitext(os.path.basename(arguments.config_fpath))[0]
+    os.makedirs(arguments.output_dir, exist_ok=True)
+    prefix_path = os.path.join(arguments.output_dir, config_basename)
+
+    # Decide mode and inform user
+    if has_r2 and not force_single_end:
+        paired_end_mode = True
+        log.info(
+            "Simulation mode: paired-end. "
+            "Reason: barcode_struct_r2 is present and --single-end-reads was not set."
+        )
+    elif has_r2 and force_single_end:
+        paired_end_mode = False
+        warnings.warn(
+            "Simulation mode: single-end. "
+            "barcode_struct_r2 is present in the config, but --single-end-reads was set, "
+            "so barcode_struct_r2 will be ignored.",
+            category=UserWarning,
+        )
+    elif not has_r2 and not force_single_end:
+        paired_end_mode = False
+        log.info(
+            "Simulation mode: single-end. "
+            "Reason: barcode_struct_r2 is not present in the config."
+        )
+    else:  # not has_r2 and force_single_end
+        paired_end_mode = False
+        log.info(
+            "Simulation mode: single-end. "
+            "Reason: --single-end-reads was set and no barcode_struct_r2 is present."
+        )
+
+    if paired_end_mode:
+        fq1name = f"{prefix_path}_1.txt.gz"
+        fq2name = f"{prefix_path}_2.txt.gz"
         fq2 = gzip.open(fq2name, "wt")
     else:
-        fq1name = f"{arguments.fastq_prefix}.txt.gz"
-
-    os.makedirs(os.path.dirname(arguments.fastq_prefix), exist_ok=True)
+        fq1name = f"{prefix_path}.txt.gz"
 
     fq1 = gzip.open(fq1name, "wt")
 
@@ -86,20 +125,41 @@ def simulate_reads(arguments):
         mutatereadfun = lambda seq, maxerrors, errorprob, substitutionprob, insertionprob, rng: mutate_read_probabilistic(seq, errorprob, substitutionprob, insertionprob, rng)
 
     for readidx in range(arguments.nreads):
-        read1name, read1 = make_read(arguments.config["barcode_struct_r1"]["blocks"], str(readidx), readidx > arguments.unique_umis * arguments.nreads,  mutatereadfun, arguments.error_probability, arguments.substitution_probability, arguments.insertion_probability, read1_umis, rng)
+        read1name, read1 = make_read(
+            arguments.config["barcode_struct_r1"]["blocks"],
+            str(readidx),
+            readidx > arguments.unique_umis * arguments.nreads,
+            mutatereadfun,
+            arguments.error_probability,
+            arguments.substitution_probability,
+            arguments.insertion_probability,
+            read1_umis,
+            rng,
+        )
+
         revcomp = False
         if arguments.config["unknown_read_orientation"] and rng.random() > 0.5:
             read1 = read1.translate(complement)[::-1]
             revcomp = True
+
         print(read1name, read1, "+", "E" * len(read1), sep="\n", file=fq1)
 
-        if "barcode_struct_r2" in arguments.config:
-            read2name, read2 = make_read(arguments.config["barcode_struct_r2"]["blocks"], str(readidx), readidx > arguments.unique_umis * arguments.nreads, mutatereadfun, arguments.error_probability, arguments.substitution_probability, arguments.insertion_probability, read1_umis, rng)
+        if paired_end_mode:
+            read2name, read2 = make_read(
+                arguments.config["barcode_struct_r2"]["blocks"],
+                str(readidx),
+                readidx > arguments.unique_umis * arguments.nreads,
+                mutatereadfun,
+                arguments.error_probability,
+                arguments.substitution_probability,
+                arguments.insertion_probability,
+                read2_umis,
+                rng,
+            )
             if revcomp:
                 read2 = read2.translate(complement)[::-1]
             print(read2name, read2, "+", "E" * len(read2), sep="\n", file=fq2)
 
     fq1.close()
-
-    if "barcode_struct_r2" in arguments.config:
+    if paired_end_mode:
         fq2.close()

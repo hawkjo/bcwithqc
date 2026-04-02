@@ -5,7 +5,7 @@ Usage:
   bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
   bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
-  bcwithqc simulate_reads   --config=<> --fastq-prefix=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [-v | -vv | -vvv]
+  bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--single-end-reads] [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [-v | -vv | -vvv]
 
 Options:
   --STAR-ref-dir=<>:                  Path to directory with STAR index.
@@ -16,7 +16,6 @@ Options:
   --output-dir=<>:                    Path to output directory [default: .].
   --threads=<>:                       Number of threads [default: 1].
   -v:                                 Verbose output.
-  --fastq-prefix=<>:                  Prefix for output FASTQ files.
   --nreads=<>:                        Number of reads to simulate.
   --unique-umis=<>:                   Fraction of all reads that have unique UMIs [default: 0.5].
   --seed=<>:                          Random seed [default: 42].
