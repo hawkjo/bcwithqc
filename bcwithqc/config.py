@@ -117,3 +117,11 @@ class SimulationCommandLineArguments(CommandLineArgumentsBase):
     @property
     def insertion_probability(self):
         return float(self._arguments['--insertion-probability'])
+    
+    @property
+    def output_dir(self):
+        return self._arguments['--output-dir']
+        
+    @property
+    def single_end_reads(self):
+        return self._arguments['--single-end-reads']

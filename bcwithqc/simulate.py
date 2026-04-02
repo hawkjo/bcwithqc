@@ -74,7 +74,8 @@ def simulate_reads(arguments):
     force_single_end = arguments.single_end_reads
 
     # Determine output prefix from config file name
-    config_basename = os.path.splitext(os.path.basename(arguments.config_fpath))[0]
+    config_path = arguments._arguments["--config"]
+    config_basename = os.path.splitext(os.path.basename(config_path))[0]
     os.makedirs(arguments.output_dir, exist_ok=True)
     prefix_path = os.path.join(arguments.output_dir, config_basename)
 
