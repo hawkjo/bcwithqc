@@ -428,7 +428,7 @@ def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
     best_aligner = next(al for al, (s, p, e, sq) in zip(aligners, scores_pieces_end_pos) if s == raw_score)
 
     commonseqs = [best_aligner.prefixes[i] for i, block in enumerate(blocks) if block["blocktype"] == "constantRegion"]
-    
+
     # QC Metrics
     bc_qc = {
         "raw_bcs": raw_bcs,
@@ -439,17 +439,29 @@ def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
 
     bc_idx = commonseq_idx = 0
     corrected_pieces = []
-    for block in blocks:
+
+    for i, block in enumerate(blocks):
         if block["blocktype"] == "barcodeList":
             if bcs[bc_idx] is None:
                 return raw_score, None, None, bc_qc
             corrected_pieces.append(bcs[bc_idx])
             bc_idx += 1
+
         elif block["blocktype"] == "constantRegion":
             if commonseqs[commonseq_idx] is None:
                 return raw_score, None, None, bc_qc
-            corrected_pieces.append(commonseqs[commonseq_idx])
+
+            observed_const = raw_pieces[i].upper().replace("N", "A")
+            expected_const = commonseqs[commonseq_idx]
+
+            distfun = misc.DistanceThresh("levenshtein", block["maxerrors"])
+            dist = distfun(observed_const, expected_const)
+            if dist is False:
+                return raw_score, None, None, bc_qc
+
+            corrected_pieces.append(expected_const)
             commonseq_idx += 1
+
         else:
             corrected_pieces.append('N' * block["length"])
 
