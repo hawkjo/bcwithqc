@@ -9,7 +9,6 @@ from collections import defaultdict
 import numpy as np
 
 log = logging.getLogger(__name__)
-pysam.set_verbosity(0)
 
 alphabet = ("A", "T", "G", "C")
 complement = {"A": "T", "T": "A", "G": "C", "C": "G"}
