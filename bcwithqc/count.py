@@ -680,65 +680,133 @@ def tag_type_from_val(val):
 def output_rec_name_and_tags(rec, tags, out_fh):
     out_fh.write('\t'.join([f'{str(rec.id)}'] + [f'{tag}:{tag_type_from_val(val)}:{val}' for tag, val in tags]) + '\n')
 
+def get_config_metadata(arguments, read_key):
+    """
+    Get metadata for barcodeList blocks from barcode_struct_r1 or barcode_struct_r2.
+    Returns an empty list if the requested barcode_struct is not present.
+    """
+    if read_key not in arguments.config:
+        return []
+
+    metas = []
+    for block in arguments.config[read_key]["blocks"]:
+        if block["blocktype"] == "barcodeList":
+            metas.append({
+                "read_label": "R1" if read_key == "barcode_struct_r1" else "R2",
+                "blockname": block.get("blockname", f"{read_key}_barcode"),
+                "whitelist": block["sequence"],
+            })
+    return metas
+
+
+def parse_conflicts(conflicts):
+    """
+    Split conflict information into parsable whitelist candidates and metadata entries.
+    Metadata entries are things like "conflict_level:...".
+    """
+    if not conflicts:
+        return [], []
+
+    whitelist_candidates = []
+    metadata_entries = []
+
+    for entry in conflicts:
+        if isinstance(entry, str) and entry.startswith("conflict_level:"):
+            metadata_entries.append(entry)
+        else:
+            whitelist_candidates.append(entry)
+
+    return whitelist_candidates, metadata_entries
+
+
+def handle_read_qc(read_qc, meta_list, counts, conflict_counts):
+    """
+    Update counts and conflict_counts for one read_qc entry.
+    """
+    for block_idx, (decoded_bc, status, conflicts) in enumerate(
+        zip(read_qc["decoded_bcs"], read_qc["statuses"], read_qc["conflict_bcs"])
+    ):
+        meta = meta_list[block_idx]
+        read_label = meta["read_label"]
+        blockname = meta["blockname"]
+
+        if status in ("exact", "corrected") and decoded_bc is not None:
+            key = (read_label, blockname, decoded_bc)
+            counts[key][status] += 1
+            continue
+
+        if status == "no_match":
+            key = (read_label, blockname, "__NO_MATCH__")
+            counts[key]["no_match"] += 1
+            continue
+
+        if status == "ambiguous":
+            candidate_bcs, conflict_meta = parse_conflicts(conflicts)
+
+            if candidate_bcs:
+                for candidate_bc in candidate_bcs:
+                    key = (read_label, blockname, candidate_bc)
+                    counts[key]["ambiguous"] += 1
+
+                    other_candidates = [bc for bc in candidate_bcs if bc != candidate_bc]
+                    for other_bc in other_candidates:
+                        conflict_counts[key][other_bc] += 1
+            else:
+                key = (read_label, blockname, "__AMBIGUOUS_UNIDENTIFIED__")
+                counts[key]["ambiguous"] += 1
+                for entry in conflict_meta:
+                    conflict_counts[key][entry] += 1
+
+
 def generate_qc_metrics(arguments, read_qcs):
+    """
+    Generate a TSV file with barcode QC metrics.
+    """
     log.info(f"Collected {len(read_qcs):,d} read QC entries")
 
     output_file = os.path.join(arguments.output_dir, "QC_metrics.tsv")
-
-    # Normalize input so we always iterate over per-read QC dicts
-    if arguments.single_end_reads:
-        qc_iter = read_qcs
-    else:
-        qc_iter = (
-            read_qc
-            for read_qc_pair in read_qcs
-            for read_qc in read_qc_pair
-            if read_qc is not None
-        )
-
-    # Always include these columns, even if all counts are zero
     status_columns = ["exact", "corrected", "ambiguous", "no_match"]
 
-    # key: (barcode_block, barcode_label)
-    # val: Counter of statuses
+    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
+    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
+
     counts = defaultdict(Counter)
-
-    # key: (barcode_block, barcode_label)
-    # val: Counter of ambiguous conflict barcode entries
     conflict_counts = defaultdict(Counter)
+    row_keys = []
 
-    for read_qc in qc_iter:
-        raw_bcs = read_qc["raw_bcs"]
-        decoded_bcs = read_qc["decoded_bcs"]
-        statuses = read_qc["statuses"]
-        conflict_bcs = read_qc["conflict_bcs"]
+    # Pre-initialize whitelist rows plus special rows
+    for meta in r1_meta + r2_meta:
+        for whitelist_bc in meta["whitelist"]:
+            key = (meta["read_label"], meta["blockname"], whitelist_bc)
+            row_keys.append(key)
+            counts[key]
 
-        for block_idx, (raw_bc, decoded_bc, status, conflicts) in enumerate(
-            zip(raw_bcs, decoded_bcs, statuses, conflict_bcs),
-            start=1,
-        ):
-            # Choose row label
-            if decoded_bc is not None:
-                barcode_label = decoded_bc
-            else:
-                barcode_label = raw_bc
+        for special in ["__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"]:
+            key = (meta["read_label"], meta["blockname"], special)
+            row_keys.append(key)
+            counts[key]
 
-            counts[(block_idx, barcode_label)][status] += 1
-
-            # For ambiguous entries, collect all candidate conflict barcodes
-            if status == "ambiguous" and conflicts:
-                for conflict_bc in conflicts:
-                    conflict_counts[(block_idx, barcode_label)][conflict_bc] += 1
+    if arguments.single_end_reads:
+        for read_qc in read_qcs:
+            handle_read_qc(read_qc, r1_meta, counts, conflict_counts)
+    else:
+        for read_qc_pair in read_qcs:
+            for read_idx, read_qc in enumerate(read_qc_pair):
+                if read_qc is None:
+                    continue
+                meta_list = r1_meta if read_idx == 0 else r2_meta
+                handle_read_qc(read_qc, meta_list, counts, conflict_counts)
 
     with open(output_file, "w") as out_fh:
-        header = ["barcode_block", "barcode"] + status_columns + ["total", "conflict_bcs"]
+        header = ["read", "blockname", "barcode"] + status_columns + ["total", "conflict_bcs"]
         out_fh.write("\t".join(header) + "\n")
 
-        for (block_idx, barcode_label) in sorted(counts.keys(), key=lambda x: (x[0], x[1])):
-            status_counter = counts[(block_idx, barcode_label)]
+        for key in row_keys:
+            read_label, blockname, barcode_label = key
+            status_counter = counts[key]
             total = sum(status_counter.values())
 
-            conflict_counter = conflict_counts.get((block_idx, barcode_label), Counter())
+            conflict_counter = conflict_counts.get(key, Counter())
             if conflict_counter:
                 conflict_summary = ";".join(
                     f"{entry}:{count}"
@@ -748,7 +816,8 @@ def generate_qc_metrics(arguments, read_qcs):
                 conflict_summary = ""
 
             row = [
-                str(block_idx),
+                read_label,
+                blockname,
                 barcode_label,
                 *[str(status_counter.get(status, 0)) for status in status_columns],
                 str(total),
