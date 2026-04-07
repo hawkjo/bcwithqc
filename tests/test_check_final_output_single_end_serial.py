@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import shutil
 import subprocess
 import pytest
@@ -18,6 +19,58 @@ gDNA_config = os.path.join(SCRIPT_DIR, "../examples/gDNA.json")
 cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA.json")
 
 
+def snapshot_tree(path):
+    snapshot = []
+    for root, dirs, files in os.walk(path):
+        for name in sorted(dirs + files):
+            p = os.path.join(root, name)
+            try:
+                st = os.stat(p)
+                snapshot.append((
+                    os.path.relpath(p, path),
+                    st.st_size,
+                    int(st.st_mtime_ns),
+                ))
+            except FileNotFoundError:
+                # Something changed during scan; ignore and try again next loop
+                pass
+    return tuple(snapshot)
+
+
+def wait_for_tree_to_stabilize(path, stable_checks=3, interval=1.0, timeout=60):
+    """
+    Wait until the directory tree stops changing across several consecutive checks.
+    """
+    deadline = time.time() + timeout
+    last = None
+    stable_count = 0
+
+    while time.time() < deadline:
+        current = snapshot_tree(path)
+        if current == last:
+            stable_count += 1
+            if stable_count >= stable_checks:
+                return
+        else:
+            stable_count = 0
+            last = current
+        time.sleep(interval)
+
+    raise TimeoutError(f"Output directory did not stabilize within {timeout}s: {path}")
+
+
+def rmtree_with_retries(path, retries=10, delay=1.0):
+    last_err = None
+    for _ in range(retries):
+        try:
+            shutil.rmtree(path)
+            return
+        except OSError as e:
+            last_err = e
+            time.sleep(delay)
+    raise last_err
+
+
 @pytest.fixture(scope="module", params=["gDNA", "cDNA"])
 def sample_dirs(request):
     sample_type = request.param
@@ -26,15 +79,12 @@ def sample_dirs(request):
     input_dir = gDNA_input if sample_type == "gDNA" else cDNA_input
     config = gDNA_config if sample_type == "gDNA" else cDNA_config
 
-    # Cleanup before test
     if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
+        rmtree_with_retries(tmp_dir)
     os.makedirs(tmp_dir, exist_ok=True)
 
-    # Set up env with STAR path as before
     env = os.environ.copy()
     if "GITHUB_ACTIONS" in env:
-        # On GitHub Actions, add the installed STAR path explicitly
         github_star_dir = "/home/runner/work/bcwithqc/bcwithqc/STAR-2.7.10b/source"
         star_executable = os.path.join(github_star_dir, "STAR")
         if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
@@ -50,7 +100,6 @@ def sample_dirs(request):
             )
         env["PATH"] = f"{star_dir_local}:{env.get('PATH', '')}"
 
-    # Run pipeline
     command = [
         "python", "-m", "bcwithqc", "count",
         input_dir,
@@ -64,9 +113,20 @@ def sample_dirs(request):
     ]
 
     try:
-        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, text=True)
+        result = subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            text=True
+        )
         print(result.stdout)
         print(result.stderr)
+
+        # Important: wait until filesystem activity has really stopped
+        wait_for_tree_to_stabilize(tmp_dir, stable_checks=3, interval=1.0, timeout=60)
+
     except subprocess.CalledProcessError as e:
         sys.stderr.write("Subprocess failed:\n")
         sys.stderr.write(f"Return code: {e.returncode}\n")
@@ -75,11 +135,10 @@ def sample_dirs(request):
         sys.stderr.flush()
         raise
 
-
     yield sample_type, tmp_dir, expected_dir
 
-    # Teardown: clean up tmp_dir
-    shutil.rmtree(tmp_dir)
+    if os.path.exists(tmp_dir):
+        rmtree_with_retries(tmp_dir)
 
 
 def test_file_existence(sample_dirs):
