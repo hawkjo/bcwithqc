@@ -186,7 +186,19 @@ EXPECTED_FASTQS = {
     }
 }
 
-# === Helper ===
+
+@pytest.fixture
+def cleanup_tmp_shuffle():
+    tmp_dir = os.path.join(OUTPUT_DIR, "tmp_shuffle")
+
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
+
+    yield
+
+    if not output_files_for_mismatched_reads and os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
+
 
 def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002, output_dir='output'):
     mismatched_reads = 0
@@ -240,34 +252,28 @@ def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002, output_di
     print(f"Mismatched reads: {mismatched_reads}")
     print(f"Mismatch rate: {mismatch_rate:.4%}")
 
-    try:
-        with open(mismatch_output_path, "r") as expected_file, open(mismatch_tmp_path, "r") as actual_file:
-            expected_lines = expected_file.readlines()
-            actual_lines = actual_file.readlines()
+    with open(mismatch_output_path, "r") as expected_file, open(mismatch_tmp_path, "r") as actual_file:
+        expected_lines = expected_file.readlines()
+        actual_lines = actual_file.readlines()
 
-        if expected_lines != actual_lines:
-            mismatch_index = next(
-                (i for i, (l1, l2) in enumerate(zip(expected_lines, actual_lines)) if l1 != l2),
-                None
-            )
-            raise AssertionError(
-                "Mismatch files do not match.\n"
-                f"First mismatch at line {mismatch_index + 1 if mismatch_index is not None else 'unknown'}.\n"
-                f"File 1: {mismatch_output_path}\n"
-                f"File 2: {mismatch_tmp_path}"
-            )
-    finally:
-        if not output_files_for_mismatched_reads and os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        else:
-            print(f"Mismatched reads written to: {mismatch_tmp_path}")
+    if expected_lines != actual_lines:
+        mismatch_index = next(
+            (i for i, (l1, l2) in enumerate(zip(expected_lines, actual_lines)) if l1 != l2),
+            None
+        )
+        raise AssertionError(
+            "Mismatch files do not match.\n"
+            f"First mismatch at line {mismatch_index + 1 if mismatch_index is not None else 'unknown'}.\n"
+            f"File 1: {mismatch_output_path}\n"
+            f"File 2: {mismatch_tmp_path}"
+        )
+
+    if output_files_for_mismatched_reads:
+        print(f"Mismatched reads written to: {mismatch_tmp_path}")
 
 
-
-
-# === Test with parameterization ===
 @pytest.mark.parametrize("sample_type", ["gDNA", "cDNA"])
-def test_fix_unknown_read_orientation(sample_type):
+def test_fix_unknown_read_orientation(sample_type, cleanup_tmp_shuffle):
     if sample_type == "gDNA":
         dummy_args = DummyArgs(OUTPUT_DIR, dummy_gDNA_config_r1_only)
         paired_fpaths = paired_gDNA_fpaths
@@ -290,17 +296,17 @@ def test_fix_unknown_read_orientation(sample_type):
 
     # Check if one of the files in the output matches the expected files
     assert any(
-        (compare_gzipped_text_files(first_path_tuple[0], expected_r1, output_dir=OUTPUT_DIR) == None and 
-        compare_gzipped_text_files(first_path_tuple[1], expected_r2, output_dir=OUTPUT_DIR) == None) or
-        (compare_gzipped_text_files(first_path_tuple[0], expected_r2, output_dir=OUTPUT_DIR) == None and 
-        compare_gzipped_text_files(first_path_tuple[1], expected_r1, output_dir=OUTPUT_DIR) == None)
+        (compare_gzipped_text_files(first_path_tuple[0], expected_r1, output_dir=OUTPUT_DIR) == None and
+         compare_gzipped_text_files(first_path_tuple[1], expected_r2, output_dir=OUTPUT_DIR) == None) or
+        (compare_gzipped_text_files(first_path_tuple[0], expected_r2, output_dir=OUTPUT_DIR) == None and
+         compare_gzipped_text_files(first_path_tuple[1], expected_r1, output_dir=OUTPUT_DIR) == None)
         for first_path_tuple in new_fpaths
     )
 
     # Check if unknown_read_orientation was set to False #
     assert not dummy_args.config["unknown_read_orientation"]
-    assert os.path.exists(first_path_tuple[0])  # Ensure the first file exists
-    assert os.path.exists(first_path_tuple[1])  # Ensure the second file exists
+    assert os.path.exists(first_path_tuple[0])
+    assert os.path.exists(first_path_tuple[1])
 
     # Now clean up the newly created files
     if not output_files_for_oriented_reads:
