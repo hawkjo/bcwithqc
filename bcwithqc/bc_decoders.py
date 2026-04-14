@@ -68,7 +68,42 @@ class SBCDecoder:
             return None, "no_match", None
 
         if isinstance(result, int) and result < 0:
-            return None, "ambiguous", [f"conflict_level:{-result}"]
+            conflict_level = -result
+            # Call find_conflicting_sbcs, only if there is a conflict. 
+            conflicting_sbcs = self.find_conflicting_sbcs(raw_sbc, conflict_level)
+            return None, "ambiguous", conflicting_sbcs
 
         raise ValueError(f"Unexpected decoder result for {raw_sbc!r}: {result!r}")
+    
+    def find_conflicting_sbcs(self, raw_sbc, conflict_level):
+        """
+        Return whitelist SBCs that plausibly participate in the ambiguous conflict.
+
+        conflict_level is the positive value corresponding to the negative integer
+        returned by FreeDivBarcodeDecoder.decode().
+        """
+        # calculate conflict radius, mirroring the decoder build 
+        # We only care about whitelist barcodes within this free divergence
+        max_conflict_radius = conflict_level + self.sbc_reject_delta
+
+        # Calculate the free divergence to every whitelist barcode
+        # WARNING: This might reduce the speed at which it runs slightly,
+        # but since it only triggers on conflicts, it should not be too bad. 
+        dists_and_sbcs = [
+            (freebarcodes.editmeasures.free_divergence(raw_sbc, sbc), sbc)
+            for sbc in self.sbcs
+        ]
+
+        # Identify all barcodes within the max_conflic_radius
+        conflicting = [
+            (dist, sbc)
+            for dist, sbc in dists_and_sbcs
+            if dist <= max_conflict_radius
+        ]
+        # Sort first by distance, then alphabetically by barcode.
+        conflicting.sort(key=lambda x: (x[0], x[1]))
+
+        # Here we throw away the "distance" and keep only the conflicting barcodes
+        # Might be interesting to keep the distance too. 
+        return [sbc for dist, sbc in conflicting]
 
