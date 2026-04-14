@@ -5,3 +5,7 @@ R1	cb1	TATAGGTGT	1	0	0	0	1
 R1	cb1	GGCGACTCA	0	0	0	0	0	
 R1	cb1	__NO_MATCH__	0	0	0	2	2	
 R1	cb1	__AMBIGUOUS_UNIDENTIFIED__	0	0	0	0	0	
+
+SUMMARY
+read	blockname	exact	corrected	ambiguous	no_match	total
+R1	cb1	6	2	0	2	10

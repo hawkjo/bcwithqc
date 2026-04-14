@@ -3,6 +3,7 @@ import os
 import pysam
 import itertools
 import numpy as np
+import matplotlib.pyplot as plt
 import pickle
 import subprocess
 import shutil
@@ -291,6 +292,7 @@ def process_fastqs(arguments):
     count_matrix(arguments, star_w_bc_umi_sorted_fpath)
 
     handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath)
+    make_stacked_barplot(arguments)
 
     log.info('Done')
 
@@ -711,6 +713,7 @@ def parse_conflicts(conflicts):
     metadata_entries = []
 
     for entry in conflicts:
+        # Since I implemented correct conflicting bcs returning, this should always jumpt to else. 
         if isinstance(entry, str) and entry.startswith("conflict_level:"):
             metadata_entries.append(entry)
         else:
@@ -719,9 +722,10 @@ def parse_conflicts(conflicts):
     return whitelist_candidates, metadata_entries
 
 
-def handle_read_qc(read_qc, meta_list, counts, conflict_counts):
+def handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_counts):
     """
     Update counts and conflict_counts for one read_qc entry.
+    Also update one unique summary count per block.
     """
     for block_idx, (decoded_bc, status, conflicts) in enumerate(
         zip(read_qc["decoded_bcs"], read_qc["statuses"], read_qc["conflict_bcs"])
@@ -730,17 +734,23 @@ def handle_read_qc(read_qc, meta_list, counts, conflict_counts):
         read_label = meta["read_label"]
         blockname = meta["blockname"]
 
+        summary_key = (read_label, blockname)
+
         if status in ("exact", "corrected") and decoded_bc is not None:
             key = (read_label, blockname, decoded_bc)
             counts[key][status] += 1
+            block_summary_counts[summary_key][status] += 1
             continue
 
         if status == "no_match":
             key = (read_label, blockname, "__NO_MATCH__")
             counts[key]["no_match"] += 1
+            block_summary_counts[summary_key]["no_match"] += 1
             continue
 
         if status == "ambiguous":
+            block_summary_counts[summary_key]["ambiguous"] += 1
+
             candidate_bcs, conflict_meta = parse_conflicts(conflicts)
 
             if candidate_bcs:
@@ -772,6 +782,7 @@ def generate_qc_metrics(arguments, read_qcs):
 
     counts = defaultdict(Counter)
     conflict_counts = defaultdict(Counter)
+    block_summary_counts = defaultdict(Counter)
     row_keys = []
 
     # Pre-initialize whitelist rows plus special rows
@@ -786,16 +797,18 @@ def generate_qc_metrics(arguments, read_qcs):
             row_keys.append(key)
             counts[key]
 
+        block_summary_counts[(meta["read_label"], meta["blockname"])]
+
     if arguments.single_end_reads:
         for read_qc in read_qcs:
-            handle_read_qc(read_qc, r1_meta, counts, conflict_counts)
+            handle_read_qc(read_qc, r1_meta, counts, conflict_counts, block_summary_counts)
     else:
         for read_qc_pair in read_qcs:
             for read_idx, read_qc in enumerate(read_qc_pair):
                 if read_qc is None:
                     continue
                 meta_list = r1_meta if read_idx == 0 else r2_meta
-                handle_read_qc(read_qc, meta_list, counts, conflict_counts)
+                handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_counts)
 
     with open(output_file, "w") as out_fh:
         header = ["read", "blockname", "barcode"] + status_columns + ["total", "conflict_bcs"]
@@ -825,8 +838,115 @@ def generate_qc_metrics(arguments, read_qcs):
             ]
             out_fh.write("\t".join(row) + "\n")
 
+        out_fh.write("\n")
+        out_fh.write("SUMMARY\n")
+        out_fh.write("read\tblockname\texact\tcorrected\tambiguous\tno_match\ttotal\n")
+
+        for read_label, blockname in sorted(block_summary_counts.keys()):
+            summary = block_summary_counts[(read_label, blockname)]
+            exact = summary.get("exact", 0)
+            corrected = summary.get("corrected", 0)
+            ambiguous = summary.get("ambiguous", 0)
+            no_match = summary.get("no_match", 0)
+            total = exact + corrected + ambiguous + no_match
+
+            out_fh.write(
+                "\t".join([
+                    read_label,
+                    blockname,
+                    str(exact),
+                    str(corrected),
+                    str(ambiguous),
+                    str(no_match),
+                    str(total),
+                ]) + "\n"
+            )
+
     log.info(f"Wrote QC metrics to: {output_file}")
 
+import os
+import matplotlib.pyplot as plt
+
+
+def make_stacked_barplot(arguments):
+    """
+    Read the SUMMARY section of QC_metrics.tsv and create a stacked barplot.
+
+    Dark green  = exact
+    Light green = corrected
+    Orange      = ambiguous
+    Grey        = no_match
+
+    One bar per barcode block.
+    """
+    input_file = os.path.join(arguments.output_dir, "QC_metrics.tsv")
+    output_file = os.path.join(arguments.output_dir, "QC_metrics_stacked_barplot.png")
+
+    labels = []
+    exact_vals = []
+    corrected_vals = []
+    ambiguous_vals = []
+    no_match_vals = []
+
+    in_summary = False
+    with open(input_file, "r") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+
+            if line == "SUMMARY":
+                in_summary = True
+                next(fh)  # skip summary header
+                continue
+
+            if not in_summary or not line:
+                continue
+
+            read_label, blockname, exact, corrected, ambiguous, no_match, total = line.split("\t")
+            labels.append(f"{read_label}_{blockname}")
+            exact_vals.append(int(exact))
+            corrected_vals.append(int(corrected))
+            ambiguous_vals.append(int(ambiguous))
+            no_match_vals.append(int(no_match))
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    x = range(len(labels))
+
+    ax.bar(x, exact_vals, label="exact", color="darkgreen")
+    ax.bar(
+        x,
+        corrected_vals,
+        bottom=exact_vals,
+        label="corrected",
+        color="lightgreen",
+    )
+    ax.bar(
+        x,
+        ambiguous_vals,
+        bottom=[e + c for e, c in zip(exact_vals, corrected_vals)],
+        label="ambiguous",
+        color="orange",
+    )
+    ax.bar(
+        x,
+        no_match_vals,
+        bottom=[e + c + a for e, c, a in zip(exact_vals, corrected_vals, ambiguous_vals)],
+        label="no_match",
+        color="grey",
+    )
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_ylabel("Read count")
+    ax.set_title("QC metrics per barcode block")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=300)
+    plt.close(fig)
+
+    log.info(f"Wrote stacked barplot to: {output_file}")
+    
 def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath, bcs_on_both_reads):
     blocks = [arguments.config["barcode_struct_r1"]["blocks"]]
     if bcs_on_both_reads:

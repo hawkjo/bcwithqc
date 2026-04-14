@@ -3075,3 +3075,8 @@ R1	bc2	ATCTGGTAG	8	0	0	0	8
 R1	bc2	ACTGGACCA	13	2	0	0	15	
 R1	bc2	__NO_MATCH__	0	0	0	155	155	
 R1	bc2	__AMBIGUOUS_UNIDENTIFIED__	0	0	0	0	0	
+
+SUMMARY
+read	blockname	exact	corrected	ambiguous	no_match	total
+R1	bc1	19039	655	0	306	20000
+R1	bc2	19055	745	45	155	20000

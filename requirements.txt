@@ -7,4 +7,5 @@ docopt-ng
 regex>=2024.11.6
 pywfa
 pytest
+matplotlib
 
