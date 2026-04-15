@@ -6,6 +6,8 @@ import tempfile
 from contextlib import nullcontext
 
 import pytest
+import json
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,7 +20,7 @@ cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA.json")
 
 # Set to True to use a temp directory that is deleted automatically.
 # Set to False to write into SCRIPT_DIR/<sample_type>_single_end and keep the output.
-USE_TEMP_OUTPUT = True
+USE_TEMP_OUTPUT = False
 
 
 @pytest.mark.parametrize(
@@ -55,12 +57,27 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
         os.makedirs(output_dir, exist_ok=True)
         context = nullcontext(output_dir)
 
+    config_to_use = config
+
+    # We need to edit the cDNA config, and change keep_nonbarcode:false to true, for single end reads, otherwise everything is discarded.  
+    if sample_type == "cDNA":
+        with open(config, "r") as fh:
+            cfg = json.load(fh)
+
+        cfg["barcode_struct_r1"]["keep_nonbarcode"] = True
+
+        temp_config = os.path.join(output_dir, "temp_cDNA_single_end_config.json")
+        with open(temp_config, "w") as fh:
+            json.dump(cfg, fh, indent=4)
+
+        config_to_use = temp_config
+
     with context as output_dir:
         command = [
             "python", "-m", "bcwithqc", "count",
             input_dir,
             f"--STAR-ref-dir={star_index}",
-            f"--config={config}",
+            f"--config={config_to_use}",
             f"--output-dir={output_dir}",
             "--threads=1",
             "--keep-intermediary",
