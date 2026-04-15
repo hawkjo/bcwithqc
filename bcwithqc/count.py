@@ -31,7 +31,7 @@ n_first_seqs = 10000  # n seqs for finding score threshold
 
 def preprocess_fastqs(arguments):
     if not os.path.exists(arguments.output_dir):
-        os.makedirs(arguments.output_dir)    
+        os.makedirs(arguments.output_dir)
 
     # For single end reads
     if arguments.single_end_reads:
@@ -51,23 +51,20 @@ def preprocess_fastqs(arguments):
 
         single_align_fq_and_tags_fpaths = []
 
-        process_fastqs_func = serial_process_fastqs_single_end if arguments.threads == 1 else parallel_process_fastqs_single_end 
-        keep_r1 = arguments.config["barcode_struct_r1"]["keep_nonbarcode"]
-        if not keep_r1:
-            warnings.warn(
-                "`keep_nonbarcode = false` is not supported for single-end reads; "
-                "overriding to true so the remaining sequence can be aligned.",
-                category=UserWarning,
-            )
-            keep_r1 = True
+        process_fastqs_func = (
+            serial_process_fastqs_single_end
+            if arguments.threads == 1
+            else parallel_process_fastqs_single_end
+        )
+
         all_reads_qcs = []
         for fpath in single_fpaths:
             bc_fq1_fpath = fpath
             bc_fq2_fpath = None
 
-            sans_bc_fq1_fpath = (
-                os.path.join(arguments.output_dir, f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq')
-                if keep_r1 else None
+            sans_bc_fq1_fpath = os.path.join(
+                arguments.output_dir,
+                f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq'
             )
 
             tags1_fpath = os.path.join(
@@ -77,11 +74,10 @@ def preprocess_fastqs(arguments):
 
             log.info('Processing file:')
             log.info(f'  barcode fastq: {bc_fq1_fpath}')
-            if sans_bc_fq1_fpath:
-                log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
+            log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
             log.info(f'  tags file:     {tags1_fpath}')
 
-            if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, tags1_fpath] if fpath):
+            if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, tags1_fpath]):
                 raise FileExistsError('Partial results found: Remove partial results and restart.')
 
             file_read_qcs = process_fastqs_func(
@@ -92,15 +88,17 @@ def preprocess_fastqs(arguments):
             )
             all_reads_qcs.extend(file_read_qcs)
             single_align_fq_and_tags_fpaths.append((sans_bc_fq1_fpath, tags1_fpath))
+
         generate_qc_metrics(arguments, all_reads_qcs)
         return single_align_fq_and_tags_fpaths
-    # For paired reads    
+
+    # For paired reads
     else:
         paired_fpaths = misc.find_paired_fastqs_in_dir(arguments.fastq_dir)
 
         if arguments.config["unknown_read_orientation"]:
             paired_fpaths = misc.fix_unknown_read_orientation(arguments, paired_fpaths)
-   
+
         log.info('Files to process:')
         for i, (fpath1, fpath2) in enumerate(paired_fpaths):
             log.info(f'  {fpath1}')
@@ -113,8 +111,7 @@ def preprocess_fastqs(arguments):
 
         process_fastqs_func = serial_process_fastqs if arguments.threads == 1 else parallel_process_fastqs
         bcs_on_both_reads = misc.config_has_barcodes_on_both_reads(arguments.config)
-        keep_r1 = arguments.config["barcode_struct_r1"]["keep_nonbarcode"]
-        keep_r2 = arguments.config["barcode_struct_r2"]["keep_nonbarcode"] if bcs_on_both_reads else True
+
         if not bcs_on_both_reads:
             bc_fq_idx, paired_fq_idx = misc.determine_bc_and_paired_fastq_idxs(paired_fpaths, arguments.config["barcode_struct_r1"]["blocks"], arguments.config["unknown_read_orientation"])
             log.info(f'Detected barcodes in read{bc_fq_idx+1} files')
@@ -126,50 +123,62 @@ def preprocess_fastqs(arguments):
             bc_fq1_fpath = fpath_tup[bc_fq_idx]
             bc_fq2_fpath = fpath_tup[paired_fq_idx]
 
-            sans_bc_fq1_fpath = os.path.join(arguments.output_dir, f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq') if keep_r1 else None
-            sans_bc_fq2_fpath = os.path.join(arguments.output_dir, f'sans_bc_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.fq') if keep_r2 else None
+            sans_bc_fq1_fpath = os.path.join(
+                arguments.output_dir,
+                f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq'
+            )
+            sans_bc_fq2_fpath = os.path.join(
+                arguments.output_dir,
+                f'sans_bc_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.fq'
+            )
 
-            tags1_fpath = os.path.join(arguments.output_dir, f'rec_names_and_tags1_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.txt')
-            tags2_fpath = os.path.join(arguments.output_dir, f'rec_names_and_tags2_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.txt')
+            tags1_fpath = os.path.join(
+                arguments.output_dir,
+                f'rec_names_and_tags1_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.txt'
+            )
+            tags2_fpath = os.path.join(
+                arguments.output_dir,
+                f'rec_names_and_tags2_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.txt'
+            )
 
-            namepairidx_fpath = os.path.join(arguments.output_dir, f'namepairidx_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.pkl')
+            namepairidx_fpath = os.path.join(
+                arguments.output_dir,
+                f'namepairidx_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.pkl'
+            )
 
             namepairidx = misc.get_namepair_index(bc_fq1_fpath, bc_fq2_fpath)
             namepairidxs.append(namepairidx)
             with open(namepairidx_fpath, "wb") as pkl:
                 pickle.dump(namepairidx, pkl)
 
-
             log.info('Processing files:')
             if bcs_on_both_reads:
                 log.info(f'  barcode fastq 1: {bc_fq1_fpath}')
                 log.info(f'  barcode fastq 2: {bc_fq2_fpath}')
-                if sans_bc_fq1_fpath:
-                    log.info(f'  sans-bc fastq 1: {sans_bc_fq1_fpath}')
-                if sans_bc_fq2_fpath:
-                    log.info(f'  sans-bc fastq 2: {sans_bc_fq2_fpath}')
+                log.info(f'  sans-bc fastq 1: {sans_bc_fq1_fpath}')
+                log.info(f'  sans-bc fastq 2: {sans_bc_fq2_fpath}')
                 log.info(f'  tags file 1:     {tags1_fpath}')
                 log.info(f'  tags file 2:     {tags2_fpath}')
             else:
                 log.info(f'  barcode fastq: {bc_fq1_fpath}')
                 log.info(f'  paired fastq:  {bc_fq2_fpath}')
-                if sans_bc_fq1_fpath:
-                    log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
+                log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
                 log.info(f'  sans-bc fastq: {sans_bc_fq2_fpath}')
                 log.info(f'  tags file:     {tags1_fpath}')
 
-            if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath] if fpath):
+            if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath]):
                 raise FileExistsError('Partial results found: Remove partial results and restart.')
 
             file_read_qcs = process_fastqs_func(
-                    arguments,
-                    bc_fq1_fpath,
-                    bc_fq2_fpath,
-                    sans_bc_fq1_fpath,
-                    sans_bc_fq2_fpath,
-                    tags1_fpath,
-                    tags2_fpath,
-                    bcs_on_both_reads)
+                arguments,
+                bc_fq1_fpath,
+                bc_fq2_fpath,
+                sans_bc_fq1_fpath,
+                sans_bc_fq2_fpath,
+                tags1_fpath,
+                tags2_fpath,
+                bcs_on_both_reads
+            )
 
             all_read_qcs.extend(file_read_qcs)
 
@@ -178,7 +187,7 @@ def preprocess_fastqs(arguments):
             else:
                 paired_align_fqs_and_tags_fpaths.append((sans_bc_fq2_fpath, sans_bc_fq1_fpath, tags2_fpath, tags1_fpath))
 
-        generate_qc_metrics(arguments, all_read_qcs)        
+        generate_qc_metrics(arguments, all_read_qcs)
         return paired_align_fqs_and_tags_fpaths, namepairidxs
 
 def process_fastqs(arguments):
@@ -409,7 +418,7 @@ def run_STAR_single_end(arguments, R1_fpath):
 
     return star_out_dir, star_out_fpath
 
-def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
+def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders):
     """
     Find barcodes etc in bc_rec 
     """
@@ -502,59 +511,32 @@ def process_bc_rec(arguments, blocks, bc_rec, aligners, decoders):
     # And raw UMI
     tags.append(("UR", ".".join(bam_umis)))
 
-    ### WORKK IN PROGERESS BEGINS HERE
-    valid_star_block_modes = {"undefined_only", "constant", "constant_mask"}
+    starts = [0] + list(raw_bounds[:-1])
+    quals = bc_rec.letter_annotations["phred_quality"]
 
-    if arguments.block_type_for_STAR_alignment not in valid_star_block_modes:
-        raise ValueError(
-            "Invalid value for --block-type-for-STAR-alignment: "
-            f"{arguments.block_type_for_STAR_alignment!r}. "
-            "Valid options are: undefined_only, constant, constant_mask."
-        )
-    # Current processing for single end, example:
-    #   barcode | constantRegion | UMI
-    #  CCTTAACAT|GGGTCAGTACGTACGAGTCCC|AAAAAA
-    #  NNNNNNNNN|GGGTCAGTACGTACGAGTCCC|NNNNNN    with "constant_mask"
-    # or         GGGTCAGTACGTACGAGTCCC           with "constant"
-    # ^ this is the read that is then created and used for STAR alignment. 
-    # Everything about the tags and the barcode processing is unchanged. 
-    if arguments.single_end_reads and arguments.block_type_for_STAR_alignment != "undefined_only":
+    keep_seq_parts = []
+    keep_qual_parts = []
 
-        keep_seq_parts = []
-        keep_qual_parts = []
+    # Keep selected defined blocks
+    for block, piece, start, end in zip(blocks, raw_pieces, starts, raw_bounds):
+        if block.get("keepblock", False):
+            keep_seq_parts.append(piece)
+            keep_qual_parts.extend(quals[start:end])
 
-        pos = 0
-        quals = bc_rec.letter_annotations["phred_quality"]
+    # Keep undefined / trailing sequence if requested
+    if keep_nonbarcode:
+        trailing_rec = bc_rec[raw_end_pos:]
+        keep_seq_parts.append(str(trailing_rec.seq))
+        keep_qual_parts.extend(trailing_rec.letter_annotations["phred_quality"])
 
-        for block, piece in zip(blocks, raw_pieces):
-            piece_len = len(piece)
-            piece_qual = quals[pos:pos + piece_len]
+    new_seq = "".join(keep_seq_parts)
 
-            if block["blocktype"] == "constantRegion":
-                keep_seq_parts.append(piece)
-                keep_qual_parts.extend(piece_qual)
-            else:
-                if arguments.block_type_for_STAR_alignment == "constant_mask":
-                    keep_seq_parts.append("N" * piece_len)
-                    keep_qual_parts.extend(piece_qual)
-                elif arguments.block_type_for_STAR_alignment == "constant":
-                    pass
-
-            pos += piece_len
-
-        new_seq = "".join(keep_seq_parts)
-
-        new_rec = SeqRecord(
-            Seq(new_seq),
-            id=bc_rec.id,
-            description=bc_rec.description,
-        )
-        new_rec.letter_annotations["phred_quality"] = keep_qual_parts
-            ### WORKK IN PROGERESS ENDS HERE
-    else:
-        new_rec = bc_rec[raw_end_pos:]
-        new_rec.id = bc_rec.id
-        new_rec.description = bc_rec.description
+    new_rec = SeqRecord(
+        Seq(new_seq),
+        id=bc_rec.id,
+        description=bc_rec.description,
+    )
+    new_rec.letter_annotations["phred_quality"] = keep_qual_parts
 
     return raw_score, new_rec, tags, bc_qc
 
@@ -949,8 +931,10 @@ def make_stacked_barplot(arguments):
     
 def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath, bcs_on_both_reads):
     blocks = [arguments.config["barcode_struct_r1"]["blocks"]]
+    keep_nonbarcodes = [arguments.config["barcode_struct_r1"]["keep_nonbarcode"]]
     if bcs_on_both_reads:
         blocks.append(arguments.config["barcode_struct_r2"]["blocks"])
+        keep_nonbarcodes.append(arguments.config["barcode_struct_r2"]["keep_nonbarcode"])
 
     log.info('Building aligners and barcode decoders')
     aligners = tuple(misc.build_bc_aligners(bblocks, arguments.config["unknown_read_orientation"]) for bblocks in blocks)
@@ -959,10 +943,10 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
     log.info(f'Processing first {n_first_seqs:,d} for score threshold...')
 
     thresh = [np.inf, -np.inf]
-    for i, (fq_fpath, bblocks, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, aligners, decoders, strict=False)):
+    for i, (fq_fpath, bblocks, bkeep_nonbarcodes, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, keep_nonbarcodes, aligners, decoders, strict=False)):
         first_scores_recs_tags = []
         for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq_fpath), 'fastq')):
-            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders)[:-1]) # Append the tags (excluding QC in the last tupel)
+            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)[:-1]) # Append the tags (excluding QC in the last tupel)
             if j >= n_first_seqs:
                 break
 
@@ -989,9 +973,9 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
             sans_bc_rec = [None, True]
             tags = [None, None]
             read_qcs = [None, None]
-            for j, (bblocks, bc_rec, baligners, bdecoders) in enumerate(zip(blocks, (bc_rec1, bc_rec2), aligners, decoders, strict=False)):             
+            for j, (bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) in enumerate(zip(blocks, keep_nonbarcodes, (bc_rec1, bc_rec2), aligners, decoders, strict=False)):             
 
-                read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders) # get our tags for each read and trim the read
+                read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) # get our tags for each read and trim the read
                 read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
                 read_qcs[j] = read_qc
                 scores[j], sans_bc_rec[j], tags[j] = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
@@ -1014,6 +998,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
 
 def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, tags1_fpath):
     blocks = arguments.config["barcode_struct_r1"]["blocks"]
+    keep_nonbarcode = arguments.config["barcode_struct_r1"]["keep_nonbarcode"]
 
     log.info('Building aligners and barcode decoders')
     aligners = misc.build_bc_aligners(blocks, unknown_read_orientation=False)
@@ -1023,7 +1008,7 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
 
     first_scores_recs_tags = []
     for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq')):
-        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, bc_rec, aligners, decoders)[:-1]) # get the first three tuple entries 
+        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders)[:-1]) # get the first three tuple entries 
         if j >= n_first_seqs:
             break
 
@@ -1045,7 +1030,7 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
             if i % 100000 == 0 and i > 0:
                 log.info(f'  {i:,d} processed,  {total_out:,d} output')
 
-            read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, blocks, bc_rec, aligners, decoders) # get our tags for each read and trim the read
+            read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders) # get our tags for each read and trim the read
             read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
             all_read_qcs.append(read_qc)
             score, sans_bc_rec, tags = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
@@ -1063,18 +1048,20 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
     log.info(f'{total_out:,d} records output')
     return all_read_qcs
 
-def worker_build_aligners(ablocks, unknown_read_orientation, athresh):
-    global blocks, aligners, decoders, thresh, arguments
+def worker_build_aligners(ablocks, akeep_nonbarcodes, unknown_read_orientation, athresh):
+    global blocks, keep_nonbarcodes, aligners, decoders, thresh
     blocks = ablocks
+    keep_nonbarcodes = akeep_nonbarcodes
     thresh = athresh
     aligners = tuple(misc.build_bc_aligners(bblocks, unknown_read_orientation) for bblocks in blocks)
     decoders = tuple(misc.build_bc_decoders(bblocks) for bblocks in blocks)
 
-def worker_build_aligners_single_end(ablocks, athresh):
-    global blocks, aligners, decoders, thresh, arguments
+def worker_build_aligners_single_end(ablocks, akeep_nonbarcode, athresh):
+    global blocks, keep_nonbarcode, aligners, decoders, thresh
     blocks = ablocks
+    keep_nonbarcode = akeep_nonbarcode
     thresh = athresh
-    aligners = misc.build_bc_aligners(blocks, unknown_read_orientation = False)
+    aligners = misc.build_bc_aligners(blocks, unknown_read_orientation=False)
     decoders = misc.build_bc_decoders(blocks)
 
 def worker_process_read(bc_recs):
@@ -1085,8 +1072,8 @@ def worker_process_read(bc_recs):
     tags = [None, None]
     read_qcs = [None, None]
 
-    for i, (bblocks, bc_rec, baligners, bdecoders) in enumerate(zip(blocks, (bc_rec1, bc_rec2), aligners, decoders, strict=False)):
-        read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders) # get our tags for each read and trim the read
+    for i, (bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) in enumerate(zip(blocks, keep_nonbarcodes, (bc_rec1, bc_rec2), aligners, decoders, strict=False)):
+        read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) # get our tags for each read and trim the read
         read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
         read_qcs[i] = read_qc
         scores[i], sans_bc_rec[i], tags[i] = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
@@ -1102,7 +1089,7 @@ def worker_process_read(bc_recs):
     return output_recs, output_tags, read_qcs
 
 def worker_process_read_single_end(bc_rec):
-    read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, blocks, bc_rec, aligners, decoders) # get our tags for each read and trim the read
+    read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders) # get our tags for each read and trim the read
     read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
     score, sans_bc_rec, tags = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
 
@@ -1129,8 +1116,10 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
     chunksize = 100
 
     blocks = [arguments.config["barcode_struct_r1"]["blocks"]]
+    keep_nonbarcodes = [arguments.config["barcode_struct_r1"]["keep_nonbarcode"]]
     if bcs_on_both_reads:
         blocks.append(arguments.config["barcode_struct_r2"]["blocks"])
+        keep_nonbarcodes.append(arguments.config["barcode_struct_r2"]["keep_nonbarcode"])
 
     log.info('Building aligners and barcode decoders')
     aligners = tuple(misc.build_bc_aligners(bblocks, arguments.config["unknown_read_orientation"]) for bblocks in blocks)
@@ -1139,10 +1128,10 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
     log.info(f'Processing first {n_first_seqs:,d} for score threshold...')
 
     thresh = [np.inf, -np.inf]
-    for i, (fq_fpath, bblocks, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, aligners, decoders, strict=False)):
+    for i, (fq_fpath, bblocks, bkeep_nonbarcodes, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, keep_nonbarcodes, aligners, decoders, strict=False)):
         first_scores_recs_tags = []
         for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq_fpath), 'fastq')):
-            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bc_rec, baligners, bdecoders)[:-1]) # get the first three tuple entries
+            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)[:-1]) # get the first three tuple entries
             if j >= n_first_seqs:
                 break
 
@@ -1158,7 +1147,7 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
             (open(sans_bc_fq2_fpath, 'w') if sans_bc_fq2_fpath else nullcontext(None)) as bc_fq2_fh, \
             open(tags1_fpath, 'w') as tag1_fh, \
             (open(tags2_fpath, 'w') if bcs_on_both_reads else nullcontext(None)) as tag2_fh, \
-            Pool(arguments.threads, initializer = worker_build_aligners, initargs=(blocks, arguments.config["unknown_read_orientation"], thresh)) as pool:
+            Pool(arguments.threads, initializer = worker_build_aligners, initargs=(blocks, keep_nonbarcodes, arguments.config["unknown_read_orientation"], thresh)) as pool:
         log.info('Continuing...')
         total_out = 0
         for i, (output_recs, output_tags, read_qcs) in enumerate(pool.imap(worker_process_read, read_iterator(fq1_fpath, fq2_fpath, sem), chunksize=chunksize)):
@@ -1184,6 +1173,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
     chunksize = 100
 
     blocks = arguments.config["barcode_struct_r1"]["blocks"]
+    keep_nonbarcode = [arguments.config["barcode_struct_r1"]["keep_nonbarcode"]]
 
     log.info('Building aligners and barcode decoders')
     aligners = misc.build_bc_aligners(blocks, unknown_read_orientation=False)
@@ -1193,7 +1183,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
 
     first_scores_recs_tags = []
     for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq')):
-        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, bc_rec, aligners, decoders)[:-1])# get the first three tuple entries
+        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders)[:-1])# get the first three tuple entries
         if j >= n_first_seqs:
             break
 
@@ -1210,7 +1200,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
             Pool(
                 arguments.threads,
                 initializer=worker_build_aligners_single_end,
-                initargs=(blocks, thresh)
+                initargs=(blocks, keep_nonbarcode, thresh)
             ) as pool:
         log.info('Continuing...')
         total_out = 0
