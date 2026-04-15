@@ -1545,7 +1545,8 @@
                     "ACTGGACCA"
                 ],
                 "blocktype": "barcodeList",
-                "blockname": "bc1"
+                "blockname": "bc1",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -1563,7 +1564,8 @@
                     "AGTACGTACGAGTC"
                 ],
                 "blocktype": "constantRegion",
-                "blockname": "commonseq1"
+                "blockname": "commonseq1",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -3107,7 +3109,8 @@
                     "ACTGGACCA"
                 ],
                 "blocktype": "barcodeList",
-                "blockname": "bc2"
+                "blockname": "bc2",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -3119,8 +3122,13 @@
                     "GTACTCGCAGTAGTC"
                 ],
                 "blocktype": "constantRegion",
-                "blockname": "commonseq2"
+                "blockname": "commonseq2",
+                "keepblock": false
             }
         ]
-    }
+    },
+    "barcode_struct_r2": {
+        "keep_nonbarcode": true,
+        "blocks":[]
+    }   
 }

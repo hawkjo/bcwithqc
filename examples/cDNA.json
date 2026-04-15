@@ -1545,7 +1545,8 @@
                     "ACTGGACCA"
                 ],
                 "blocktype": "barcodeList",
-                "blockname": "cb1"
+                "blockname": "cb1",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -1563,7 +1564,8 @@
                     "AGTACGTACGAGTC"
                 ],
                 "blocktype": "constantRegion",
-                "blockname": "cso"
+                "blockname": "cso",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -3107,7 +3109,8 @@
                     "ACTGGACCA"
                 ],
                 "blocktype": "barcodeList",
-                "blockname": "cb2"
+                "blockname": "cb2",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -3119,7 +3122,8 @@
                     "GTACTCGCAGTAGTCGACACGTC"
                 ],
                 "blocktype": "constantRegion",
-                "blockname": "commonseq2"
+                "blockname": "commonseq2",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -3131,15 +3135,21 @@
                     "GCTCAGGA"
                 ],
                 "blocktype": "barcodeList",
-                "blockname": "sb"
+                "blockname": "sb",
+                "keepblock": false
             },
             {
                 "maxerrors": 0,
                 "blockfunction": "UMI",
                 "length": 8,
                 "blocktype": "randomBarcode",
-                "blockname": "umi"
+                "blockname": "umi",
+                "keepblock": false
             }
         ]
-    }
+    },
+    "barcode_struct_r2": {
+        "keep_nonbarcode": true,
+        "blocks":[]
+    }   
 }

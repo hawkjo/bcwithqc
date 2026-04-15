@@ -13,7 +13,8 @@
                     "GGCGACTCA"
                 ],
                 "blocktype": "barcodeList",
-                "blockname": "cb1"
+                "blockname": "cb1",
+                "keepblock": false
             },
             {
                 "maxerrors": 1,
@@ -22,14 +23,16 @@
                     "GGGTCAGTACGTACGAGTCCC"
                 ],
                 "blocktype": "constantRegion",
-                "blockname": "con1"
+                "blockname": "con1",
+                "keepblock": true
             },
             {
                 "maxerrors": 0,
                 "blockfunction": "UMI",
                 "length": 6,
                 "blocktype": "randomBarcode",
-                "blockname": "umi"
+                "blockname": "umi",
+                "keepblock": false
             }
         ]
     }
