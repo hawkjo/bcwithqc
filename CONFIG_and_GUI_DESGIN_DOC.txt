@@ -87,3 +87,13 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
         "blocks":[]
     }  
 }
+
+## Changes made by Lukas
+Changes I made to the config files and how it is handled:
+    1. I introduced the following key-value pairs: 
+        1. "unknown_read_orientation": [BOL],
+        2. "single_end_reads": [BOL],
+    2. "barcode_struct_r2" is now required for paired end reads, and must include at least:
+        1. "keep_nonbarcode": [BOL],
+        3. "blocks":[]
+    3. Each block now must contain the key-value pair: "keepblock": [BOL]
