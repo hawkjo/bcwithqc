@@ -307,45 +307,50 @@ def process_fastqs(arguments):
 
 
 def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
-    '''
-    This function deletes/moves all files and subdirectories in output_dir, 
-    EXCEPT the final output defined in paths_to_keep. Currently:
-    raw_reads_bc_matrix
-    raw_umis_bc_matrix
-    with_bc_umi.sorted.bam
-    with_bc_umi.sorted.bam.bai
-    QC_metrics.tsv
+    """
+    Delete or move all files/subdirectories in output_dir except the final outputs.
 
-    If the final output is updated, this needs to updated as well! 
-    '''
-    
+    Final outputs currently preserved:
+    - raw_reads_bc_matrix
+    - raw_umis_bc_matrix
+    - with_bc_umi.sorted.bam
+    - with_bc_umi.sorted.bam.bai
+    - QC_metrics/   (contains QC_metrics.tsv and QC_metrics_stacked_barplot.png)
+
+    If the final outputs are updated, this function must be updated as well!
+    """
+
     output_dir = arguments.output_dir
     intermediary_dir = os.path.join(output_dir, "intermediary_files")
+
+    qc_dir = os.path.join(output_dir, "QC_metrics")
 
     # Define paths to keep
     paths_to_keep = {
         star_w_bc_umi_sorted_fpath,
-        star_w_bc_umi_sorted_fpath + '.bai',
-        os.path.join(output_dir, 'raw_reads_bc_matrix'),
-        os.path.join(output_dir, 'raw_umis_bc_matrix'),
-        os.path.join(output_dir, 'QC_metrics.tsv')
+        star_w_bc_umi_sorted_fpath + ".bai",
+        os.path.join(output_dir, "raw_reads_bc_matrix"),
+        os.path.join(output_dir, "raw_umis_bc_matrix"),
+        qc_dir,
     }
 
-    # List all items in output_dir
+    # List all top-level items in output_dir
     all_items = [os.path.join(output_dir, item) for item in os.listdir(output_dir)]
 
     if not arguments.keep_intermediary_files:
-        log.info('Deleting intermediary files...')
+        log.info("Deleting intermediary files...")
         for item in all_items:
             # Skip if item is in the keep list
             if item in paths_to_keep:
                 continue
+
             if os.path.isfile(item):
                 os.remove(item)
             elif os.path.isdir(item):
                 shutil.rmtree(item)
+
     else:
-        log.info('Preserving intermediary files in: %s', intermediary_dir)
+        log.info("Preserving intermediary files in: %s", intermediary_dir)
         os.makedirs(intermediary_dir, exist_ok=True)
 
         for item in all_items:
@@ -752,11 +757,14 @@ def handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_co
 
 def generate_qc_metrics(arguments, read_qcs):
     """
-    Generate a TSV file with barcode QC metrics.
+    Generate a TSV file with barcode QC metrics in a QC_metrics subdirectory.
     """
     log.info(f"Collected {len(read_qcs):,d} read QC entries")
 
-    output_file = os.path.join(arguments.output_dir, "QC_metrics.tsv")
+    qc_dir = os.path.join(arguments.output_dir, "QC_metrics")
+    os.makedirs(qc_dir, exist_ok=True)
+
+    output_file = os.path.join(qc_dir, "QC_metrics.tsv")
     status_columns = ["exact", "corrected", "ambiguous", "no_match"]
 
     r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
@@ -846,9 +854,6 @@ def generate_qc_metrics(arguments, read_qcs):
 
     log.info(f"Wrote QC metrics to: {output_file}")
 
-import os
-import matplotlib.pyplot as plt
-
 
 def make_stacked_barplot(arguments):
     """
@@ -860,15 +865,20 @@ def make_stacked_barplot(arguments):
     Grey        = no_match
 
     One bar per barcode block.
+    Y-axis is shown as percentage.
+    Output is written to the QC_metrics subdirectory.
     """
-    input_file = os.path.join(arguments.output_dir, "QC_metrics.tsv")
-    output_file = os.path.join(arguments.output_dir, "QC_metrics_stacked_barplot.png")
+    qc_dir = os.path.join(arguments.output_dir, "QC_metrics")
+    os.makedirs(qc_dir, exist_ok=True)
+
+    input_file = os.path.join(qc_dir, "QC_metrics.tsv")
+    output_file = os.path.join(qc_dir, "QC_metrics_stacked_barplot.png")
 
     labels = []
-    exact_vals = []
-    corrected_vals = []
-    ambiguous_vals = []
-    no_match_vals = []
+    exact_pct = []
+    corrected_pct = []
+    ambiguous_pct = []
+    no_match_pct = []
 
     in_summary = False
     with open(input_file, "r") as fh:
@@ -884,42 +894,56 @@ def make_stacked_barplot(arguments):
                 continue
 
             read_label, blockname, exact, corrected, ambiguous, no_match, total = line.split("\t")
+
+            exact = int(exact)
+            corrected = int(corrected)
+            ambiguous = int(ambiguous)
+            no_match = int(no_match)
+            total = int(total)
+
             labels.append(f"{read_label}_{blockname}")
-            exact_vals.append(int(exact))
-            corrected_vals.append(int(corrected))
-            ambiguous_vals.append(int(ambiguous))
-            no_match_vals.append(int(no_match))
+
+            if total > 0:
+                exact_pct.append(100 * exact / total)
+                corrected_pct.append(100 * corrected / total)
+                ambiguous_pct.append(100 * ambiguous / total)
+                no_match_pct.append(100 * no_match / total)
+            else:
+                exact_pct.append(0)
+                corrected_pct.append(0)
+                ambiguous_pct.append(0)
+                no_match_pct.append(0)
 
     fig, ax = plt.subplots(figsize=(8, 5))
-
     x = range(len(labels))
 
-    ax.bar(x, exact_vals, label="exact", color="darkgreen")
+    ax.bar(x, exact_pct, label="exact", color="darkgreen")
     ax.bar(
         x,
-        corrected_vals,
-        bottom=exact_vals,
+        corrected_pct,
+        bottom=exact_pct,
         label="corrected",
         color="lightgreen",
     )
     ax.bar(
         x,
-        ambiguous_vals,
-        bottom=[e + c for e, c in zip(exact_vals, corrected_vals)],
+        ambiguous_pct,
+        bottom=[e + c for e, c in zip(exact_pct, corrected_pct)],
         label="ambiguous",
         color="orange",
     )
     ax.bar(
         x,
-        no_match_vals,
-        bottom=[e + c + a for e, c, a in zip(exact_vals, corrected_vals, ambiguous_vals)],
+        no_match_pct,
+        bottom=[e + c + a for e, c, a in zip(exact_pct, corrected_pct, ambiguous_pct)],
         label="no_match",
         color="grey",
     )
 
     ax.set_xticks(list(x))
     ax.set_xticklabels(labels, rotation=45, ha="right")
-    ax.set_ylabel("Read count")
+    ax.set_ylabel("Reads (%)")
+    ax.set_ylim(0, 100)
     ax.set_title("QC metrics per barcode block")
     ax.legend()
 
