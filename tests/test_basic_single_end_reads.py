@@ -57,35 +57,41 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
         os.makedirs(output_dir, exist_ok=True)
         context = nullcontext(output_dir)
 
-    config_to_use = config
-
-    # We need to edit the cDNA config, and change keep_nonbarcode:false to true, for single end reads, otherwise everything is discarded.  
-    if sample_type == "cDNA":
-        with open(config, "r") as fh:
-            cfg = json.load(fh)
-
-        cfg["barcode_struct_r1"]["keep_nonbarcode"] = True
-
-        temp_config = os.path.join(output_dir, "temp_cDNA_single_end_config.json")
-        with open(temp_config, "w") as fh:
-            json.dump(cfg, fh, indent=4)
-
-        config_to_use = temp_config
-
     with context as output_dir:
-        command = [
-            "python", "-m", "bcwithqc", "count",
-            input_dir,
-            f"--STAR-ref-dir={star_index}",
-            f"--config={config_to_use}",
-            f"--output-dir={output_dir}",
-            "--threads=1",
-            "--keep-intermediary",
-            "--single-end-reads",
-            "-vvv",
-        ]
-
+        config_to_use = config
+        temp_config = None
+        
+        # We need to edit the cDNA config, and change keep_nonbarcode:false to true, for single end reads, otherwise everything is discarded.
         try:
+            if sample_type == "cDNA":
+                with open(config, "r") as fh:
+                    cfg = json.load(fh)
+
+                cfg["barcode_struct_r1"]["keep_nonbarcode"] = True
+
+                with tempfile.NamedTemporaryFile(
+                    mode="w",
+                    suffix=".json",
+                    prefix="temp_cDNA_single_end_config_",
+                    delete=False,
+                ) as tf:
+                    json.dump(cfg, tf, indent=4)
+                    temp_config = tf.name
+
+                config_to_use = temp_config
+
+            command = [
+                "python", "-m", "bcwithqc", "count",
+                input_dir,
+                f"--STAR-ref-dir={star_index}",
+                f"--config={config_to_use}",
+                f"--output-dir={output_dir}",
+                "--threads=1",
+                "--keep-intermediary",
+                "--single-end-reads",
+                "-vvv",
+            ]
+
             result = subprocess.run(
                 command,
                 check=True,
@@ -96,11 +102,21 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
             )
             print(result.stdout)
             print(result.stderr)
+            print(f"Output dir: {output_dir}")
+
         except subprocess.CalledProcessError as e:
             sys.stderr.write("Subprocess failed:\n")
             sys.stderr.write(f"Return code: {e.returncode}\n")
             sys.stderr.write(f"Output dir: {output_dir}\n")
+            sys.stderr.write(f"Command: {' '.join(command)}\n")
             sys.stderr.write(f"STDOUT:\n{e.stdout}\n")
             sys.stderr.write(f"STDERR:\n{e.stderr}\n")
             sys.stderr.flush()
             raise
+
+        finally:
+            if temp_config is not None:
+                try:
+                    os.remove(temp_config)
+                except FileNotFoundError:
+                    pass
