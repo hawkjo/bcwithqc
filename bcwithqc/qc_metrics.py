@@ -26,7 +26,12 @@ def get_qc_paths(arguments):
         "qc_dir": qc_dir,
         "bcs_tsv": os.path.join(qc_dir, "QC_metrics_bcs.tsv"),
         "bcs_summary_tsv": os.path.join(qc_dir, "QC_metrics_bcs_summary.tsv"),
+        "reads_tsv": os.path.join(qc_dir, "QC_metrics_reads.tsv"),
+        "reads_summary_tsv": os.path.join(qc_dir, "QC_metrics_reads_summary.tsv"),
         "blocks_plot": os.path.join(qc_dir, "QC_stacked_barplot_blocks.png"),
+        "reads_plot": os.path.join(qc_dir, "QC_metrics_reads_stacked_barplot.png"),
+        "no_match_reads_fq": os.path.join(qc_dir, "no_match_reads.fq"),
+        "ambiguous_reads_fq": os.path.join(qc_dir, "ambiguous_reads.fq"),
     }
 
 def get_config_metadata(arguments, read_key):
@@ -125,6 +130,66 @@ def parse_conflicts(conflicts):
             whitelist_candidates.append(entry)
 
     return whitelist_candidates, metadata_entries
+
+def collapse_read_status(statuses):
+    if "no_match" in statuses:
+        return "no_match"
+    if "ambiguous" in statuses:
+        return "ambiguous"
+    if "corrected" in statuses:
+        return "corrected"
+    return "exact"
+
+def iter_read_qc_rows(arguments, read_qcs):
+    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
+    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
+
+    if arguments.single_end_reads:
+        for read_idx, read_qc in enumerate(read_qcs, start=1):
+            for block_idx, (raw_bc, decoded_bc, status, conflict_bcs) in enumerate(
+                zip(
+                    read_qc["raw_bcs"],
+                    read_qc["decoded_bcs"],
+                    read_qc["statuses"],
+                    read_qc["conflict_bcs"],
+                )
+            ):
+                meta = r1_meta[block_idx]
+                yield {
+                    "read_index": read_idx,
+                    "read_label": meta["read_label"],
+                    "block_index": block_idx,
+                    "blockname": meta["blockname"],
+                    "raw_bc": raw_bc,
+                    "decoded_bc": decoded_bc if decoded_bc is not None else "",
+                    "status": status,
+                    "conflict_bcs": ";".join(conflict_bcs) if conflict_bcs else "",
+                }
+    else:
+        for read_idx, read_qc_pair in enumerate(read_qcs, start=1):
+            for read_member_idx, read_qc in enumerate(read_qc_pair):
+                if read_qc is None:
+                    continue
+                meta_list = r1_meta if read_member_idx == 0 else r2_meta
+                for block_idx, (raw_bc, decoded_bc, status, conflict_bcs) in enumerate(
+                    zip(
+                        read_qc["raw_bcs"],
+                        read_qc["decoded_bcs"],
+                        read_qc["statuses"],
+                        read_qc["conflict_bcs"],
+                    )
+                ):
+                    meta = meta_list[block_idx]
+                    yield {
+                        "read_index": read_idx,
+                        "read_label": meta["read_label"],
+                        "block_index": block_idx,
+                        "blockname": meta["blockname"],
+                        "raw_bc": raw_bc,
+                        "decoded_bc": decoded_bc if decoded_bc is not None else "",
+                        "status": status,
+                        "conflict_bcs": ";".join(conflict_bcs) if conflict_bcs else "",
+                    }
 
 def generate_qc_metrics(arguments, read_qcs):
     """
@@ -225,6 +290,113 @@ def generate_qc_metrics(arguments, read_qcs):
     log.info(f"Wrote barcode-level QC metrics to: {output_file_bcs}")
     log.info(f"Wrote block summary QC metrics to: {output_file_summary}")
 
+def generate_qc_metrics_reads(arguments, read_qcs):
+    """
+    Generate read-level QC outputs in output_dir/QC_metrics.
+
+    Outputs:
+    - QC_metrics_reads.tsv
+      One row per read (single-end) or read pair (paired-end), with:
+        read_index, read_label, status, blockname_1, blockstatus_1, blockname_2, blockstatus_2, ...
+
+    - QC_metrics_reads_summary.tsv
+      One row per collapsed read-level status:
+        status, count
+
+    Uses collapse_read_status(statuses) to assign one final status per read/read-pair.
+    """
+    paths = get_qc_paths(arguments)
+    output_reads = paths["reads_tsv"]
+    output_summary = paths["reads_summary_tsv"]
+
+    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
+    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
+
+    read_rows = []
+    summary_statuses = []
+
+    if arguments.single_end_reads:
+        max_blocks = len(r1_meta)
+
+        for read_idx, read_qc in enumerate(read_qcs, start=1):
+            block_entries = []
+            statuses = []
+
+            for block_idx, status in enumerate(read_qc["statuses"]):
+                blockname = r1_meta[block_idx]["blockname"]
+                block_entries.extend([blockname, status])
+                statuses.append(status)
+
+            collapsed_status = collapse_read_status(statuses)
+            summary_statuses.append(collapsed_status)
+
+            read_rows.append({
+                "read_index": read_idx,
+                "read_label": "R1",
+                "status": collapsed_status,
+                "block_entries": block_entries,
+            })
+
+    else:
+        max_blocks = len(r1_meta) + len(r2_meta)
+
+        for read_idx, read_qc_pair in enumerate(read_qcs, start=1):
+            block_entries = []
+            statuses = []
+
+            for read_member_idx, read_qc in enumerate(read_qc_pair):
+                if read_qc is None:
+                    continue
+
+                meta_list = r1_meta if read_member_idx == 0 else r2_meta
+
+                for block_idx, status in enumerate(read_qc["statuses"]):
+                    read_label = meta_list[block_idx]["read_label"]
+                    blockname = meta_list[block_idx]["blockname"]
+                    full_blockname = f"{read_label}_{blockname}"
+
+                    block_entries.extend([full_blockname, status])
+                    statuses.append(status)
+
+            collapsed_status = collapse_read_status(statuses)
+            summary_statuses.append(collapsed_status)
+
+            read_rows.append({
+                "read_index": read_idx,
+                "read_label": "R1_R2",
+                "status": collapsed_status,
+                "block_entries": block_entries,
+            })
+
+    header = ["read_index", "read_label", "status"]
+    for i in range(1, max_blocks + 1):
+        header.extend([f"block_name_{i}", f"block_status_{i}"])
+
+    with open(output_reads, "w", newline="") as out_fh:
+        writer = csv.writer(out_fh, delimiter="\t")
+        writer.writerow(header)
+
+        for row in read_rows:
+            padded_entries = list(row["block_entries"])
+            while len(padded_entries) < 2 * max_blocks:
+                padded_entries.extend(["", ""])
+
+            writer.writerow([
+                row["read_index"],
+                row["read_label"],
+                row["status"],
+                *padded_entries,
+            ])
+
+    status_counts = Counter(summary_statuses)
+    with open(output_summary, "w", newline="") as out_fh:
+        writer = csv.writer(out_fh, delimiter="\t")
+        writer.writerow(["status", "count"])
+        for status in ["exact", "corrected", "ambiguous", "no_match"]:
+            writer.writerow([status, status_counts.get(status, 0)])
+
+    log.info(f"Wrote read-level QC metrics to: {output_reads}")
+    log.info(f"Wrote read-level QC summary to: {output_summary}")
 
 def make_stacked_barplot_blocks(arguments):
     """
@@ -444,3 +616,58 @@ def make_stacked_barplots_bcs(arguments):
         plt.close(fig)
 
         log.info(f"Wrote barcode-level stacked barplot to: {output_file}")
+
+def make_stacked_barplot_reads(arguments):
+    paths = get_qc_paths(arguments)
+    summary_fpath = paths["reads_summary_tsv"]
+    out_fpath = paths["reads_plot"]
+
+    status_order = ["exact", "corrected", "ambiguous", "no_match"]
+    counts = {status: 0 for status in status_order}
+
+    with open(summary_fpath, "r", newline="") as fh:
+        reader = csv.DictReader(fh, delimiter="\t")
+        for row in reader:
+            status = row["status"]
+            count = int(row["count"])
+            if status in counts:
+                counts[status] = count
+
+    total = sum(counts.values())
+
+    if total > 0:
+        percentages = {status: 100 * counts[status] / total for status in status_order}
+    else:
+        percentages = {status: 0 for status in status_order}
+
+    bottom = 0
+    fig, ax = plt.subplots(figsize=(4, 6))
+
+    color_map = {
+        "exact": "darkgreen",
+        "corrected": "lightgreen",
+        "ambiguous": "orange",
+        "no_match": "grey",
+    }
+
+    for status in status_order:
+        value = percentages[status]
+        ax.bar(
+            ["all_reads"],
+            [value],
+            bottom=bottom,
+            color=color_map[status],
+            label=status
+        )
+        bottom += value
+
+    ax.set_ylabel("Reads (%)")
+    ax.set_ylim(0, 100)
+    ax.set_title("QC metrics across all reads")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(out_fpath, dpi=300)
+    plt.close(fig)
+
+    log.info(f"Wrote read-level stacked barplot to: {out_fpath}")
