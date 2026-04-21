@@ -1,53 +1,73 @@
+import csv
 import logging
 import os
-import pysam
-import itertools
-import numpy as np
+from collections import Counter, defaultdict
+
 import matplotlib.pyplot as plt
-import pickle
-import subprocess
-import shutil
-import scipy
-import csv
-import warnings
-from . import misc
-from Bio import SeqIO
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-from collections import defaultdict, Counter
-from contextlib import nullcontext
-from glob import glob
-from multiprocessing import Pool
-from threading import BoundedSemaphore
-from scipy.sparse import lil_matrix
-from .bc_aligner import CustomBCAligner
-from .umi import get_umi_maps_from_bam_file
+import numpy as np
+import pysam
 
 
 log = logging.getLogger(__name__)
 pysam.set_verbosity(0)
 
-def generate_qc_metrics(arguments, read_qcs):
-    """
-    Generate a TSV file with barcode QC metrics in a QC_metrics subdirectory.
-    """
-    log.info(f"Collected {len(read_qcs):,d} read QC entries")
 
+def sanitize_name(name):
+    """Replace spaces so labels are safe for downstream filenames and plotting."""
+    return str(name).replace(" ", "_")
+
+
+def get_qc_paths(arguments):
+    """Return the QC output directory and standard output file paths."""
     qc_dir = os.path.join(arguments.output_dir, "QC_metrics")
     os.makedirs(qc_dir, exist_ok=True)
 
-    output_file = os.path.join(qc_dir, "QC_metrics.tsv")
+    return {
+        "qc_dir": qc_dir,
+        "bcs_tsv": os.path.join(qc_dir, "QC_metrics_bcs.tsv"),
+        "bcs_summary_tsv": os.path.join(qc_dir, "QC_metrics_bcs_summary.tsv"),
+        "blocks_plot": os.path.join(qc_dir, "QC_stacked_barplot_blocks.png"),
+    }
+
+
+def get_sanitized_metadata(arguments, config_key):
+    """Load metadata and sanitize read/block labels once at the source."""
+    metadata = get_config_metadata(arguments, config_key)
+    sanitized = []
+
+    for meta in metadata:
+        meta_copy = dict(meta)
+        meta_copy["read_label"] = sanitize_name(meta_copy["read_label"])
+        meta_copy["blockname"] = sanitize_name(meta_copy["blockname"])
+        sanitized.append(meta_copy)
+
+    return sanitized
+
+
+def generate_qc_metrics(arguments, read_qcs):
+    """
+    Generate barcode-level and block-level QC TSV files in output_dir/QC_metrics.
+
+    Outputs:
+    - QC_metrics_bcs.tsv
+    - QC_metrics_bcs_summary.tsv
+    """
+    log.info(f"Collected {len(read_qcs):,d} read QC entries")
+
+    paths = get_qc_paths(arguments)
+    output_file_bcs = paths["bcs_tsv"]
+    output_file_summary = paths["bcs_summary_tsv"]
     status_columns = ["exact", "corrected", "ambiguous", "no_match"]
 
-    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
-    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
+    r1_meta = get_sanitized_metadata(arguments, "barcode_struct_r1")
+    r2_meta = get_sanitized_metadata(arguments, "barcode_struct_r2")
 
     counts = defaultdict(Counter)
     conflict_counts = defaultdict(Counter)
     block_summary_counts = defaultdict(Counter)
     row_keys = []
 
-    # Pre-initialize whitelist rows plus special rows
+    # Pre-initialize whitelist rows plus special rows.
     for meta in r1_meta + r2_meta:
         for whitelist_bc in meta["whitelist"]:
             key = (meta["read_label"], meta["blockname"], whitelist_bc)
@@ -72,9 +92,9 @@ def generate_qc_metrics(arguments, read_qcs):
                 meta_list = r1_meta if read_idx == 0 else r2_meta
                 handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_counts)
 
-    with open(output_file, "w") as out_fh:
-        header = ["read", "blockname", "barcode"] + status_columns + ["total", "conflict_bcs"]
-        out_fh.write("\t".join(header) + "\n")
+    with open(output_file_bcs, "w", newline="") as out_fh:
+        writer = csv.writer(out_fh, delimiter="\t")
+        writer.writerow(["read", "blockname", "barcode", *status_columns, "total", "conflict_bcs"])
 
         for key in row_keys:
             read_label, blockname, barcode_label = key
@@ -84,25 +104,23 @@ def generate_qc_metrics(arguments, read_qcs):
             conflict_counter = conflict_counts.get(key, Counter())
             if conflict_counter:
                 conflict_summary = ";".join(
-                    f"{entry}:{count}"
-                    for entry, count in sorted(conflict_counter.items())
+                    f"{entry}:{count}" for entry, count in sorted(conflict_counter.items())
                 )
             else:
                 conflict_summary = ""
 
-            row = [
+            writer.writerow([
                 read_label,
                 blockname,
                 barcode_label,
-                *[str(status_counter.get(status, 0)) for status in status_columns],
-                str(total),
+                *[status_counter.get(status, 0) for status in status_columns],
+                total,
                 conflict_summary,
-            ]
-            out_fh.write("\t".join(row) + "\n")
+            ])
 
-        out_fh.write("\n")
-        out_fh.write("SUMMARY\n")
-        out_fh.write("read\tblockname\texact\tcorrected\tambiguous\tno_match\ttotal\n")
+    with open(output_file_summary, "w", newline="") as out_fh:
+        writer = csv.writer(out_fh, delimiter="\t")
+        writer.writerow(["read", "blockname", *status_columns, "total"])
 
         for read_label, blockname in sorted(block_summary_counts.keys()):
             summary = block_summary_counts[(read_label, blockname)]
@@ -112,39 +130,34 @@ def generate_qc_metrics(arguments, read_qcs):
             no_match = summary.get("no_match", 0)
             total = exact + corrected + ambiguous + no_match
 
-            out_fh.write(
-                "\t".join([
-                    read_label,
-                    blockname,
-                    str(exact),
-                    str(corrected),
-                    str(ambiguous),
-                    str(no_match),
-                    str(total),
-                ]) + "\n"
-            )
+            writer.writerow([
+                read_label,
+                blockname,
+                exact,
+                corrected,
+                ambiguous,
+                no_match,
+                total,
+            ])
 
-    log.info(f"Wrote QC metrics to: {output_file}")
+    log.info(f"Wrote barcode-level QC metrics to: {output_file_bcs}")
+    log.info(f"Wrote block summary QC metrics to: {output_file_summary}")
 
 
 def make_stacked_barplot_blocks(arguments):
     """
-    Read the SUMMARY section of QC_metrics.tsv and create a stacked barplot.
+    Read QC_metrics_bcs_summary.tsv and create one stacked barplot with one bar per block.
 
     Dark green  = exact
     Light green = corrected
     Orange      = ambiguous
     Grey        = no_match
 
-    One bar per barcode block.
     Y-axis is shown as percentage.
-    Output is written to the QC_metrics subdirectory.
     """
-    qc_dir = os.path.join(arguments.output_dir, "QC_metrics")
-    os.makedirs(qc_dir, exist_ok=True)
-
-    input_file = os.path.join(qc_dir, "QC_metrics.tsv")
-    output_file = os.path.join(qc_dir, "QC_stacked_barplot_blocks.png")
+    paths = get_qc_paths(arguments)
+    input_file = paths["bcs_summary_tsv"]
+    output_file = paths["blocks_plot"]
 
     labels = []
     exact_pct = []
@@ -152,26 +165,17 @@ def make_stacked_barplot_blocks(arguments):
     ambiguous_pct = []
     no_match_pct = []
 
-    in_summary = False
-    with open(input_file, "r") as fh:
-        for line in fh:
-            line = line.rstrip("\n")
+    with open(input_file, "r", newline="") as fh:
+        reader = csv.DictReader(fh, delimiter="\t")
 
-            if line == "SUMMARY":
-                in_summary = True
-                next(fh)  # skip summary header
-                continue
-
-            if not in_summary or not line:
-                continue
-
-            read_label, blockname, exact, corrected, ambiguous, no_match, total = line.split("\t")
-
-            exact = int(exact)
-            corrected = int(corrected)
-            ambiguous = int(ambiguous)
-            no_match = int(no_match)
-            total = int(total)
+        for row in reader:
+            read_label = row["read"]
+            blockname = row["blockname"]
+            exact = int(row["exact"])
+            corrected = int(row["corrected"])
+            ambiguous = int(row["ambiguous"])
+            no_match = int(row["no_match"])
+            total = int(row["total"])
 
             labels.append(f"{read_label}_{blockname}")
 
@@ -187,16 +191,10 @@ def make_stacked_barplot_blocks(arguments):
                 no_match_pct.append(0)
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    x = range(len(labels))
+    x = np.arange(len(labels))
 
     ax.bar(x, exact_pct, label="exact", color="darkgreen")
-    ax.bar(
-        x,
-        corrected_pct,
-        bottom=exact_pct,
-        label="corrected",
-        color="lightgreen",
-    )
+    ax.bar(x, corrected_pct, bottom=exact_pct, label="corrected", color="lightgreen")
     ax.bar(
         x,
         ambiguous_pct,
@@ -212,7 +210,7 @@ def make_stacked_barplot_blocks(arguments):
         color="grey",
     )
 
-    ax.set_xticks(list(x))
+    ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha="right")
     ax.set_ylabel("Reads (%)")
     ax.set_ylim(0, 100)
@@ -223,13 +221,14 @@ def make_stacked_barplot_blocks(arguments):
     plt.savefig(output_file, dpi=300)
     plt.close(fig)
 
-    log.info(f"Wrote stacked barplot to: {output_file}")
+    log.info(f"Wrote block-level stacked barplot to: {output_file}")
+
 
 def make_stacked_barplots_bcs(arguments):
     """
     Create one stacked barplot per barcode block, with one bar per whitelist barcode.
 
-    Each bar corresponds to one barcode from the 'barcode' column in QC_metrics.tsv.
+    Each bar corresponds to one barcode from QC_metrics_bcs.tsv.
     Bars are sorted by descending exact count.
 
     Colors:
@@ -237,18 +236,11 @@ def make_stacked_barplots_bcs(arguments):
     - light green: corrected
     - orange: ambiguous
     - grey: no_match
-
-    Plots are written into the QC_metrics subdirectory.
     """
+    paths = get_qc_paths(arguments)
+    qc_dir = paths["qc_dir"]
+    input_file = paths["bcs_tsv"]
 
-    import csv
-
-    qc_dir = os.path.join(arguments.output_dir, "QC_metrics")
-    os.makedirs(qc_dir, exist_ok=True)
-
-    input_file = os.path.join(qc_dir, "QC_metrics.tsv")
-
-    # Collect rows grouped by (read, blockname)
     grouped_rows = defaultdict(list)
 
     with open(input_file, "r", newline="") as fh:
@@ -257,7 +249,7 @@ def make_stacked_barplots_bcs(arguments):
         for row in reader:
             barcode = row["barcode"]
 
-            # Skip special rows
+            # Skip special rows from plotting.
             if barcode in {"__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"}:
                 continue
 
@@ -276,7 +268,6 @@ def make_stacked_barplots_bcs(arguments):
         if not rows:
             continue
 
-        # Sort by highest exact count to lowest
         rows = sorted(rows, key=lambda x: x["exact"], reverse=True)
 
         labels = [r["barcode"] for r in rows]
@@ -287,13 +278,11 @@ def make_stacked_barplots_bcs(arguments):
 
         n_bcs = len(labels)
 
-        # Scale figure width mildly with barcode number, but cap it
         fig_width = min(max(8, n_bcs * 0.12), 30)
         fig, ax = plt.subplots(figsize=(fig_width, 5))
 
         x = np.arange(n_bcs)
 
-        # width=1.0 removes whitespace between bars
         ax.bar(x, exact_vals, width=1.0, label="exact", color="darkgreen")
         ax.bar(
             x,
@@ -325,33 +314,24 @@ def make_stacked_barplots_bcs(arguments):
         ax.set_title(f"QC metrics for {read_label}_{blockname}")
         ax.legend()
 
-        # Adaptive x tick label handling
         if n_bcs <= 20:
-            fontsize = 10
             ax.set_xticks(x)
-            ax.set_xticklabels(labels, rotation=90, fontsize=fontsize)
+            ax.set_xticklabels(labels, rotation=90, fontsize=10)
         elif n_bcs <= 50:
-            fontsize = 8
             ax.set_xticks(x)
-            ax.set_xticklabels(labels, rotation=90, fontsize=fontsize)
+            ax.set_xticklabels(labels, rotation=90, fontsize=8)
         elif n_bcs <= 100:
-            fontsize = 6
             ax.set_xticks(x)
-            ax.set_xticklabels(labels, rotation=90, fontsize=fontsize)
+            ax.set_xticklabels(labels, rotation=90, fontsize=6)
         else:
-            # Too many labels -> hide them
             ax.set_xticks([])
             ax.set_xlabel("Barcodes")
 
-        # Remove margins so bars touch plot edges nicely
         ax.margins(x=0)
 
         plt.tight_layout()
 
-        output_file = os.path.join(
-            qc_dir,
-            f"QC_metrics_barcodes_{read_label}_{blockname}.png"
-        )
+        output_file = os.path.join(qc_dir, f"QC_metrics_barcodes_{read_label}_{blockname}.png")
         plt.savefig(output_file, dpi=300)
         plt.close(fig)
 
