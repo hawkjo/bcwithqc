@@ -29,6 +29,23 @@ def get_qc_paths(arguments):
         "blocks_plot": os.path.join(qc_dir, "QC_stacked_barplot_blocks.png"),
     }
 
+def get_config_metadata(arguments, read_key):
+    """
+    Get metadata for barcodeList blocks from barcode_struct_r1 or barcode_struct_r2.
+    Returns an empty list if the requested barcode_struct is not present.
+    """
+    if read_key not in arguments.config:
+        return []
+
+    metas = []
+    for block in arguments.config[read_key]["blocks"]:
+        if block["blocktype"] == "barcodeList":
+            metas.append({
+                "read_label": "R1" if read_key == "barcode_struct_r1" else "R2",
+                "blockname": block.get("blockname", f"{read_key}_barcode"),
+                "whitelist": block["sequence"],
+            })
+    return metas
 
 def get_sanitized_metadata(arguments, config_key):
     """Load metadata and sanitize read/block labels once at the source."""
@@ -43,6 +60,71 @@ def get_sanitized_metadata(arguments, config_key):
 
     return sanitized
 
+
+def handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_counts):
+    """
+    Update counts and conflict_counts for one read_qc entry.
+    Also update one unique summary count per block.
+    """
+    for block_idx, (decoded_bc, status, conflicts) in enumerate(
+        zip(read_qc["decoded_bcs"], read_qc["statuses"], read_qc["conflict_bcs"])
+    ):
+        meta = meta_list[block_idx]
+        read_label = meta["read_label"]
+        blockname = meta["blockname"]
+
+        summary_key = (read_label, blockname)
+
+        if status in ("exact", "corrected") and decoded_bc is not None:
+            key = (read_label, blockname, decoded_bc)
+            counts[key][status] += 1
+            block_summary_counts[summary_key][status] += 1
+            continue
+
+        if status == "no_match":
+            key = (read_label, blockname, "__NO_MATCH__")
+            counts[key]["no_match"] += 1
+            block_summary_counts[summary_key]["no_match"] += 1
+            continue
+
+        if status == "ambiguous":
+            block_summary_counts[summary_key]["ambiguous"] += 1
+
+            candidate_bcs, conflict_meta = parse_conflicts(conflicts)
+
+            if candidate_bcs:
+                for candidate_bc in candidate_bcs:
+                    key = (read_label, blockname, candidate_bc)
+                    counts[key]["ambiguous"] += 1
+
+                    other_candidates = [bc for bc in candidate_bcs if bc != candidate_bc]
+                    for other_bc in other_candidates:
+                        conflict_counts[key][other_bc] += 1
+            else:
+                key = (read_label, blockname, "__AMBIGUOUS_UNIDENTIFIED__")
+                counts[key]["ambiguous"] += 1
+                for entry in conflict_meta:
+                    conflict_counts[key][entry] += 1
+
+def parse_conflicts(conflicts):
+    """
+    Split conflict information into parsable whitelist candidates and metadata entries.
+    Metadata entries are things like "conflict_level:...".
+    """
+    if not conflicts:
+        return [], []
+
+    whitelist_candidates = []
+    metadata_entries = []
+
+    for entry in conflicts:
+        # Since I implemented correct conflicting bcs returning, this should always jumpt to else. 
+        if isinstance(entry, str) and entry.startswith("conflict_level:"):
+            metadata_entries.append(entry)
+        else:
+            whitelist_candidates.append(entry)
+
+    return whitelist_candidates, metadata_entries
 
 def generate_qc_metrics(arguments, read_qcs):
     """

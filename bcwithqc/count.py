@@ -302,7 +302,8 @@ def process_fastqs(arguments):
     count_matrix(arguments, star_w_bc_umi_sorted_fpath)
 
     handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath)
-    qc_metrics.make_stacked_barplot(arguments)
+    qc_metrics.make_stacked_barplot_blocks(arguments)
+    qc_metrics.make_stacked_barplots_bcs(arguments)
 
     log.info('Done')
 
@@ -670,94 +671,7 @@ def tag_type_from_val(val):
 def output_rec_name_and_tags(rec, tags, out_fh):
     out_fh.write('\t'.join([f'{str(rec.id)}'] + [f'{tag}:{tag_type_from_val(val)}:{val}' for tag, val in tags]) + '\n')
 
-def get_config_metadata(arguments, read_key):
-    """
-    Get metadata for barcodeList blocks from barcode_struct_r1 or barcode_struct_r2.
-    Returns an empty list if the requested barcode_struct is not present.
-    """
-    if read_key not in arguments.config:
-        return []
 
-    metas = []
-    for block in arguments.config[read_key]["blocks"]:
-        if block["blocktype"] == "barcodeList":
-            metas.append({
-                "read_label": "R1" if read_key == "barcode_struct_r1" else "R2",
-                "blockname": block.get("blockname", f"{read_key}_barcode"),
-                "whitelist": block["sequence"],
-            })
-    return metas
-
-
-def parse_conflicts(conflicts):
-    """
-    Split conflict information into parsable whitelist candidates and metadata entries.
-    Metadata entries are things like "conflict_level:...".
-    """
-    if not conflicts:
-        return [], []
-
-    whitelist_candidates = []
-    metadata_entries = []
-
-    for entry in conflicts:
-        # Since I implemented correct conflicting bcs returning, this should always jumpt to else. 
-        if isinstance(entry, str) and entry.startswith("conflict_level:"):
-            metadata_entries.append(entry)
-        else:
-            whitelist_candidates.append(entry)
-
-    return whitelist_candidates, metadata_entries
-
-
-def handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_counts):
-    """
-    Update counts and conflict_counts for one read_qc entry.
-    Also update one unique summary count per block.
-    """
-    for block_idx, (decoded_bc, status, conflicts) in enumerate(
-        zip(read_qc["decoded_bcs"], read_qc["statuses"], read_qc["conflict_bcs"])
-    ):
-        meta = meta_list[block_idx]
-        read_label = meta["read_label"]
-        blockname = meta["blockname"]
-
-        summary_key = (read_label, blockname)
-
-        if status in ("exact", "corrected") and decoded_bc is not None:
-            key = (read_label, blockname, decoded_bc)
-            counts[key][status] += 1
-            block_summary_counts[summary_key][status] += 1
-            continue
-
-        if status == "no_match":
-            key = (read_label, blockname, "__NO_MATCH__")
-            counts[key]["no_match"] += 1
-            block_summary_counts[summary_key]["no_match"] += 1
-            continue
-
-        if status == "ambiguous":
-            block_summary_counts[summary_key]["ambiguous"] += 1
-
-            candidate_bcs, conflict_meta = parse_conflicts(conflicts)
-
-            if candidate_bcs:
-                for candidate_bc in candidate_bcs:
-                    key = (read_label, blockname, candidate_bc)
-                    counts[key]["ambiguous"] += 1
-
-                    other_candidates = [bc for bc in candidate_bcs if bc != candidate_bc]
-                    for other_bc in other_candidates:
-                        conflict_counts[key][other_bc] += 1
-            else:
-                key = (read_label, blockname, "__AMBIGUOUS_UNIDENTIFIED__")
-                counts[key]["ambiguous"] += 1
-                for entry in conflict_meta:
-                    conflict_counts[key][entry] += 1
-
-
-
-    
 def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath, bcs_on_both_reads):
     blocks = [arguments.config["barcode_struct_r1"]["blocks"]]
     keep_nonbarcodes = [arguments.config["barcode_struct_r1"]["keep_nonbarcode"]]
