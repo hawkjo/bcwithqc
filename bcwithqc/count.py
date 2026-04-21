@@ -259,6 +259,30 @@ def process_fastqs(arguments):
             star_out_dirs = set()
             star_bam_and_tags_fpaths = []
             for R1_fpath, R2_fpath, tags1_fpath, tags2_fpath in paired_align_fqs_and_tags_fpaths:
+                r1_empty = misc.check_if_sans_bc_is_empty(R1_fpath)
+                r2_empty = misc.check_if_sans_bc_is_empty(R2_fpath)
+
+                if r1_empty and r2_empty:
+                    raise ValueError(
+                        "After preprocessing, both paired-end sans_bc FASTQ files contain no alignable sequence. "
+                        "This usually means all sequence content was removed by barcode trimming / keep_nonbarcode settings. "
+                        "No reads remain that STAR can align."
+                    )
+
+                if r1_empty:
+                    warnings.warn(
+                        f"Preprocessed read 1 FASTQ has no alignable sequence left and will be omitted from STAR alignment: {R1_fpath}",
+                        category=UserWarning
+                    )
+                    R1_fpath = None
+
+                if r2_empty:
+                    warnings.warn(
+                        f"Preprocessed read 2 FASTQ has no alignable sequence left and will be omitted from STAR alignment: {R2_fpath}",
+                        category=UserWarning
+                    )
+                    R2_fpath = None
+
                 if R1_fpath:
                     log.info(f'  {R1_fpath}')
                 log.info(f'  {R2_fpath}')
@@ -376,7 +400,7 @@ def run_STAR(arguments, R1_fpath, R2_fpath):
         'STAR',
         f'--runThreadN {arguments.threads}',
         f'--genomeDir {arguments.star_ref_dir}',
-        f'--readFilesIn {R1_fpath if R1_fpath else ""} {R2_fpath}',
+        f'--readFilesIn {R1_fpath if R1_fpath else ""} {R2_fpath if R2_fpath else ""}',
         f'--outFileNamePrefix {out_prefix}',
         '--outFilterMultimapNmax 1',
         '--outSAMtype BAM Unsorted',

@@ -464,3 +464,54 @@ def get_bam_read_by_name_single_end(name, bam, index, threads=1):
 
     if needclose:
         bam.close()
+
+def check_if_sans_bc_is_empty(fpath):
+    """
+    Return True if the sans-bc FASTQ has no alignable sequence left.
+
+    True when:
+    - file path is None
+    - file does not exist
+    - file has no records
+    - any record has a different length of sequence and quality string
+    - any record has an empty sequence and empty quality
+
+    Logs the reason when returning True, or logs that the file passed the check.
+    """
+    if fpath is None:
+        log.warning("sans-bc FASTQ check failed: file path is None")
+        return True
+
+    if not os.path.exists(fpath):
+        log.warning("sans-bc FASTQ check failed: file does not exist: %s", fpath)
+        return True
+
+    saw_record = False
+    for i, rec in enumerate(SeqIO.parse(gzip_friendly_open(fpath), "fastq"), start=1):
+        saw_record = True
+        seq = str(rec.seq)
+        quals = rec.letter_annotations.get("phred_quality", [])
+
+        if len(seq) != len(quals):
+            log.warning(
+                "sans-bc FASTQ check failed for %s: record %d (%s) has sequence length %d but quality length %d",
+                fpath, i, rec.id, len(seq), len(quals)
+            )
+            return True
+
+        if len(seq) == 0 and len(quals) == 0:
+            log.info(
+                "sans-bc FASTQ check failed for %s: empty record found at record %d (%s) with sequence length %d",
+                fpath, i, rec.id, len(seq)
+            )
+            return True
+
+    if not saw_record:
+        log.warning("sans-bc FASTQ check failed: file has no records: %s", fpath)
+        return True
+
+    log.warning(
+        "sans-bc FASTQ check passed: all records in %s are clean.",
+        fpath
+    )
+    return False

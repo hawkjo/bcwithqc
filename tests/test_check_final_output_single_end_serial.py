@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import pytest
 import gzip
+import json
+import tempfile
 from filecmp import cmp
 
 # Get the directory this test script lives in
@@ -12,7 +14,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Paths to input directories (relative to script)
 gDNA_input = os.path.join(SCRIPT_DIR, "../examples/gDNA_fastqs_single_end")
-cDNA_input = os.path.join(SCRIPT_DIR, "../examples/cDNA_fastqs_single_end")  # Adjust if different
+cDNA_input = os.path.join(SCRIPT_DIR, "../examples/cDNA_fastqs_single_end")
 
 star_index = os.path.join(SCRIPT_DIR, "../examples/SDR001_REF_index")
 gDNA_config = os.path.join(SCRIPT_DIR, "../examples/gDNA.json")
@@ -100,19 +102,40 @@ def sample_dirs(request):
             )
         env["PATH"] = f"{star_dir_local}:{env.get('PATH', '')}"
 
-    command = [
-        "python", "-m", "bcwithqc", "count",
-        input_dir,
-        f"--STAR-ref-dir={star_index}",
-        f"--config={config}",
-        f"--output-dir={tmp_dir}",
-        "--threads=1",
-        "--keep-intermediary",
-        "--single-end-reads",
-        "-vvv"
-    ]
+    config_to_use = config
+    temp_config = None
 
     try:
+        # For cDNA single-end, keep_nonbarcode must be True or everything is discarded
+        if sample_type == "cDNA":
+            with open(config, "r") as fh:
+                cfg = json.load(fh)
+
+            cfg["barcode_struct_r1"]["keep_nonbarcode"] = True
+
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".json",
+                prefix="temp_cDNA_single_end_config_",
+                delete=False,
+            ) as tf:
+                json.dump(cfg, tf, indent=4)
+                temp_config = tf.name
+
+            config_to_use = temp_config
+
+        command = [
+            "python", "-m", "bcwithqc", "count",
+            input_dir,
+            f"--STAR-ref-dir={star_index}",
+            f"--config={config_to_use}",
+            f"--output-dir={tmp_dir}",
+            "--threads=1",
+            "--keep-intermediary",
+            "--single-end-reads",
+            "-vvv"
+        ]
+
         result = subprocess.run(
             command,
             check=True,
@@ -124,12 +147,13 @@ def sample_dirs(request):
         print(result.stdout)
         print(result.stderr)
 
-        # Important: wait until filesystem activity has really stopped
         wait_for_tree_to_stabilize(tmp_dir, stable_checks=3, interval=1.0, timeout=60)
 
     except subprocess.CalledProcessError as e:
         sys.stderr.write("Subprocess failed:\n")
         sys.stderr.write(f"Return code: {e.returncode}\n")
+        sys.stderr.write(f"Output dir: {tmp_dir}\n")
+        sys.stderr.write(f"Command: {' '.join(command)}\n")
         sys.stderr.write(f"STDOUT:\n{e.stdout}\n")
         sys.stderr.write(f"STDERR:\n{e.stderr}\n")
         sys.stderr.flush()
@@ -139,6 +163,12 @@ def sample_dirs(request):
 
     if os.path.exists(tmp_dir):
         rmtree_with_retries(tmp_dir)
+
+    if temp_config is not None:
+        try:
+            os.remove(temp_config)
+        except FileNotFoundError:
+            pass
 
 
 def test_file_existence(sample_dirs):
@@ -168,6 +198,7 @@ def test_file_existence(sample_dirs):
         f"Extra in tmp: {extra_in_tmp}"
     )
 
+
 def test_file_contents(sample_dirs):
     sample_type, tmp_dir, expected_dir = sample_dirs
 
@@ -175,7 +206,6 @@ def test_file_contents(sample_dirs):
         return 'intermediary_files' in path.split(os.sep)
 
     def compare_gzipped_text_files(file1, file2):
-        import gzip
         with gzip.open(file1, 'rt', encoding='utf-8') as f1, gzip.open(file2, 'rt', encoding='utf-8') as f2:
             return f1.read() == f2.read()
 
