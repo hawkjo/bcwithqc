@@ -168,7 +168,6 @@ def test_file_existence(sample_dirs):
         f"Extra in tmp: {extra_in_tmp}"
     )
 
-
 def test_file_contents(sample_dirs):
     sample_type, tmp_dir, expected_dir = sample_dirs
 

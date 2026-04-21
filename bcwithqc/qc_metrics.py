@@ -310,7 +310,7 @@ def make_stacked_barplots_bcs(arguments):
     """
     Create one stacked barplot per barcode block, with one bar per whitelist barcode.
 
-    Each bar corresponds to one barcode from QC_metrics_bcs.tsv.
+    Each bar corresponds to one barcode from the 'barcode' column in QC_metrics_bcs.tsv.
     Bars are sorted by descending exact count.
 
     Colors:
@@ -318,10 +318,16 @@ def make_stacked_barplots_bcs(arguments):
     - light green: corrected
     - orange: ambiguous
     - grey: no_match
+
+    The x-axis always shows barcode rank (1..n).
+    Barcode names are only shown when there are few enough to remain readable.
+
+    Plots are written into the QC_metrics subdirectory.
     """
-    paths = get_qc_paths(arguments)
-    qc_dir = paths["qc_dir"]
-    input_file = paths["bcs_tsv"]
+    qc_dir = os.path.join(arguments.output_dir, "QC_metrics")
+    os.makedirs(qc_dir, exist_ok=True)
+
+    input_file = os.path.join(qc_dir, "QC_metrics_bcs.tsv")
 
     grouped_rows = defaultdict(list)
 
@@ -331,7 +337,7 @@ def make_stacked_barplots_bcs(arguments):
         for row in reader:
             barcode = row["barcode"]
 
-            # Skip special rows from plotting.
+            # Skip special rows
             if barcode in {"__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"}:
                 continue
 
@@ -350,6 +356,7 @@ def make_stacked_barplots_bcs(arguments):
         if not rows:
             continue
 
+        # Sort by highest exact count to lowest
         rows = sorted(rows, key=lambda x: x["exact"], reverse=True)
 
         labels = [r["barcode"] for r in rows]
@@ -393,27 +400,46 @@ def make_stacked_barplots_bcs(arguments):
 
         ax.set_xlim(-0.5, n_bcs - 0.5)
         ax.set_ylabel("Read count")
+        ax.set_xlabel("Barcode rank (sorted by exact count)")
         ax.set_title(f"QC metrics for {read_label}_{blockname}")
         ax.legend()
-
-        if n_bcs <= 20:
-            ax.set_xticks(x)
-            ax.set_xticklabels(labels, rotation=90, fontsize=10)
-        elif n_bcs <= 50:
-            ax.set_xticks(x)
-            ax.set_xticklabels(labels, rotation=90, fontsize=8)
-        elif n_bcs <= 100:
-            ax.set_xticks(x)
-            ax.set_xticklabels(labels, rotation=90, fontsize=6)
-        else:
-            ax.set_xticks([])
-            ax.set_xlabel("Barcodes")
-
         ax.margins(x=0)
+
+        # Always show rank values on x-axis
+        if n_bcs <= 20:
+            rank_step = 1
+        elif n_bcs <= 100:
+            rank_step = 5
+        elif n_bcs <= 500:
+            rank_step = 25
+        else:
+            rank_step = max(1, n_bcs // 20)
+
+        rank_ticks = np.arange(0, n_bcs, rank_step)
+        rank_ticklabels = [str(i + 1) for i in rank_ticks]
+        ax.set_xticks(rank_ticks)
+        ax.set_xticklabels(rank_ticklabels)
+
+        # Optional barcode names as a second/top axis only when readable
+        if n_bcs <= 20:
+            ax_top = ax.twiny()
+            ax_top.set_xlim(ax.get_xlim())
+            ax_top.set_xticks(x)
+            ax_top.set_xticklabels(labels, rotation=90, fontsize=10)
+            ax_top.set_xlabel("Barcode")
+        elif n_bcs <= 50:
+            ax_top = ax.twiny()
+            ax_top.set_xlim(ax.get_xlim())
+            ax_top.set_xticks(x)
+            ax_top.set_xticklabels(labels, rotation=90, fontsize=8)
+            ax_top.set_xlabel("Barcode")
 
         plt.tight_layout()
 
-        output_file = os.path.join(qc_dir, f"QC_metrics_barcodes_{read_label}_{blockname}.png")
+        output_file = os.path.join(
+            qc_dir,
+            f"QC_metrics_barcodes_{read_label}_{blockname}.png"
+        )
         plt.savefig(output_file, dpi=300)
         plt.close(fig)
 

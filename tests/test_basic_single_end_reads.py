@@ -20,7 +20,7 @@ cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA.json")
 
 # Set to True to use a temp directory that is deleted automatically.
 # Set to False to write into SCRIPT_DIR/<sample_type>_single_end and keep the output.
-USE_TEMP_OUTPUT = False
+USE_TEMP_OUTPUT = True
 
 
 @pytest.mark.parametrize(
