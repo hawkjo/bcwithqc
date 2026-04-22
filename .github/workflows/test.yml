@@ -1,0 +1,56 @@
+name: Run Python Tests
+
+on:
+  push:
+    branches: [ main, lukas-branch ]
+  pull_request:
+    branches: [ main, lukas-branch ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11.4'
+
+      - name: Debug current directory and files
+        run: |
+          pwd
+          ls -lR
+          
+      - name: Install bcwithqc in editable mode
+        run: |
+          pip install -e .
+
+      - name: Install STAR aligner
+        run: |
+          wget https://github.com/alexdobin/STAR/archive/2.7.10b.tar.gz
+          tar -xzf 2.7.10b.tar.gz
+          cd STAR-2.7.10b/source
+          make STAR
+          echo "$PWD" >> $GITHUB_PATH  # Add STAR binary directory to PATH
+
+      - name: Enable core dumps
+        run: ulimit -c unlimited
+
+
+      - name: Verify STAR installation
+        run: |
+          which STAR
+          STAR --version || true  # Show version, don't fail if it doesn't exist
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install git+https://github.com/lukaslink/freebarcodes.git@master
+
+      - name: Run tests
+        run: |
+          pytest --capture=tee-sys -vv

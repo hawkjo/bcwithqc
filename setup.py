@@ -1,5 +1,5 @@
 from setuptools import setup
-from distutils.extension import Extension
+from setuptools import Extension
 
 import codecs
 import os.path
@@ -30,13 +30,14 @@ if __name__ == '__main__':
         },
         include_package_data=True,
         install_requires=[
-            "numpy>=1.20.0,<2.0.0",
+            "numpy>=2.0.0",
             "docopt-ng",
-            "biopython==1.79",
+            "biopython==1.79", # > 1.79 breaks non mainline features
             "matplotlib>=3.5.2",
             "pysam>=0.23.0",
             "scipy>=1.10.1",
-            "freebarcodes>=3.1.0",
+            "freebarcodes @ git+https://github.com/lukaslink/freebarcodes.git@master",
+            "regex>=2024.11.6",
             "pywfa @ git+https://github.com/kcleal/pywfa.git@master"
             ],
         zip_safe=False,
@@ -46,7 +47,7 @@ if __name__ == '__main__':
         url='https://github.com/hawkjo/bcwithqc',
         download_url='',
         keywords=['DNA', 'NGS', 'bioinformatics', 'TAP-Seq', 'multiomics'],
-        python_requires='>=3.0',
+        python_requires='>=3.0,<3.12',
         classifiers=['Development Status :: 3 - Alpha',
                      'Natural Language :: English',
                      'Intended Audience :: Science/Research',
