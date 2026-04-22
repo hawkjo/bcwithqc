@@ -1,7 +1,0 @@
-read	blockname	barcode	exact	corrected	ambiguous	no_match	total	conflict_bcs
-R1	cb1	CCTTAACAT	2	2	0	0	4	
-R1	cb1	AGCGTAGAA	3	0	0	0	3	
-R1	cb1	TATAGGTGT	1	0	0	0	1	
-R1	cb1	GGCGACTCA	0	0	0	0	0	
-R1	cb1	__NO_MATCH__	0	0	0	2	2	
-R1	cb1	__AMBIGUOUS_UNIDENTIFIED__	0	0	0	0	0	

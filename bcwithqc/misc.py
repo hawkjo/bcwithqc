@@ -3,7 +3,6 @@ import gzip
 import glob
 import logging
 import pysam
-import regex
 import json
 from itertools import product
 from bisect import bisect
@@ -65,11 +64,7 @@ def write_stats_file_from_cntr(cntr, fpath):
             out.write(s + '\n')
 
 def config_has_barcodes_on_both_reads(config):
-    return (
-        "barcode_struct_r2" in config
-        and "blocks" in config["barcode_struct_r2"]
-        and len(config["barcode_struct_r2"]["blocks"]) > 0
-    )
+    return "barcode_struct_r2" in config and "blocks" in config["barcode_struct_r2"] and len(config["barcode_struct_r2"]["blocks"])
 
 def find_paired_fastqs_in_dir(fq_dir):
     raw_prompts = ['*.fastq', '*.fq', '*.txt']
@@ -86,15 +81,6 @@ def find_paired_fastqs_in_dir(fq_dir):
         paired_names.append((fpath1, fpath2))
     return paired_names
 
-def find_single_fastqs_in_dir(fq_dir):
-    raw_prompts = ['*.fastq', '*.fq', '*.txt']
-    glob_prompts = [os.path.join(fq_dir, prompt) for rp in raw_prompts for prompt in [rp, f'{rp}.gz']]
-    fq_fpaths = [fpath for glob_prompt in glob_prompts for fpath in glob.glob(glob_prompt)]
-    fq_fpaths.sort()
-
-    if not fq_fpaths:
-        raise FileNotFoundError(f'No FASTQ files found in directory: {fq_dir}')
-    return fq_fpaths
 
 def names_pair(s1, s2):
     """
@@ -127,148 +113,6 @@ def file_prefix_from_fpath(fpath):
     bname = os.path.splitext(fpath[:-3] if fpath.endswith('.gz') else fpath)[0]
     return os.path.basename(bname)
 
-def fix_unknown_read_orientation(arguments, paired_fpaths):
-    '''
-    If unkown_read_orientation is clicked in the gui
-    this function checks each readpair, and asigns it to one of the two 
-    files, based on which barcode_struct it matches better. 
-    '''
-    output_dir = arguments.output_dir
-    os.makedirs(output_dir, exist_ok=True)   
-    
-    r1_blocks = arguments.config.get("barcode_struct_r1", {}).get("blocks", [])
-    r2_blocks = arguments.config.get("barcode_struct_r2", {}).get("blocks", [])
-
-    new_paired_fpaths = []
-
-    for r1_path, r2_path in paired_fpaths:
-        basename_r1 = os.path.basename(r1_path).replace(".txt.gz", "")
-        basename_r2 = os.path.basename(r2_path).replace(".txt.gz", "")
-        out_r1 = os.path.join(output_dir, f"oriented_{basename_r1}.txt.gz")
-        out_r2 = os.path.join(output_dir, f"oriented_{basename_r2}.txt.gz")
-        new_paired_fpaths.append((out_r1, out_r2))
-
-        with gzip_friendly_open(r1_path) as f1, gzip_friendly_open(r2_path) as f2, \
-             gzip.open(out_r1, 'wt') as out1, gzip.open(out_r2, 'wt') as out2:
-            
-            iterations = 0
-            for read1, read2 in read_fastq_pair(f1, f2):
-                # THIS IS ONLY HERE FOR DEBUGGING
-                iterations += 1
-                if iterations > 20010:  # Stop and raise error if we exceed allowed iterations
-                    raise ValueError(f"Exceeded the maximum allowed number of reads. Processed {iterations} reads, expected at most {max_iterations}.")
-                # END OF DEBUGGING CODE
-                seq1 = read1[1].strip()
-                seq2 = read2[1].strip()
-
-                score1_r1 = get_read_pattern_match_score(seq1, r1_blocks)
-                score2_r1 = get_read_pattern_match_score(seq2, r1_blocks)
-                score1_r2 = get_read_pattern_match_score(seq1, r2_blocks)
-                score2_r2 = get_read_pattern_match_score(seq2, r2_blocks)
-
-                # Assign based on which fits better to r1 vs r2 pattern
-                if score1_r1 + score2_r2 >= score1_r2 + score2_r1:
-                    write_fastq(out1, read1)
-                    write_fastq(out2, read2)
-                else:
-                    write_fastq(out1, read2)
-                    write_fastq(out2, read1)
-
-    arguments.config["unknown_read_orientation"] = False
-    return new_paired_fpaths
-
-def get_read_pattern_match_score(seq, blocks):
-    '''
-    This function calculates the match score for a sequence (one read),
-    and the blocks from the config file, which define that sequence. 
-    Only the "constantRegion" blocks are taking into consideration. 
-    The score is calculated by using fuzy regex pattern matching for each block-sequence on the original sequence,
-    and adding the length of the block-sequence to the score if it was found on the read.
-    The number of allowed insertions/deletions/missmatches is 1. 
-    1: runtime 14s, incorrect reads: 6 gDNA, 22 cDNA (out of 20.000).
-    2: runtime 24s, incorrect reads: 6 gDNA, 19 cDNA (out of 20.000).
-    3: runtime 53s, incorrect reads: 5 gDNA, 18 cDNA (out of 20.000).
-    4: runtime 130s, incorrect reads: 226 gDNA, 19 cDNA (out of 20.000).
-    '''
-    scores = []
-
-    for block in blocks:
-        if block.get("blocktype") != "constantRegion":
-            continue
-
-        sequences = block.get("sequence", [])
-        maxerror = block.get("maxerrors", 1)
-        best_block_score = 0.0
-
-        # Iterate through each sequence in the block
-        for sequence in sequences:
-            sequence_len = len(sequence)
-            max_mismatches = maxerror  # Allow n mismatch
-            best_local_score = 0.0
-
-            # Create a regex pattern with 1 allowed mismatch (use . for 1 character mismatch)
-            regex_pattern = f"({sequence}){{e<={max_mismatches}}}" 
-    
-            # Use regex to search for the pattern with a maximum of 1 mismatch
-            if regex.search(regex_pattern, seq):
-                best_local_score = sequence_len  # Assign score as length of block sequence
-            
-            # Keep track of the best score for the block
-            best_block_score = max(best_block_score, best_local_score)
-
-        # Append the best score for the block
-        scores.append(best_block_score)
-
-    if not scores:
-        return 0.0
-
-    # Final score: sum the scores (and average them)
-    # I tested averaging and it doesn't really affect accuracy.  
-    final_score = sum(scores)# / len(scores)
-    return final_score
-
-def read_fastq_pair(handle1, handle2):
-    """
-    Yield validated paired-end FASTQ records (4 lines each),
-    skipping and logging malformed ones.
-    """
-    processed = 0
-    skipped = 0
-
-    while True:
-        lines1 = [handle1.readline() for _ in range(4)]
-        lines2 = [handle2.readline() for _ in range(4)]
-
-        if not lines1[0] or not lines2[0]:
-            break  # End of one of the files
-
-        if any(l == '' for l in lines1 + lines2):
-            skipped += 1
-            continue
-
-        if not (lines1[0].startswith('@') and lines1[2].startswith('+')):
-            skipped += 1
-            continue
-
-        if not (lines2[0].startswith('@') and lines2[2].startswith('+')):
-            skipped += 1
-            continue
-
-        if len(lines1[1].strip()) != len(lines1[3].strip()):
-            skipped += 1
-            continue
-
-        if len(lines2[1].strip()) != len(lines2[3].strip()):
-            skipped += 1
-            continue
-
-        yield lines1, lines2
-        processed += 1
-
-    log.info(f"Finished reading FASTQ pairs: {processed} valid reads processed, {skipped} skipped bad or malformed reads.")
-
-def write_fastq(handle, record):
-    handle.writelines(record)
 
 def determine_bc_and_paired_fastq_idxs(paired_fpaths, blocks, unknown_read_orientation):
     """Returns (bc_fq_idx, paired_fq_idx), based on first pair of fastqs"""
@@ -391,33 +235,6 @@ def sort_and_index_readname_bam(input_bam_fpath, output_bam_fpath, namepairidx, 
 
     return i_readnames, i_offsets, namepairidx
 
-def sort_and_index_readname_bam_single_end(input_bam_fpath, output_bam_fpath, threads=1):
-    pysam.sort("-N", "-@", str(threads), "-o", output_bam_fpath, input_bam_fpath)
-    with pysam.AlignmentFile(output_bam_fpath, "r", threads=threads) as bam:
-        i_readnames = []
-        i_offsets = []
-        lastblock = -1
-        offset = bam.tell()
-        lastreadname = ""
-        lastreadoffset = offset
-
-        for read in bam.fetch(until_eof=True):
-            block = offset >> 16
-            readname = read.query_name
-
-            if block > lastblock:
-                i_readnames.append(readname)
-                i_offsets.append(offset if readname != lastreadname else lastreadoffset)
-                lastblock = block
-
-            if readname != lastreadname:
-                lastreadname = readname
-                lastreadoffset = offset
-
-            offset = bam.tell()
-
-    return i_readnames, i_offsets
-
 def get_bam_read_by_name(name, bam, index, threads=1):
     i_readnames, i_offsets, namepairidx = index
     name = make_paired_name(name, namepairidx)
@@ -440,78 +257,3 @@ def get_bam_read_by_name(name, bam, index, threads=1):
             break
     if needclose:
         bam.close()
-        
-def get_bam_read_by_name_single_end(name, bam, index, threads=1):
-    i_readnames, i_offsets = index
-
-    idx = bisect(i_readnames, name) - 1
-    needclose = False
-    if not isinstance(bam, pysam.AlignmentFile):
-        bam = pysam.AlignmentFile(bam, "r", threads=threads)
-        needclose = True
-
-    bam.seek(i_offsets[idx])
-    startblock = None
-    haveread = False
-    for bread in bam.fetch(until_eof=True):
-        if startblock is None:
-            startblock = bam.tell() >> 16
-        if bread.query_name == name:
-            haveread = True
-            yield bread
-        elif haveread or bam.tell() >> 16 > startblock:
-            break
-
-    if needclose:
-        bam.close()
-
-def check_if_sans_bc_is_empty(fpath):
-    """
-    Return True if the sans-bc FASTQ has no alignable sequence left.
-
-    True when:
-    - file path is None
-    - file does not exist
-    - file has no records
-    - any record has a different length of sequence and quality string
-    - any record has an empty sequence and empty quality
-
-    Logs the reason when returning True, or logs that the file passed the check.
-    """
-    if fpath is None:
-        log.warning("sans-bc FASTQ check failed: file path is None")
-        return True
-
-    if not os.path.exists(fpath):
-        log.warning("sans-bc FASTQ check failed: file does not exist: %s", fpath)
-        return True
-
-    saw_record = False
-    for i, rec in enumerate(SeqIO.parse(gzip_friendly_open(fpath), "fastq"), start=1):
-        saw_record = True
-        seq = str(rec.seq)
-        quals = rec.letter_annotations.get("phred_quality", [])
-
-        if len(seq) != len(quals):
-            log.warning(
-                "sans-bc FASTQ check failed for %s: record %d (%s) has sequence length %d but quality length %d",
-                fpath, i, rec.id, len(seq), len(quals)
-            )
-            return True
-
-        if len(seq) == 0 and len(quals) == 0:
-            log.info(
-                "sans-bc FASTQ check failed for %s: empty record found at record %d (%s) with sequence length %d",
-                fpath, i, rec.id, len(seq)
-            )
-            return True
-
-    if not saw_record:
-        log.warning("sans-bc FASTQ check failed: file has no records: %s", fpath)
-        return True
-
-    log.warning(
-        "sans-bc FASTQ check passed: all records in %s are clean.",
-        fpath
-    )
-    return False
