@@ -97,3 +97,4 @@ Changes I made to the config files and how it is handled:
         1. "keep_nonbarcode": [BOL],
         3. "blocks":[]
     3. Each block now must contain the key-value pair: "keepblock": [BOL]
+    4.
