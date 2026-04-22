@@ -67,7 +67,7 @@ class CustomBCAligner:
         pieces = [str(seq[:obs_ends[0]])] + [str(seq[obs_ends[i]:obs_ends[i+1]]) for i in range(len(obs_ends)-1)]
         return (norm_score, pieces) if not return_seq else (norm_score, pieces, seq)
 
-    def find_norm_score_pieces_and_end_pos(self, seq: Seq, return_seq=False):
+    def find_norm_score_pieces_and_boundaries(self, seq: Seq, return_seq=False):
         norm_score, obs_ends, seq = self.find_norm_score_and_key_boundaries(seq)
         pieces = [str(seq[:obs_ends[0]])] + [str(seq[obs_ends[i]:obs_ends[i+1]]) for i in range(len(obs_ends)-1)]
-        return (norm_score, pieces, obs_ends[-1]) if not return_seq else (norm_score, pieces, obs_ends[-1], seq)
+        return (norm_score, pieces, obs_ends) if not return_seq else (norm_score, pieces, obs_ends, seq)

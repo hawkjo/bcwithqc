@@ -1,0 +1,7 @@
+read	blockname	barcode	exact	corrected	ambiguous	no_match	total	conflict_bcs
+R1	cb1	CCTTAACAT	1026	865	0	0	1891	
+R1	cb1	AGCGTAGAA	1048	821	0	0	1869	
+R1	cb1	TATAGGTGT	953	843	0	0	1796	
+R1	cb1	GGCGACTCA	941	830	0	0	1771	
+R1	cb1	__NO_MATCH__	0	0	0	2673	2673	
+R1	cb1	__AMBIGUOUS_UNIDENTIFIED__	0	0	0	0	0	
