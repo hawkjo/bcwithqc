@@ -22,30 +22,38 @@ This typically takes a few minutes.
 
 The basic usage for bcwithqc can be displayed at any time via `bcwithqc --help`:
 ```
-  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+Usage:
+  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
-  bcwithqc simulate_reads   --config=<> --fastq-prefix=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [-v | -vv | -vvv]
+  bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--single-end-reads] [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
 
 Options:
-  --STAR-ref-dir=<>:              Path to directory with STAR index.
-  --STAR-output=<>:               Path to STAR output file (BAM/SAM). Can be repeated multiple times,
-                                    in which case the order must correspond to the lexicographic ordering
-                                    of paired FASTQ files in <fastq_dir>.
-  --config=<>:                    Path to JSON configuration.
-  --output-dir=<>:                Path to output directory [default: .].
-  --threads=<>:                   Number of threads [default: 1].
-  -v:                             Verbose output.
-  --fastq-prefix=<>:              Prefix for output FASTQ files.
-  --nreads=<>:                    Number of reads to simulate.
-  --unique-umis=<>:               Fraction of all reads that have unique UMIs [default: 0.5].
-  --seed=<>:                      Random seed [default: 42].
-  --error-probability=<>:         Probability of an error occurring [default: 0.1]. Set to a negative number to
-                                    always introduce as many errors as allowed by the configuration.
-  --substitution-probability=<>:  Probability of generating a substitution as opposed to an indel [default: 0.7].
-  --insertion-probability=<>:     Probability of generating an insertion as opposed to a deletion when generating an indel [default: 0.5].
-  -h --help                       Show this screen.
-  --version                       Show version.
+  --STAR-ref-dir=<>:                  Path to directory with STAR index.
+  --STAR-output=<>:                   Path to STAR output file (BAM/SAM). Can be repeated multiple times,
+                                        in which case the order must correspond to the lexicographic ordering
+                                        of paired FASTQ files in <fastq_dir>.
+  --config=<>:                        Path to JSON configuration.
+  --output-dir=<>:                    Path to output directory [default: .].
+  --threads=<>:                       Number of threads [default: 1].
+  -v:                                 Verbose output.
+  --nreads=<>:                        Number of reads to simulate.
+  --unique-umis=<>:                   Fraction of all reads that have unique UMIs [default: 0.5].
+  --seed=<>:                          Random seed [default: 42].
+  --error-probability=<>:             Probability of an error occurring per base [default: 0.1]. Set to a negative number to
+                                        always introduce as many errors as allowed by the configuration.
+  --substitution-probability=<>:      Probability of generating a substitution as opposed to an indel [default: 0.7].
+  --insertion-probability=<>:         Probability of generating an insertion as opposed to a deletion when generating an indel [default: 0.5].
+  --random-tail-length=<>:            Mean (poisson) length of the random nucleotide tail [default: 20]. Set to a negative number to
+                                        generate reads without tails.
+  --keep-intermediary                 Keep intermediary files instead of deleting them [default: False].
+  --single-end-reads:                 Option for using single end instead of paired end reads [default: False]. 
+  --block-type-for-STAR-alignment=<>: What part of the read is retained for STAR alignment [default: undefined_only] 
+                                        'undefined_only' concatenates all parts that are not specified in the config.json
+                                        'constant'  concatenates all 'constantRegion' blocktypes and unspecified parts
+                                        'constant_mask' retains 'constantRegion' blocktypes and unspecified parts and replaces the rest with Ns
+  -h --help                           Show this screen.
+  --version                           Show version.
 
 Commands:
   preprocess       Preprocess files such that STAR can be run on the output.
