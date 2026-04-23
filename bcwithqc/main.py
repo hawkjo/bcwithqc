@@ -2,16 +2,14 @@
 bcwithqc: Process sequencing barcodes and UMIs
 
 Usage:
-  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output-dir=<>) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
   bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--single-end-reads] [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
 
 Options:
   --STAR-ref-dir=<>:                  Path to directory with STAR index.
-  --STAR-output=<>:                   Path to STAR output file (BAM/SAM). Can be repeated multiple times,
-                                        in which case the order must correspond to the lexicographic ordering
-                                        of paired FASTQ files in <fastq_dir>.
+  --STAR-output-dir=<>:                   Path to STAR output directory. All (BAM/SAM) files with the suffix "*Aligned.out.bam" will be processed in lexographic order. 
   --config=<>:                        Path to JSON configuration.
   --output-dir=<>:                    Path to output directory [default: .].
   --threads=<>:                       Number of threads [default: 1].

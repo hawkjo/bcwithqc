@@ -67,7 +67,8 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
 
     @property
     def star_output_path(self):
-        return self._arguments['--STAR-output']
+        value = self._arguments['--STAR-output-dir']
+        return False if value is None else value
 
     @property
     def threads(self):

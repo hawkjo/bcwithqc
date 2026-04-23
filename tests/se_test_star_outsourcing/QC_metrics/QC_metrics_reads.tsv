@@ -1,0 +1,11 @@
+read_index	read_label	status	block_name_1	block_status_1
+1	R1	exact	cb1	exact
+2	R1	corrected	cb1	corrected
+3	R1	no_match	cb1	no_match
+4	R1	exact	cb1	exact
+5	R1	corrected	cb1	corrected
+6	R1	no_match	cb1	no_match
+7	R1	exact	cb1	exact
+8	R1	exact	cb1	exact
+9	R1	exact	cb1	exact
+10	R1	exact	cb1	exact
