@@ -218,6 +218,8 @@ def process_fastqs(arguments):
     # Sort, index
     log.info('Writing output to:')
     log.info(f'  {star_w_bc_fpath}')
+    do_single_file_pairing = False
+
     if arguments.single_end_reads:
         if not arguments.star_output_path:
             single_align_fqs_and_tags_fpaths = preprocess_fastqs(arguments)
@@ -240,19 +242,22 @@ def process_fastqs(arguments):
             bam_fpaths = sorted(glob(os.path.join(arguments.star_output_path, "*Aligned.out.bam")))
             tag_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags1_*.txt")))
 
+            if len(bam_fpaths) == 0:
+                raise FileNotFoundError(
+                    f"No STAR BAM files found in STAR output directory: {arguments.star_output_path}"
+                )
+            if len(tag_fpaths) == 0:
+                raise FileNotFoundError(
+                    f"No tag files found in fastq/output directory: {arguments.fastq_dir}"
+                )
+            if len(bam_fpaths) != len(tag_fpaths):
+                raise ValueError(
+                    f"Unequal number of BAM files and rec_names_and_tags files found. \
+                    {len(bam_fpaths)} BAM files found: {bam_fpaths}. \
+                    {len(tag_fpaths)} rec_names_and_tags files found: {tag_fpaths}. "
+                    )
             star_bam_and_tags_fpaths = list(zip(bam_fpaths, tag_fpaths))
 
-        log.info('Adding barcode tags to mapped reads...')
-        template_bam_fpath = star_bam_and_tags_fpaths[0][0]
-        with pysam.AlignmentFile(star_w_bc_fpath, 'wb', template=pysam.AlignmentFile(template_bam_fpath)) as bam_out:
-            for star_out_fpath, tags1_fpath in star_bam_and_tags_fpaths:
-                if arguments.threads == 1 and not arguments.star_output_path:
-                    readsiter = iter(serial_add_tags_to_reads_single_end(tags1_fpath, star_out_fpath))
-                else:
-                    readsiter = iter(parallel_add_tags_to_reads_single_end(tags1_fpath, star_out_fpath, arguments.threads))
-
-                for read in readsiter:
-                    bam_out.write(read)
     else:        
         if not arguments.star_output_path:
             paired_align_fqs_and_tags_fpaths, namepairidxs = preprocess_fastqs(arguments)
@@ -295,23 +300,67 @@ def process_fastqs(arguments):
                 star_bam_and_tags_fpaths.append((star_out_fpath, tags1_fpath, tags2_fpath))
         else:
             log.info(f'Using STAR results from {arguments.star_output_path}')
-            bam_fpath = glob(os.path.join(arguments.star_output_path, "*Aligned.out.bam")).sort()
-            tag_fpaths = glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags_*.txt")).sort()
-            namepairidx_fpaths = glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags_*.pkl")).sort()
-
-            star_bam_and_tags_fpaths = list(zip(bam_fpath, tag_fpaths[::2], tag_fpaths[1::2]))
+            bam_fpaths = sorted(glob(os.path.join(arguments.star_output_path, "*Aligned.out.bam")))
+            tag_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags*.txt")))
+            namepairidx_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags*.pkl")))
+            
+            if len(bam_fpaths) == 0:
+                raise FileNotFoundError(
+                    f"No STAR BAM files found in STAR output directory: {arguments.star_output_path}"
+                )
+            if len(tag_fpaths) == 0:
+                raise FileNotFoundError(
+                    f"No tag files found in fastq/output directory: {arguments.fastq_dir}"
+                )            
+            if len(bam_fpaths) == len(tag_fpaths):
+                log.info(
+                    "Found equal number of BAM and tag files; treating outsourced STAR input like single-file pairing."
+                )
+                do_single_file_pairing = True
+                star_bam_and_tags_fpaths = list(zip(bam_fpaths, tag_fpaths))
+            elif len(tag_fpaths) == 2 * len(bam_fpaths):
+                log.info(
+                    f"Found {len(bam_fpaths)} BAM file(s) and {len(tag_fpaths)} tag file(s); "
+                    "treating tags as paired entries per BAM."
+                )
+                star_bam_and_tags_fpaths = list(zip(bam_fpaths, tag_fpaths[::2], tag_fpaths[1::2]))
+            else:
+                raise ValueError(
+                    "Mismatch between STAR BAM files and tag files in outsourced paired-end mode. "
+                    f"Found {len(bam_fpaths)} BAM file(s): {bam_fpaths} "
+                    f"and {len(tag_fpaths)} tag file(s): {tag_fpaths}. "
+                    "Expected either:\n"
+                    "  - exactly 1 tag per BAM file (barcodes only on one read direction), or\n"
+                    "  - exactly 2 tag files per BAM (barcodes on both read directions)."
+                )                            
             namepairidxs = [pickle.load(open(fpath, "rb")) for fpath in namepairidx_fpaths]
 
+
+    if arguments.single_end_reads or do_single_file_pairing:
+        log.info('Adding barcode tags to mapped reads... ')
+        template_bam_fpath = star_bam_and_tags_fpaths[0][0]
+        with pysam.AlignmentFile(star_w_bc_fpath, 'wb', template=pysam.AlignmentFile(template_bam_fpath)) as bam_out:
+            for star_out_fpath, tags1_fpath in star_bam_and_tags_fpaths:
+                if arguments.threads == 1:
+                    readsiter = iter(serial_add_tags_to_reads_single_end(tags1_fpath, star_out_fpath))
+                else:
+                    readsiter = iter(parallel_add_tags_to_reads_single_end(tags1_fpath, star_out_fpath, arguments.threads))
+
+                for read in readsiter:
+                    bam_out.write(read)
+    else:
         log.info('Adding barcode tags to mapped reads...')
         template_bam_fpath = star_bam_and_tags_fpaths[0][0]
         with pysam.AlignmentFile(star_w_bc_fpath, 'wb', template=pysam.AlignmentFile(template_bam_fpath)) as bam_out:
             for (star_out_fpath, tags1_fpath, tags2_fpath), namepairidx in zip(star_bam_and_tags_fpaths, namepairidxs):
-                if arguments.threads == 1 and not arguments.star_output_path:
+                if arguments.threads == 1:
                     readsiter = iter(serial_add_tags_to_reads(tags1_fpath, tags2_fpath, star_out_fpath))
                 else:
                     readsiter = iter(parallel_add_tags_to_reads(tags1_fpath, tags2_fpath, star_out_fpath, namepairidx, arguments.threads))
                 for read in readsiter:
                     bam_out.write(read)
+
+
 
     log.info('Sorting bam...')
     pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_sorted_fpath, star_w_bc_fpath)
