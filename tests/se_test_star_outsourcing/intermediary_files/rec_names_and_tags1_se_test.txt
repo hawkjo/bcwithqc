@@ -1,8 +1,0 @@
-read_1:bc1:NoErrors:const:NoErrors:umi:One:1:forward	CB:Z:CCTTAACAT	CR:Z:CCTTAACAT	FL:i:21	UR:Z:AAAAAA
-read_2:bc1:1Sub:const:1Sub:umi:Two:1:forward	CB:Z:CCTTAACAT	CR:Z:GCTTAACAT	FL:i:21	UR:Z:CCCCCC
-read_4:bc1:NoErrors:const:1Ins:umi:Four:1:forward	CB:Z:CCTTAACAT	CR:Z:CCTTAACAT	FL:i:21	UR:Z:TTTTT
-read_5:bc1:1Del:const:NoErrors:umi:Five:1:forward	CB:Z:CCTTAACAT	CR:Z:CCTTACAT	FL:i:21	UR:Z:ATATAT
-read_7:bc2:NoErrors:const:NoErrors:umi:One:1:forward	CB:Z:AGCGTAGAA	CR:Z:AGCGTAGAA	FL:i:21	UR:Z:AAAAAA
-read_8:bc2:NoErrors:const:NoErrors:umi:One:1:forward	CB:Z:AGCGTAGAA	CR:Z:AGCGTAGAA	FL:i:21	UR:Z:AAAAAA
-read_9:bc2:NoErrors:const:NoErrors:umi:Two:1:forward	CB:Z:AGCGTAGAA	CR:Z:AGCGTAGAA	FL:i:21	UR:Z:CCCCCC
-read_10:bc3:NoErrors:const:NoErrors:umi:One:1:forward	CB:Z:TATAGGTGT	CR:Z:TATAGGTGT	FL:i:21	UR:Z:AAAAAA
