@@ -2,9 +2,9 @@ name: Run Python Tests
 
 on:
   push:
-    branches: [ main, lukas-branch ]
+    branches: [ main, reopen-lukas-branch ]
   pull_request:
-    branches: [ main, lukas-branch ]
+    branches: [ main, reopen-lukas-branch ]
 
 jobs:
   test:
