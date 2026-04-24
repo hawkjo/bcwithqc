@@ -18,7 +18,7 @@ se_test_config = os.path.join(SCRIPT_DIR, "../examples/se_test.json")
 star_index = os.path.join(SCRIPT_DIR, "../examples/se_test_genome_index")
 star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
-USE_TEMP_OUTPUT = False
+USE_TEMP_OUTPUT = True
 
 
 def read_tsv_gz_first_col(path):

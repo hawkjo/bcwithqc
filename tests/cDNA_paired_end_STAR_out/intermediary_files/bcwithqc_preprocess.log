@@ -1,0 +1,48 @@
+2026-04-24 12:51:08   {'--STAR-output-dir': None,
+ '--STAR-ref-dir': None,
+ '--block-type-for-STAR-alignment': None,
+ '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/cDNA.json',
+ '--error-probability': '0.1',
+ '--insertion-probability': '0.5',
+ '--keep-intermediary': False,
+ '--nreads': None,
+ '--output-dir': '/home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out',
+ '--random-tail-length': '20',
+ '--seed': '42',
+ '--single-end-reads': False,
+ '--substitution-probability': '0.7',
+ '--threads': '1',
+ '--unique-umis': '0.5',
+ '-v': 3,
+ '<bcwithqc_bam_file>': None,
+ '<fastq_dir>': '/home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs',
+ 'count': False,
+ 'count_matrix': False,
+ 'preprocess': True,
+ 'simulate_reads': False}
+2026-04-24 12:51:08   Writing log to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/bcwithqc_preprocess.log
+2026-04-24 12:51:08   Files to process:
+2026-04-24 12:51:08     /home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs/cDNA_1_sequence.txt.gz
+2026-04-24 12:51:08     /home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs/cDNA_2_sequence.txt.gz
+2026-04-24 12:51:13   Detected barcodes in read1 files
+2026-04-24 12:51:13   Processing files:
+2026-04-24 12:51:13     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs/cDNA_1_sequence.txt.gz
+2026-04-24 12:51:13     paired fastq:  /home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs/cDNA_2_sequence.txt.gz
+2026-04-24 12:51:13     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/sans_bc_cDNA_1_sequence.fq
+2026-04-24 12:51:13     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/sans_bc_cDNA_2_sequence.fq
+2026-04-24 12:51:13     tags file:     /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/rec_names_and_tags1_cDNA_1_sequence.txt
+2026-04-24 12:51:13   Building aligners and barcode decoders
+2026-04-24 12:51:13   Creating converter from 7 to 5
+2026-04-24 12:51:13   Creating converter from 5 to 7
+2026-04-24 12:51:13   Creating converter from 7 to 5
+2026-04-24 12:51:13   Creating converter from 5 to 7
+2026-04-24 12:51:13   Processing first 10,000 for score threshold...
+2026-04-24 12:51:36   Score threshold: 0.46
+2026-04-24 12:51:36   Continuing...
+2026-04-24 12:52:23   20,000 barcode records processed
+2026-04-24 12:52:23   18,986 pairs of records output
+2026-04-24 12:52:23   Collected 20,000 read QC entries
+2026-04-24 12:52:23   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/QC_metrics/QC_metrics_bcs.tsv
+2026-04-24 12:52:23   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/QC_metrics/QC_metrics_bcs_summary.tsv
+2026-04-24 12:52:23   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/QC_metrics/QC_metrics_reads.tsv
+2026-04-24 12:52:23   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end_STAR_out/QC_metrics/QC_metrics_reads_summary.tsv
