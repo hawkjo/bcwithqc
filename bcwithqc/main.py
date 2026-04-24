@@ -51,13 +51,27 @@ def main(**kwargs):
     docopt_args = docopt(__doc__, version=__version__)
     arguments = CommandLineArguments(docopt_args)
 
+    os.makedirs(arguments.output_dir, exist_ok=True)
+
     log = logging.getLogger()
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s   %(message)s", "%Y-%m-%d %H:%M:%S")
-    handler.setFormatter(formatter)
-    log.addHandler(handler)
+    log.handlers.clear()
     log.setLevel(arguments.log_level)
+
+    formatter = logging.Formatter("%(asctime)s   %(message)s", "%Y-%m-%d %H:%M:%S")
+
+    # console output
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    log.addHandler(stream_handler)
+
+    # per-command log file
+    log_fpath = os.path.join(arguments.output_dir, f"bcwithqc_{arguments.command}.log")
+    file_handler = logging.FileHandler(log_fpath, mode="w")
+    file_handler.setFormatter(formatter)
+    log.addHandler(file_handler)
+
     log.debug(docopt_args)
+    log.info(f"Writing log to: {log_fpath}")
 
     commands = {
         'count': process_fastqs,
@@ -66,7 +80,11 @@ def main(**kwargs):
         'simulate_reads': simulate_reads
     }
 
-    commands[arguments.command](arguments)
+    try:
+        commands[arguments.command](arguments)
+    except Exception:
+        log.exception("bcwithqc crashed with an unhandled exception")
+        raise
 
 
 if __name__ == '__main__':
