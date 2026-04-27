@@ -81,6 +81,9 @@ def handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_co
         summary_key = (read_label, blockname)
 
         if status in ("exact", "corrected") and decoded_bc is not None:
+            # If the read failed threshold, change corrected to below_threshold
+            if status == "corrected" and read_qc.get('status') == '__BELOW_THRESHOLD__':
+                status = "below_threshold"
             key = (read_label, blockname, decoded_bc)
             counts[key][status] += 1
             block_summary_counts[summary_key][status] += 1
@@ -156,6 +159,9 @@ def iter_read_qc_rows(arguments, read_qcs):
             ):
                 meta = r1_meta[block_idx]
                 read_name = read_qc.get("read_name", meta["read_label"])
+                final_status = status
+                if read_qc.get('status') == '__BELOW_THRESHOLD__' and status == "corrected":
+                    final_status = "__BELOW_THRESHOLD__"
                 yield {
                     "read_index": read_idx,
                     "read_label": read_name,
@@ -163,7 +169,7 @@ def iter_read_qc_rows(arguments, read_qcs):
                     "blockname": meta["blockname"],
                     "raw_bc": raw_bc,
                     "decoded_bc": decoded_bc if decoded_bc is not None else "",
-                    "status": status,
+                    "status": final_status,
                     "conflict_bcs": ";".join(conflict_bcs) if conflict_bcs else "",
                 }
     else:
@@ -182,6 +188,9 @@ def iter_read_qc_rows(arguments, read_qcs):
                 ):
                     meta = meta_list[block_idx]
                     read_name = read_qc.get("read_name", meta["read_label"])
+                    final_status = status
+                    if read_qc.get('status') == '__BELOW_THRESHOLD__' and status == "corrected":
+                        final_status = "__BELOW_THRESHOLD__"
                     yield {
                         "read_index": read_idx,
                         "read_label": read_name,
@@ -189,7 +198,7 @@ def iter_read_qc_rows(arguments, read_qcs):
                         "blockname": meta["blockname"],
                         "raw_bc": raw_bc,
                         "decoded_bc": decoded_bc if decoded_bc is not None else "",
-                        "status": status,
+                        "status": final_status,
                         "conflict_bcs": ";".join(conflict_bcs) if conflict_bcs else "",
                     }
 def common_read_name(name1, name2):
@@ -233,7 +242,7 @@ def common_read_name_from_qc_pair(read_qc_pair):
         return read_names[0]
 
     return common_read_name(read_names[0], read_names[1])
-    
+
 def generate_qc_metrics(arguments, read_qcs):
     """
     Generate barcode-level and block-level QC TSV files in output_dir/QC_metrics.
@@ -247,7 +256,7 @@ def generate_qc_metrics(arguments, read_qcs):
     paths = get_qc_paths(arguments)
     output_file_bcs = paths["bcs_tsv"]
     output_file_summary = paths["bcs_summary_tsv"]
-    status_columns = ["exact", "corrected", "ambiguous", "no_match"]
+    status_columns = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
 
     r1_meta = get_sanitized_metadata(arguments, "barcode_struct_r1")
     r2_meta = get_sanitized_metadata(arguments, "barcode_struct_r2")
@@ -316,15 +325,17 @@ def generate_qc_metrics(arguments, read_qcs):
             summary = block_summary_counts[(read_label, blockname)]
             exact = summary.get("exact", 0)
             corrected = summary.get("corrected", 0)
+            below_threshold = summary.get("below_threshold", 0)
             ambiguous = summary.get("ambiguous", 0)
             no_match = summary.get("no_match", 0)
-            total = exact + corrected + ambiguous + no_match
+            total = exact + corrected + below_threshold + ambiguous + no_match
 
             writer.writerow([
                 read_label,
                 blockname,
                 exact,
                 corrected,
+                below_threshold,
                 ambiguous,
                 no_match,
                 total,
@@ -371,6 +382,8 @@ def generate_qc_metrics_reads(arguments, read_qcs):
                 statuses.append(status)
 
             collapsed_status = collapse_read_status(statuses)
+            if read_qc.get('status') == '__BELOW_THRESHOLD__' and collapsed_status in ["exact", "corrected"]:
+                collapsed_status = "below_threshold"
             summary_statuses.append(collapsed_status)
 
             read_rows.append({
@@ -402,6 +415,8 @@ def generate_qc_metrics_reads(arguments, read_qcs):
                     statuses.append(status)
 
             collapsed_status = collapse_read_status(statuses)
+            if any(read_qc.get('status') == '__BELOW_THRESHOLD__' for read_qc in read_qc_pair if read_qc is not None) and collapsed_status in ["exact", "corrected"]:
+                collapsed_status = "below_threshold"
             summary_statuses.append(collapsed_status)
 
             read_rows.append({
@@ -435,7 +450,7 @@ def generate_qc_metrics_reads(arguments, read_qcs):
     with open(output_summary, "w", newline="") as out_fh:
         writer = csv.writer(out_fh, delimiter="\t")
         writer.writerow(["status", "count"])
-        for status in ["exact", "corrected", "ambiguous", "no_match"]:
+        for status in ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]:
             writer.writerow([status, status_counts.get(status, 0)])
 
     log.info(f"Wrote read-level QC metrics to: {output_reads}")
@@ -459,6 +474,7 @@ def make_stacked_barplot_blocks(arguments):
     labels = []
     exact_pct = []
     corrected_pct = []
+    below_threshold_pct = []
     ambiguous_pct = []
     no_match_pct = []
 
@@ -470,6 +486,7 @@ def make_stacked_barplot_blocks(arguments):
             blockname = row["blockname"]
             exact = int(row["exact"])
             corrected = int(row["corrected"])
+            below_threshold = int(row["below_threshold"])
             ambiguous = int(row["ambiguous"])
             no_match = int(row["no_match"])
             total = int(row["total"])
@@ -479,11 +496,13 @@ def make_stacked_barplot_blocks(arguments):
             if total > 0:
                 exact_pct.append(100 * exact / total)
                 corrected_pct.append(100 * corrected / total)
+                below_threshold_pct.append(100 * below_threshold / total)
                 ambiguous_pct.append(100 * ambiguous / total)
                 no_match_pct.append(100 * no_match / total)
             else:
                 exact_pct.append(0)
                 corrected_pct.append(0)
+                below_threshold_pct.append(0)
                 ambiguous_pct.append(0)
                 no_match_pct.append(0)
 
@@ -494,15 +513,22 @@ def make_stacked_barplot_blocks(arguments):
     ax.bar(x, corrected_pct, bottom=exact_pct, label="corrected", color="lightgreen")
     ax.bar(
         x,
-        ambiguous_pct,
+        below_threshold_pct,
         bottom=[e + c for e, c in zip(exact_pct, corrected_pct)],
+        label="below_threshold",
+        color="lightgrey",
+    )
+    ax.bar(
+        x,
+        ambiguous_pct,
+        bottom=[e + c + b for e, c, b in zip(exact_pct, corrected_pct, below_threshold_pct)],
         label="ambiguous",
         color="orange",
     )
     ax.bar(
         x,
         no_match_pct,
-        bottom=[e + c + a for e, c, a in zip(exact_pct, corrected_pct, ambiguous_pct)],
+        bottom=[e + c + b + a for e, c, b, a in zip(exact_pct, corrected_pct, below_threshold_pct, ambiguous_pct)],
         label="no_match",
         color="grey",
     )
@@ -563,6 +589,7 @@ def make_stacked_barplots_bcs(arguments):
                 "barcode": barcode,
                 "exact": int(row["exact"]),
                 "corrected": int(row["corrected"]),
+                "below_threshold": int(row["below_threshold"]),
                 "ambiguous": int(row["ambiguous"]),
                 "no_match": int(row["no_match"]),
             })
@@ -577,6 +604,7 @@ def make_stacked_barplots_bcs(arguments):
         labels = [r["barcode"] for r in rows]
         exact_vals = [r["exact"] for r in rows]
         corrected_vals = [r["corrected"] for r in rows]
+        below_threshold_vals = [r["below_threshold"] for r in rows]
         ambiguous_vals = [r["ambiguous"] for r in rows]
         no_match_vals = [r["no_match"] for r in rows]
 
@@ -598,9 +626,17 @@ def make_stacked_barplots_bcs(arguments):
         )
         ax.bar(
             x,
-            ambiguous_vals,
+            below_threshold_vals,
             width=1.0,
             bottom=[e + c for e, c in zip(exact_vals, corrected_vals)],
+            label="below_threshold",
+            color="lightgrey",
+        )
+        ax.bar(
+            x,
+            ambiguous_vals,
+            width=1.0,
+            bottom=[e + c + b for e, c, b in zip(exact_vals, corrected_vals, below_threshold_vals)],
             label="ambiguous",
             color="orange",
         )
@@ -608,7 +644,7 @@ def make_stacked_barplots_bcs(arguments):
             x,
             no_match_vals,
             width=1.0,
-            bottom=[e + c + a for e, c, a in zip(exact_vals, corrected_vals, ambiguous_vals)],
+            bottom=[e + c + b + a for e, c, b, a in zip(exact_vals, corrected_vals, below_threshold_vals, ambiguous_vals)],
             label="no_match",
             color="grey",
         )
@@ -665,7 +701,7 @@ def make_stacked_barplot_reads(arguments):
     summary_fpath = paths["reads_summary_tsv"]
     out_fpath = paths["reads_plot"]
 
-    status_order = ["exact", "corrected", "ambiguous", "no_match"]
+    status_order = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
     counts = {status: 0 for status in status_order}
 
     with open(summary_fpath, "r", newline="") as fh:
@@ -689,6 +725,7 @@ def make_stacked_barplot_reads(arguments):
     color_map = {
         "exact": "darkgreen",
         "corrected": "lightgreen",
+        "below_threshold": "lightgrey",
         "ambiguous": "orange",
         "no_match": "grey",
     }

@@ -1,7 +1,7 @@
-2026-04-24 14:52:59   {'--STAR-output-dir': None,
+2026-04-27 16:02:23   {'--STAR-output-dir': None,
  '--STAR-ref-dir': None,
  '--block-type-for-STAR-alignment': None,
- '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/gDNA.json',
+ '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_single_end_config.json',
  '--error-probability': '0.1',
  '--insertion-probability': '0.5',
  '--keep-intermediary': False,
@@ -20,25 +20,25 @@
  'count_matrix': False,
  'preprocess': True,
  'simulate_reads': False}
-2026-04-24 14:52:59   Writing log to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/bcwithqc_preprocess.log
-2026-04-24 14:52:59   Files to process:
-2026-04-24 14:52:59     /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_single_end/gDNA_1_sequence.txt
-2026-04-24 14:52:59   Processing file:
-2026-04-24 14:52:59     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_single_end/gDNA_1_sequence.txt
-2026-04-24 14:52:59     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/sans_bc_gDNA_1_sequence.fq
-2026-04-24 14:52:59     tags file:     /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/rec_names_and_tags1_gDNA_1_sequence.txt
-2026-04-24 14:52:59   Building aligners and barcode decoders
-2026-04-24 14:52:59   Creating converter from 7 to 5
-2026-04-24 14:52:59   Creating converter from 5 to 7
-2026-04-24 14:52:59   Creating converter from 7 to 5
-2026-04-24 14:52:59   Creating converter from 5 to 7
-2026-04-24 14:52:59   Processing first 10,000 for score threshold...
-2026-04-24 14:53:22   Score threshold: 0.57
-2026-04-24 14:53:22   Continuing...
-2026-04-24 14:54:06   20,000 barcode records processed
-2026-04-24 14:54:06   19,461 records output
-2026-04-24 14:54:06   Collected 20,000 read QC entries
-2026-04-24 14:54:06   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_bcs.tsv
-2026-04-24 14:54:06   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_bcs_summary.tsv
-2026-04-24 14:54:06   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_reads.tsv
-2026-04-24 14:54:06   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_reads_summary.tsv
+2026-04-27 16:02:23   Writing log to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/bcwithqc_preprocess.log
+2026-04-27 16:02:23   Files to process:
+2026-04-27 16:02:23     /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_single_end/gDNA_1_sequence.txt
+2026-04-27 16:02:23   Processing file:
+2026-04-27 16:02:23     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_single_end/gDNA_1_sequence.txt
+2026-04-27 16:02:23     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/sans_bc_gDNA_1_sequence.fq
+2026-04-27 16:02:23     tags file:     /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/rec_names_and_tags1_gDNA_1_sequence.txt
+2026-04-27 16:02:23   Building aligners and barcode decoders
+2026-04-27 16:02:23   Creating converter from 7 to 5
+2026-04-27 16:02:23   Creating converter from 5 to 7
+2026-04-27 16:02:23   Creating converter from 7 to 5
+2026-04-27 16:02:23   Creating converter from 5 to 7
+2026-04-27 16:02:23   Processing first 10,000 for score threshold...
+2026-04-27 16:02:46   Score threshold: 0.57
+2026-04-27 16:02:46   Continuing...
+2026-04-27 16:03:30   20,000 barcode records processed
+2026-04-27 16:03:30   19,461 records output
+2026-04-27 16:03:30   Collected 20,000 read QC entries
+2026-04-27 16:03:30   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_bcs.tsv
+2026-04-27 16:03:30   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_bcs_summary.tsv
+2026-04-27 16:03:31   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_reads.tsv
+2026-04-27 16:03:31   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end/QC_metrics/QC_metrics_reads_summary.tsv

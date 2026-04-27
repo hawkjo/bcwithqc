@@ -817,13 +817,14 @@ def output_rec_name_and_tags(rec, tags, out_fh):
 
 def get_per_fastq_qc_fastq_paths(arguments, fq_fpath):
     """
-    Return ambiguous/no_match FASTQ paths for one input FASTQ file.
+    Return ambiguous/no_match/threshold_fail FASTQ paths for one input FASTQ file.
     """
     qc_dir = qc_metrics.get_qc_paths(arguments)["qc_dir"]
     prefix = misc.file_prefix_from_fpath(fq_fpath)
     return {
         "ambiguous": os.path.join(qc_dir, f"{prefix}_ambiguous_reads.fq"),
         "no_match": os.path.join(qc_dir, f"{prefix}_no_match_reads.fq"),
+        "threshold_fail": os.path.join(qc_dir, f"{prefix}_threshold_fail_reads.fq"),
     }
 
 
@@ -848,11 +849,13 @@ def build_qc_failure_records(rec, read_qc, meta_list):
     From one raw read + its QC info, build:
       - ambiguous FASTQ record (or None)
       - no_match FASTQ record (or None)
+      - threshold_fail FASTQ record (or None)
 
-    A read can appear in both outputs if it has both ambiguous and no_match blocks.
+    A read can appear in multiple outputs based on its status.
     """
     ambiguous_details = []
     no_match_blocks = []
+    threshold_fail = read_qc.get("status") == "__BELOW_THRESHOLD__"
 
     for meta, status, conflicts in zip(
         meta_list,
@@ -878,6 +881,7 @@ def build_qc_failure_records(rec, read_qc, meta_list):
 
     ambiguous_rec = None
     no_match_rec = None
+    threshold_fail_rec = None
 
     if ambiguous_details:
         ambiguous_desc = (
@@ -893,20 +897,27 @@ def build_qc_failure_records(rec, read_qc, meta_list):
         )
         no_match_rec = clone_rec_with_new_description(rec, no_match_desc)
 
-    return ambiguous_rec, no_match_rec
+    if threshold_fail:
+        threshold_fail_desc = f"{rec.id} QC_status=__BELOW_THRESHOLD__"
+        threshold_fail_rec = clone_rec_with_new_description(rec, threshold_fail_desc)
+
+    return ambiguous_rec, no_match_rec, threshold_fail_rec
 
 
-def write_qc_failure_records(rec, read_qc, meta_list, ambiguous_fh, no_match_fh):
+def write_qc_failure_records(rec, read_qc, meta_list, ambiguous_fh, no_match_fh, threshold_fail_fh=None):
     """
     Write raw reads with QC annotations into the appropriate FASTQ files.
     """
-    ambiguous_rec, no_match_rec = build_qc_failure_records(rec, read_qc, meta_list)
+    ambiguous_rec, no_match_rec, threshold_fail_rec = build_qc_failure_records(rec, read_qc, meta_list)
 
     if ambiguous_rec is not None and ambiguous_fh is not None:
         SeqIO.write(ambiguous_rec, ambiguous_fh, "fastq")
 
     if no_match_rec is not None and no_match_fh is not None:
         SeqIO.write(no_match_rec, no_match_fh, "fastq")
+
+    if threshold_fail_rec is not None and threshold_fail_fh is not None:
+        SeqIO.write(threshold_fail_rec, threshold_fail_fh, "fastq")
 
 
 def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath, bcs_on_both_reads):
@@ -950,8 +961,10 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
             (open(tags2_fpath, 'w') if bcs_on_both_reads else nullcontext(None)) as tag2_fh, \
             open(r1_qc_fastq_paths["ambiguous"], "w") as r1_ambiguous_fh, \
             open(r1_qc_fastq_paths["no_match"], "w") as r1_no_match_fh, \
+            open(r1_qc_fastq_paths["threshold_fail"], "w") as r1_threshold_fail_fh, \
             (open(r2_qc_fastq_paths["ambiguous"], "w") if bcs_on_both_reads else nullcontext(None)) as r2_ambiguous_fh, \
-            (open(r2_qc_fastq_paths["no_match"], "w") if bcs_on_both_reads else nullcontext(None)) as r2_no_match_fh:
+            (open(r2_qc_fastq_paths["no_match"], "w") if bcs_on_both_reads else nullcontext(None)) as r2_no_match_fh, \
+            (open(r2_qc_fastq_paths["threshold_fail"], "w") if bcs_on_both_reads else nullcontext(None)) as r2_threshold_fail_fh:
 
         log.info('Continuing...')
         for i, (bc_rec1, bc_rec2) in enumerate(zip(
@@ -981,6 +994,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
                 r1_meta,
                 r1_ambiguous_fh,
                 r1_no_match_fh,
+                r1_threshold_fail_fh,
             )
 
             if bcs_on_both_reads and read_qcs[1] is not None:
@@ -990,9 +1004,11 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
                     r2_meta,
                     r2_ambiguous_fh,
                     r2_no_match_fh,
+                    r2_threshold_fail_fh,
                 )
 
-            if all(score >= cthresh for score, cthresh in zip(scores, thresh)) and all(sans_bc_rec):
+            n_processed = len(blocks)
+            if all(score >= cthresh for score, cthresh in zip(scores[:n_processed], thresh[:n_processed])) and all(sans_bc_rec[:n_processed]):
                 total_out += 1
                 for bc_rec, bc_fq_fh, csans_bc_rec, ctags, tag_fh in zip(
                     (bc_rec1, bc_rec2),
@@ -1008,6 +1024,24 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
                             SeqIO.write(bc_rec, bc_fq_fh, 'fastq')
                     if ctags:
                         output_rec_name_and_tags(bc_rec, ctags, tag_fh)
+            else:
+                # Reads failed threshold, mark as __BELOW_THRESHOLD__ if barcode processing was successful
+                for j, (bc_rec, qc, meta, threshold_fail_fh) in enumerate(zip(
+                    (bc_rec1, bc_rec2),
+                    read_qcs,
+                    (r1_meta, r2_meta),
+                    (r1_threshold_fail_fh, r2_threshold_fail_fh)
+                )):
+                    if qc is not None and not any(s in ['no_match', 'ambiguous'] for s in qc['statuses']):
+                        qc['status'] = '__BELOW_THRESHOLD__'
+                        write_qc_failure_records(
+                            bc_rec,
+                            qc,
+                            meta,
+                            None,  # ambiguous_fh
+                            None,  # no_match_fh
+                            threshold_fail_fh,
+                        )
 
             all_reads_qcs.append(tuple(read_qcs[:len(blocks)]))
 
@@ -1046,7 +1080,8 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
     with (open(sans_bc_fq1_fpath, 'w') if sans_bc_fq1_fpath else nullcontext(None)) as bc_fq1_fh, \
             open(tags1_fpath, 'w') as tag1_fh, \
             open(qc_fastq_paths["ambiguous"], "w") as ambiguous_fh, \
-            open(qc_fastq_paths["no_match"], "w") as no_match_fh:
+            open(qc_fastq_paths["no_match"], "w") as no_match_fh, \
+            open(qc_fastq_paths["threshold_fail"], "w") as threshold_fail_fh:
         log.info('Continuing...')
         for i, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq')):
             n_processed = i + 1
@@ -1066,6 +1101,7 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
                 r1_meta,
                 ambiguous_fh,
                 no_match_fh,
+                threshold_fail_fh,
             )
 
             if score >= thresh and sans_bc_rec:
@@ -1076,6 +1112,18 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
 
                 if tags:
                     output_rec_name_and_tags(bc_rec, tags, tag1_fh)
+            else:
+                # Read failed threshold, mark as __BELOW_THRESHOLD__ if barcode processing was successful
+                if not any(s in ['no_match', 'ambiguous'] for s in read_qc['statuses']):
+                    read_qc['status'] = '__BELOW_THRESHOLD__'
+                    write_qc_failure_records(
+                        bc_rec,
+                        read_qc,
+                        r1_meta,
+                        None,  # ambiguous_fh
+                        None,  # no_match_fh
+                        threshold_fail_fh,
+                    )
 
     log.info(f'{n_processed:,d} barcode records processed')
     log.info(f'{total_out:,d} records output')
@@ -1117,27 +1165,35 @@ def worker_process_read(bc_recs):
 
     output_recs = [None, None]
     output_tags = [None, None]
-    if all(score >= cthresh for score, cthresh in zip(scores, thresh)) and all(sans_bc_rec):
+    n_processed = len(blocks)
+    if all(score >= cthresh for score, cthresh in zip(scores[:n_processed], thresh[:n_processed])) and all(sans_bc_rec[:n_processed]):
         # TODO: don't write second fastq if barcodes only in first. Need to do this currently in case input
         # fastqs are gzipped: STAR input must be either all gzipped or all uncompressed
         for i, (bc_rec, csans_bc_rec, ctags) in enumerate(zip((bc_rec1, bc_rec2), sans_bc_rec, tags)):
             output_recs[i] = csans_bc_rec if csans_bc_rec and csans_bc_rec is not True else bc_rec
             output_tags[i] = ctags
+    else:
+        # Reads failed threshold, mark as __BELOW_THRESHOLD__ if barcode processing was successful
+        for i in range(len(read_qcs)):
+            if read_qcs[i] is not None and not any(s in ['no_match', 'ambiguous'] for s in read_qcs[i]['statuses']):
+                read_qcs[i]['status'] = '__BELOW_THRESHOLD__'
 
     r1_meta = qc_metrics.get_config_metadata(arguments, "barcode_struct_r1")
     r2_meta = qc_metrics.get_config_metadata(arguments, "barcode_struct_r2") if len(read_qcs) > 1 else []
 
-    r1_ambiguous_rec, r1_no_match_rec = build_qc_failure_records(bc_rec1, read_qcs[0], r1_meta)
+    r1_ambiguous_rec, r1_no_match_rec, r1_threshold_fail_rec = build_qc_failure_records(bc_rec1, read_qcs[0], r1_meta)
 
-    r2_ambiguous_rec, r2_no_match_rec = (None, None)
+    r2_ambiguous_rec, r2_no_match_rec, r2_threshold_fail_rec = (None, None, None)
     if len(blocks) > 1 and read_qcs[1] is not None:
-        r2_ambiguous_rec, r2_no_match_rec = build_qc_failure_records(bc_rec2, read_qcs[1], r2_meta)
+        r2_ambiguous_rec, r2_no_match_rec, r2_threshold_fail_rec = build_qc_failure_records(bc_rec2, read_qcs[1], r2_meta)
 
     qc_failure_recs = {
         "r1_ambiguous": r1_ambiguous_rec,
         "r1_no_match": r1_no_match_rec,
+        "r1_threshold_fail": r1_threshold_fail_rec,
         "r2_ambiguous": r2_ambiguous_rec,
         "r2_no_match": r2_no_match_rec,
+        "r2_threshold_fail": r2_threshold_fail_rec,
     }
 
     return output_recs, output_tags, read_qcs, qc_failure_recs
@@ -1151,7 +1207,7 @@ def worker_process_read_single_end(bc_rec):
     output_tags = None
 
     meta_list = qc_metrics.get_config_metadata(arguments, "barcode_struct_r1")
-    ambiguous_rec, no_match_rec = build_qc_failure_records(
+    ambiguous_rec, no_match_rec, threshold_fail_rec = build_qc_failure_records(
         bc_rec,
         read_qc,
         meta_list,
@@ -1160,8 +1216,12 @@ def worker_process_read_single_end(bc_rec):
     if score >= thresh and sans_bc_rec:
         output_rec = sans_bc_rec if sans_bc_rec is not True else bc_rec
         output_tags = tags
+    else:
+        # Read failed threshold, mark as __BELOW_THRESHOLD__ if barcode processing was successful
+        if not any(s in ['no_match', 'ambiguous'] for s in read_qc['statuses']):
+            read_qc['status'] = '__BELOW_THRESHOLD__'
 
-    return output_rec, output_tags, read_qc, ambiguous_rec, no_match_rec
+    return output_rec, output_tags, read_qc, ambiguous_rec, no_match_rec, threshold_fail_rec
 
 def read_iterator(fq1_fpath, fq2_fpath, sem):
     for bc_rec1, bc_rec2 in zip(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq'), SeqIO.parse(misc.gzip_friendly_open(fq2_fpath), 'fastq')):
@@ -1213,8 +1273,10 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
             (open(tags2_fpath, 'w') if bcs_on_both_reads else nullcontext(None)) as tag2_fh, \
             open(r1_qc_fastq_paths["ambiguous"], "w") as r1_ambiguous_fh, \
             open(r1_qc_fastq_paths["no_match"], "w") as r1_no_match_fh, \
+            open(r1_qc_fastq_paths["threshold_fail"], "w") as r1_threshold_fail_fh, \
             (open(r2_qc_fastq_paths["ambiguous"], "w") if bcs_on_both_reads else nullcontext(None)) as r2_ambiguous_fh, \
             (open(r2_qc_fastq_paths["no_match"], "w") if bcs_on_both_reads else nullcontext(None)) as r2_no_match_fh, \
+            (open(r2_qc_fastq_paths["threshold_fail"], "w") if bcs_on_both_reads else nullcontext(None)) as r2_threshold_fail_fh, \
             Pool(arguments.threads, initializer=worker_build_aligners, initargs=(arguments, blocks, keep_nonbarcodes, arguments.config["unknown_read_orientation"], thresh)) as pool:
 
         log.info('Continuing...')
@@ -1232,12 +1294,16 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
                 SeqIO.write(qc_failure_recs["r1_ambiguous"], r1_ambiguous_fh, "fastq")
             if qc_failure_recs["r1_no_match"] is not None:
                 SeqIO.write(qc_failure_recs["r1_no_match"], r1_no_match_fh, "fastq")
+            if qc_failure_recs["r1_threshold_fail"] is not None:
+                SeqIO.write(qc_failure_recs["r1_threshold_fail"], r1_threshold_fail_fh, "fastq")
 
             if bcs_on_both_reads:
                 if qc_failure_recs["r2_ambiguous"] is not None:
                     SeqIO.write(qc_failure_recs["r2_ambiguous"], r2_ambiguous_fh, "fastq")
                 if qc_failure_recs["r2_no_match"] is not None:
                     SeqIO.write(qc_failure_recs["r2_no_match"], r2_no_match_fh, "fastq")
+                if qc_failure_recs["r2_threshold_fail"] is not None:
+                    SeqIO.write(qc_failure_recs["r2_threshold_fail"], r2_threshold_fail_fh, "fastq")
 
             processed = False
             for rec, bc_fh, tags, tag_fh in zip(output_recs, (bc_fq1_fh, bc_fq2_fh), output_tags, (tag1_fh, tag2_fh)):
@@ -1283,6 +1349,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
             open(tags1_fpath, 'w') as tag1_fh, \
             open(qc_fastq_paths["ambiguous"], "w") as ambiguous_fh, \
             open(qc_fastq_paths["no_match"], "w") as no_match_fh, \
+            open(qc_fastq_paths["threshold_fail"], "w") as threshold_fail_fh, \
             Pool(
                 arguments.threads,
                 initializer=worker_build_aligners_single_end,
@@ -1292,7 +1359,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
         total_out = 0
         all_reads_qcs = []
 
-        for i, (output_rec, output_tags, read_qc, ambiguous_rec, no_match_rec) in enumerate(
+        for i, (output_rec, output_tags, read_qc, ambiguous_rec, no_match_rec, threshold_fail_rec) in enumerate(
             pool.imap(worker_process_read_single_end, read_iterator_single_end(fq1_fpath, sem), chunksize=chunksize)
         ):
             if i % 100000 == 0 and i > 0:
@@ -1305,6 +1372,8 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
                 SeqIO.write(ambiguous_rec, ambiguous_fh, "fastq")
             if no_match_rec is not None:
                 SeqIO.write(no_match_rec, no_match_fh, "fastq")
+            if threshold_fail_rec is not None:
+                SeqIO.write(threshold_fail_rec, threshold_fail_fh, "fastq")
 
             processed = False
             if output_rec and bc_fq1_fh:

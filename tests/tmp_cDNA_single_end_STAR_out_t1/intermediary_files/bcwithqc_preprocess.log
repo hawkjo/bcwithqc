@@ -1,0 +1,44 @@
+2026-04-27 16:19:46   {'--STAR-output-dir': None,
+ '--STAR-ref-dir': None,
+ '--block-type-for-STAR-alignment': None,
+ '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_single_end_config.json',
+ '--error-probability': '0.1',
+ '--insertion-probability': '0.5',
+ '--keep-intermediary': False,
+ '--nreads': None,
+ '--output-dir': '/home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1',
+ '--random-tail-length': '20',
+ '--seed': '42',
+ '--single-end-reads': True,
+ '--substitution-probability': '0.7',
+ '--threads': '1',
+ '--unique-umis': '0.5',
+ '-v': 3,
+ '<bcwithqc_bam_file>': None,
+ '<fastq_dir>': '/home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs_single_end',
+ 'count': False,
+ 'count_matrix': False,
+ 'preprocess': True,
+ 'simulate_reads': False}
+2026-04-27 16:19:46   Writing log to: /home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1/bcwithqc_preprocess.log
+2026-04-27 16:19:46   Files to process:
+2026-04-27 16:19:46     /home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs_single_end/cDNA_1_sequence.txt
+2026-04-27 16:19:46   Processing file:
+2026-04-27 16:19:46     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_fastqs_single_end/cDNA_1_sequence.txt
+2026-04-27 16:19:46     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1/sans_bc_cDNA_1_sequence.fq
+2026-04-27 16:19:46     tags file:     /home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1/rec_names_and_tags1_cDNA_1_sequence.txt
+2026-04-27 16:19:46   Building aligners and barcode decoders
+2026-04-27 16:19:46   Creating converter from 7 to 5
+2026-04-27 16:19:46   Creating converter from 5 to 7
+2026-04-27 16:19:46   Creating converter from 7 to 5
+2026-04-27 16:19:46   Creating converter from 5 to 7
+2026-04-27 16:19:46   Processing first 10,000 for score threshold...
+2026-04-27 16:20:10   Score threshold: 0.46
+2026-04-27 16:20:10   Continuing...
+2026-04-27 16:20:59   20,000 barcode records processed
+2026-04-27 16:20:59   18,986 records output
+2026-04-27 16:20:59   Collected 20,000 read QC entries
+2026-04-27 16:20:59   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1/QC_metrics/QC_metrics_bcs.tsv
+2026-04-27 16:20:59   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1/QC_metrics/QC_metrics_bcs_summary.tsv
+2026-04-27 16:20:59   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1/QC_metrics/QC_metrics_reads.tsv
+2026-04-27 16:20:59   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/tmp_cDNA_single_end_STAR_out_t1/QC_metrics/QC_metrics_reads_summary.tsv

@@ -1,4 +1,4 @@
-2026-04-27 14:52:08   {'--STAR-output-dir': None,
+2026-04-27 16:16:15   {'--STAR-output-dir': None,
  '--STAR-ref-dir': None,
  '--block-type-for-STAR-alignment': 'constant',
  '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini_config.json',
@@ -20,45 +20,45 @@
  'count_matrix': False,
  'preprocess': True,
  'simulate_reads': False}
-2026-04-27 14:52:08   Writing log to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/bcwithqc_preprocess.log
-2026-04-27 14:52:08   Files to process:
-2026-04-27 14:52:08     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r1.txt
-2026-04-27 14:52:08     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r2.txt
-2026-04-27 14:52:08     -
-2026-04-27 14:52:08     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r1.txt
-2026-04-27 14:52:08     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r2.txt
-2026-04-27 14:52:08   Processing files:
-2026-04-27 14:52:08     barcode fastq 1: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r1.txt
-2026-04-27 14:52:08     barcode fastq 2: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r2.txt
-2026-04-27 14:52:08     sans-bc fastq 1: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_1_r1.fq
-2026-04-27 14:52:08     sans-bc fastq 2: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_1_r2.fq
-2026-04-27 14:52:08     tags file 1:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags1_pe_mini_1_r1.txt
-2026-04-27 14:52:08     tags file 2:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags2_pe_mini_1_r2.txt
-2026-04-27 14:52:08   Building aligners and barcode decoders
-2026-04-27 14:52:08   Creating converter from 7 to 5
-2026-04-27 14:52:08   Creating converter from 5 to 7
-2026-04-27 14:52:08   Creating converter from 7 to 5
-2026-04-27 14:52:08   Creating converter from 5 to 7
-2026-04-27 14:52:08   Processing first 10,000 for score threshold...
-2026-04-27 14:52:09   Score threshold: 0.520.53
-2026-04-27 14:52:09   Continuing...
-2026-04-27 14:52:09   10 barcode records processed
-2026-04-27 14:52:09   7 pairs of records output
-2026-04-27 14:52:09   Processing files:
-2026-04-27 14:52:09     barcode fastq 1: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r1.txt
-2026-04-27 14:52:09     barcode fastq 2: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r2.txt
-2026-04-27 14:52:09     sans-bc fastq 1: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_2_r1.fq
-2026-04-27 14:52:09     sans-bc fastq 2: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_2_r2.fq
-2026-04-27 14:52:09     tags file 1:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags1_pe_mini_2_r1.txt
-2026-04-27 14:52:09     tags file 2:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags2_pe_mini_2_r2.txt
-2026-04-27 14:52:09   Building aligners and barcode decoders
-2026-04-27 14:52:09   Processing first 10,000 for score threshold...
-2026-04-27 14:52:09   Score threshold: 0.520.53
-2026-04-27 14:52:09   Continuing...
-2026-04-27 14:52:09   10 barcode records processed
-2026-04-27 14:52:09   7 pairs of records output
-2026-04-27 14:52:09   Collected 20 read QC entries
-2026-04-27 14:52:09   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_bcs.tsv
-2026-04-27 14:52:09   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_bcs_summary.tsv
-2026-04-27 14:52:09   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_reads.tsv
-2026-04-27 14:52:09   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_reads_summary.tsv
+2026-04-27 16:16:15   Writing log to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/bcwithqc_preprocess.log
+2026-04-27 16:16:15   Files to process:
+2026-04-27 16:16:15     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r1.txt
+2026-04-27 16:16:15     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r2.txt
+2026-04-27 16:16:15     -
+2026-04-27 16:16:15     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r1.txt
+2026-04-27 16:16:15     /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r2.txt
+2026-04-27 16:16:15   Processing files:
+2026-04-27 16:16:15     barcode fastq 1: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r1.txt
+2026-04-27 16:16:15     barcode fastq 2: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_1_r2.txt
+2026-04-27 16:16:15     sans-bc fastq 1: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_1_r1.fq
+2026-04-27 16:16:15     sans-bc fastq 2: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_1_r2.fq
+2026-04-27 16:16:15     tags file 1:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags1_pe_mini_1_r1.txt
+2026-04-27 16:16:15     tags file 2:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags2_pe_mini_1_r2.txt
+2026-04-27 16:16:16   Building aligners and barcode decoders
+2026-04-27 16:16:16   Creating converter from 7 to 5
+2026-04-27 16:16:16   Creating converter from 5 to 7
+2026-04-27 16:16:16   Creating converter from 7 to 5
+2026-04-27 16:16:16   Creating converter from 5 to 7
+2026-04-27 16:16:16   Processing first 10,000 for score threshold...
+2026-04-27 16:16:16   Score threshold: 0.520.53
+2026-04-27 16:16:16   Continuing...
+2026-04-27 16:16:16   10 barcode records processed
+2026-04-27 16:16:16   7 pairs of records output
+2026-04-27 16:16:16   Processing files:
+2026-04-27 16:16:16     barcode fastq 1: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r1.txt
+2026-04-27 16:16:16     barcode fastq 2: /home/link/John_UMIs/bcwithqc/tests/../examples/pe_mini/pe_mini_2_r2.txt
+2026-04-27 16:16:16     sans-bc fastq 1: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_2_r1.fq
+2026-04-27 16:16:16     sans-bc fastq 2: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/sans_bc_pe_mini_2_r2.fq
+2026-04-27 16:16:16     tags file 1:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags1_pe_mini_2_r1.txt
+2026-04-27 16:16:16     tags file 2:     /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/rec_names_and_tags2_pe_mini_2_r2.txt
+2026-04-27 16:16:16   Building aligners and barcode decoders
+2026-04-27 16:16:16   Processing first 10,000 for score threshold...
+2026-04-27 16:16:16   Score threshold: 0.520.53
+2026-04-27 16:16:16   Continuing...
+2026-04-27 16:16:16   10 barcode records processed
+2026-04-27 16:16:16   7 pairs of records output
+2026-04-27 16:16:16   Collected 20 read QC entries
+2026-04-27 16:16:16   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_bcs.tsv
+2026-04-27 16:16:16   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_bcs_summary.tsv
+2026-04-27 16:16:16   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_reads.tsv
+2026-04-27 16:16:16   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/pe_mini/pe_mini_threadsN_1/QC_metrics/QC_metrics_reads_summary.tsv

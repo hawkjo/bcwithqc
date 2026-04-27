@@ -1,5 +1,6 @@
 status	count
-exact	17249
-corrected	1865
+exact	17169
+corrected	1817
+below_threshold	128
 ambiguous	46
 no_match	840

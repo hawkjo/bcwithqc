@@ -1,7 +1,7 @@
-2026-04-24 14:59:19   {'--STAR-output-dir': '/home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/STAR_files',
+2026-04-27 16:15:07   {'--STAR-output-dir': '/home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/STAR_files',
  '--STAR-ref-dir': None,
  '--block-type-for-STAR-alignment': None,
- '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/cDNA.json',
+ '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/cDNA_paired_end_config.json',
  '--error-probability': '0.1',
  '--insertion-probability': '0.5',
  '--keep-intermediary': True,
@@ -20,392 +20,393 @@
  'count_matrix': False,
  'preprocess': False,
  'simulate_reads': False}
-2026-04-24 14:59:19   Writing log to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/bcwithqc_count.log
-2026-04-24 14:59:19   Writing output to:
-2026-04-24 14:59:19     /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/with_bc.bam
-2026-04-24 14:59:19   Using STAR results from /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/STAR_files
-2026-04-24 14:59:19   Found equal number of BAM and tag files; treating outsourced STAR input like single-file pairing.
-2026-04-24 14:59:19   Adding barcode tags to mapped reads... 
-2026-04-24 14:59:20   Sorting bam...
-2026-04-24 14:59:20   Indexing bam...
-2026-04-24 14:59:20   Correcting UMIs...
-2026-04-24 14:59:20     cDNA_ROR1_chrom
-2026-04-24 14:59:20     cDNA_TSTD1_chrom
-2026-04-24 14:59:20     cDNA_NME7_chrom
-2026-04-24 14:59:20     cDNA_ATP1B1_chrom
-2026-04-24 14:59:20     cDNA_PDLIM1_chrom
-2026-04-24 14:59:20     cDNA_NANOG_chrom
-2026-04-24 14:59:20     cDNA_LTA4H_chrom
-2026-04-24 14:59:20     cDNA_KLF5_chrom
-2026-04-24 14:59:20     cDNA_PSME1_chrom
-2026-04-24 14:59:20     cDNA_EMC9_chrom
-2026-04-24 14:59:20     cDNA_PSME2_chrom
-2026-04-24 14:59:20     cDNA_ESRRB_chrom
-2026-04-24 14:59:20     cDNA_KATNBL1_chrom
-2026-04-24 14:59:20     cDNA_EMC4_chrom
-2026-04-24 14:59:20     cDNA_GOT2_chrom
-2026-04-24 14:59:20     cDNA_MYH10_chrom
-2026-04-24 14:59:20     cDNA_STAT3_chrom
-2026-04-24 14:59:20     cDNA_CNN2_chrom
-2026-04-24 14:59:20     cDNA_TCF3_chrom
-2026-04-24 14:59:20     cDNA_CARM1_chrom
-2026-04-24 14:59:21     cDNA_SPINT2_chrom
-2026-04-24 14:59:21     cDNA_ACTN4_chrom
-2026-04-24 14:59:21     cDNA_SOX11_chrom
-2026-04-24 14:59:21     cDNA_RTN4_chrom
-2026-04-24 14:59:21     cDNA_GULP1_chrom
-2026-04-24 14:59:21     cDNA_GBX2_chrom
-2026-04-24 14:59:21     cDNA_SOX12_chrom
-2026-04-24 14:59:21     cDNA_DNMT3B_chrom
-2026-04-24 14:59:21     cDNA_ERGIC3_chrom
-2026-04-24 14:59:21     cDNA_CPNE1_chrom
-2026-04-24 14:59:21     cDNA_RBM12_chrom
-2026-04-24 14:59:21     cDNA_ROMO1_chrom
-2026-04-24 14:59:21     cDNA_RBM39_chrom
-2026-04-24 14:59:21     cDNA_PHF20_chrom
-2026-04-24 14:59:21     cDNA_YWHAB_chrom
-2026-04-24 14:59:21     cDNA_STAU1_chrom
-2026-04-24 14:59:21     cDNA_DDX27_chrom
-2026-04-24 14:59:21     cDNA_COL18A1_chrom
-2026-04-24 14:59:22     cDNA_ATF4_chrom
-2026-04-24 14:59:22     cDNA_UBE2E1_chrom
-2026-04-24 14:59:22     cDNA_SOX2_chrom
-2026-04-24 14:59:22     cDNA_ANXA5_chrom
-2026-04-24 14:59:22     cDNA_TUBB2B_chrom
-2026-04-24 14:59:22     cDNA_SOX4_chrom
-2026-04-24 14:59:22     cDNA_POU5F1_chrom
-2026-04-24 14:59:22     cDNA_EPB41L2_chrom
-2026-04-24 14:59:22     cDNA_AKAP7_chrom
-2026-04-24 14:59:22     1_CROP_AIF1L_dCas9_chrom
-2026-04-24 14:59:22     2_CROP_ANXA5_dCas9_chrom
-2026-04-24 14:59:22     3_CROP_ATP1B1_dCas9_chrom
-2026-04-24 14:59:22     4_CROP_CARM1_dCas9_chrom
-2026-04-24 14:59:22     5_CROP_CNN2_dCas9_chrom
-2026-04-24 14:59:22     6_CROP_COL18A1_dCas9_chrom
-2026-04-24 14:59:22     7_CROP_CPNE1_dCas9_chrom
-2026-04-24 14:59:22     8_CROP_EMC4_dCas9_chrom
-2026-04-24 14:59:22     9_CROP_EPB41L2_dCas9_chrom
-2026-04-24 14:59:22     10_CROP_GOT2_dCas9_chrom
-2026-04-24 14:59:22     11_CROP_GULP1_dCas9_chrom
-2026-04-24 14:59:22     12_CROP_LTA4H_dCas9_chrom
-2026-04-24 14:59:22     13_CROP_PDLIM1_dCas9_chrom
-2026-04-24 14:59:22     14_CROP_PSME2_dCas9_chrom
-2026-04-24 14:59:22     15_CROP_ROR1_dCas9_chrom
-2026-04-24 14:59:22     16_CROP_RTN4_dCas9_chrom
-2026-04-24 14:59:22     17_CROP_SPINT2_dCas9_chrom
-2026-04-24 14:59:22     18_CROP_STAU1_dCas9_chrom
-2026-04-24 14:59:22     19_CROP_TSTD1_dCas9_chrom
-2026-04-24 14:59:22     20_CROP_UBE2E1_dCas9_chrom
-2026-04-24 14:59:22     21_CROP_YWHAB_dCas9_chrom
-2026-04-24 14:59:22     22_CROP_nC1_dCas9_chrom
-2026-04-24 14:59:22     23_CROP_nC2_dCas9_chrom
-2026-04-24 14:59:22     24_CROP_nC3_dCas9_chrom
-2026-04-24 14:59:22     25_CROP_nC4_dCas9_chrom
-2026-04-24 14:59:22     26_CROP_nC5_dCas9_chrom
-2026-04-24 14:59:22     27_CROP_nC6_dCas9_chrom
-2026-04-24 14:59:22     1_CROP_ANXA5_rs2306413_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     2_CROP_ATP1B1_rs10800424_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     3_CROP_CARM1_rs67987899_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     4_CROP_CNN2_rs4807440_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     5_CROP_COL18A1_rs78667666_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     6_CROP_COL18A1_rs35205716_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     7_CROP_CPNE1_rs2104417_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     8_CROP_CPNE1_rs73905926_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     9_CROP_CPNE1_rs6121020_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     10_CROP_CPNE1_rs2295355_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     11_CROP_EMC4_rs6495621_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     12_CROP_EPB41L2_rs3903759_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     13_CROP_GOT2_rs11558171_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     14_CROP_GOT2_rs727484_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     15_CROP_GULP1_rs6712056_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     16_CROP_LTA4H_rs3834482_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     17_CROP_PDLIM1_rs10218877_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     18_CROP_PSME2_rs2236352_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     19_CROP_ROR1_rs7517350_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     20_CROP_RTN4_rs2968787_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     21_CROP_RTN4_rs2044291_dCas9-pegRNA_chrom
-2026-04-24 14:59:22     22_CROP_SPINT2_rs17554832_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     23_CROP_STAU1_rs7266044_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     24_CROP_STAU1_rs2252259_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     25_CROP_STAU1_rs3818066_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     26_CROP_TSTD1_rs10908821_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     27_CROP_UBE2E1_rs7651576_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     28_CROP_YWHAB_rs6031849_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     29_CROP_YWHAB_rs2072726_dCas9-pegRNA_chrom
-2026-04-24 14:59:23     30_CROP_ATF4_control_PE_chrom
-2026-04-24 14:59:23     31_CROP_SOX11_control_PE_chrom
-2026-04-24 14:59:23     32_CROP_SOX12_control_PE_chrom
-2026-04-24 14:59:23     33_CROP_MYH10_control_PE_chrom
-2026-04-24 14:59:23     34_CROP_SOX4_control_PE_chrom
-2026-04-24 14:59:23     Puro_GFP_chrom
-2026-04-24 14:59:23     Amplicon_ATF4_control_AMPL590829_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_ATP1B1_rs10800424_AMPL587857_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_CARM1_rs67987899_AMPL587792_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_CNN2_rs4807440_AMPL587791_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_COL18A1_rs35205716_AMPL590828_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_COL18A1_rs78667666_AMPL587799_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_CPNE1_rs2104417_AMPL587794_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_CPNE1_rs2295355_AMPL587796_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_CPNE1_rs73905926_CPNE1_rs6121020_AMPL587795_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_EMC4_rs6495621_AMPL587790_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_EPB41L2_rs3903759_AMPL587789_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_GOT2_rs11558171_AMPL587820_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_GOT2_rs727484_AMPL587821_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_GULP1_rs6712056_AMPL587815_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_LTA4H_rs3834482_AMPL587865_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_MYH10_control_AMPL590826_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_PDLIM1_rs10218877_AMPL587864_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_PSME2_rs2236352_AMPL587866_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_ROR1_rs7517350_AMPL587855_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_RTN4_rs2044291_AMPL587813_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_RTN4_rs2968787_AMPL587814_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_SOX11_control_AMPL590824_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_SOX12_control_AMPL590827_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_SOX4_control_AMPL590825_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_SPINT2_rs17554832_AMPL587824_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_STAU1_rs2252259_AMPL587830_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_STAU1_rs3818066_AMPL587832_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_STAU1_rs7266044_AMPL587831_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_TSTD1_rs10908821_AMPL587856_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_UBE2E1_rs7651576_AMPL587787_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_YWHAB_rs2072726_AMPL587798_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_YWHAB_rs6031849_AMPL587797_noHDR_chrom
-2026-04-24 14:59:23     Amplicon_ATF4_control_AMPL590829_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_ATP1B1_rs10800424_AMPL587857_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_CARM1_rs67987899_AMPL587792_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_CNN2_rs4807440_AMPL587791_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_COL18A1_rs35205716_AMPL590828_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_COL18A1_rs78667666_AMPL587799_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_CPNE1_rs2104417_AMPL587794_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_CPNE1_rs2295355_AMPL587796_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_CPNE1_rs73905926_CPNE1_rs6121020_AMPL587795_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_EMC4_rs6495621_AMPL587790_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_EPB41L2_rs3903759_AMPL587789_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_GOT2_rs11558171_AMPL587820_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_GOT2_rs727484_AMPL587821_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_GULP1_rs6712056_AMPL587815_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_LTA4H_rs3834482_AMPL587865_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_MYH10_control_AMPL590826_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_PDLIM1_rs10218877_AMPL587864_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_PSME2_rs2236352_AMPL587866_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_ROR1_rs7517350_AMPL587855_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_RTN4_rs2044291_AMPL587813_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_RTN4_rs2968787_AMPL587814_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_SOX11_control_AMPL590824_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_SOX12_control_AMPL590827_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_SOX4_control_AMPL590825_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_SPINT2_rs17554832_AMPL587824_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_STAU1_rs2252259_AMPL587830_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_STAU1_rs3818066_AMPL587832_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_STAU1_rs7266044_AMPL587831_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_TSTD1_rs10908821_AMPL587856_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_UBE2E1_rs7651576_AMPL587787_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_YWHAB_rs2072726_AMPL587798_withHDR_chrom
-2026-04-24 14:59:23     Amplicon_YWHAB_rs6031849_AMPL587797_withHDR_chrom
-2026-04-24 14:59:23   Sorting bam...
-2026-04-24 14:59:23   Indexing bam...
-2026-04-24 14:59:23   Finding all barcodes present...
-2026-04-24 14:59:23   Counting reads...
-2026-04-24 14:59:23   Writing raw read count matrix...
-2026-04-24 14:59:23   Preserving intermediary files in: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/intermediary_files
-2026-04-24 14:59:23   Loaded backend agg version v2.2.
-2026-04-24 14:59:23   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0.
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf', name='STIXSizeFiveSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf', name='cmtt10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf', name='DejaVu Sans Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf', name='cmb10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 1.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf', name='STIXGeneral', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf', name='cmsy10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 0.33499999999999996
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf', name='cmmi10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf', name='cmex10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf', name='DejaVu Serif Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf', name='STIXGeneral', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf', name='cmr10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf', name='STIXGeneral', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf', name='STIXGeneral', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf', name='cmss10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 0.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 1.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Bold.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansDevanagari-Regular.ttf', name='Droid Sans Devanagari', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Oblique.otf', name='Cantarell', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-DemiOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Italic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-BoldItalic.otf', name='P052', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Book.otf', name='URW Gothic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-DemiItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans-Bold.ttf', name='Droid Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-BoldOblique.otf', name='Cantarell', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Bold.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArabic.ttf', name='Droid Sans Arabic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Bold.otf', name='Cantarell', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Regular.otf', name='Nimbus Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Italic.otf', name='P052', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansGeorgian.ttf', name='Droid Sans Georgian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Light.otf', name='URW Bookman', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Roman.otf', name='P052', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Roman.otf', name='C059', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Regular.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Regular.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Italic.otf', name='C059', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Regular.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansThai.ttf', name='Droid Sans Thai', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans.ttf', name='Droid Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/D050000L.otf', name='D050000L', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-BoldItalic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Regular.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Demi.otf', name='URW Gothic', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansJapanese.ttf', name='Droid Sans Japanese', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansFallback.ttf', name='Droid Sans Fallback', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-BookOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Bold.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Bold.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Bold.otf', name='Nimbus Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Bold.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=700, stretch='condensed', size='scalable')) = 10.535
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-BdIta.otf', name='C059', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-BoldItalic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Bold.otf', name='P052', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Oblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=400, stretch='condensed', size='scalable')) = 11.25
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Regular.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Italic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Italic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-BoldOblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=700, stretch='condensed', size='scalable')) = 11.535
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/Z003-MediumItalic.otf', name='Z003', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-BoldItalic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Bold.otf', name='Nimbus Roman', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArmenian.ttf', name='Droid Sans Armenian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Regular.otf', name='Nimbus Roman', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Bold.otf', name='C059', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Demi.otf', name='URW Bookman', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-LightItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
-2026-04-24 14:59:23   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Regular.otf', name='Cantarell', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:23   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000.
-2026-04-24 14:59:24   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0.
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf', name='STIXSizeFiveSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf', name='cmtt10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf', name='DejaVu Sans Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf', name='cmb10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 1.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf', name='STIXGeneral', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf', name='cmsy10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 0.33499999999999996
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf', name='cmmi10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf', name='cmex10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf', name='DejaVu Serif Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf', name='STIXGeneral', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf', name='cmr10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf', name='STIXGeneral', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf', name='STIXGeneral', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf', name='cmss10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 0.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 1.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Bold.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansDevanagari-Regular.ttf', name='Droid Sans Devanagari', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Oblique.otf', name='Cantarell', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-DemiOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Italic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-BoldItalic.otf', name='P052', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Book.otf', name='URW Gothic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-DemiItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans-Bold.ttf', name='Droid Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-BoldOblique.otf', name='Cantarell', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Bold.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArabic.ttf', name='Droid Sans Arabic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Bold.otf', name='Cantarell', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Regular.otf', name='Nimbus Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Italic.otf', name='P052', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansGeorgian.ttf', name='Droid Sans Georgian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Light.otf', name='URW Bookman', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Roman.otf', name='P052', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Roman.otf', name='C059', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Regular.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Regular.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Italic.otf', name='C059', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Regular.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansThai.ttf', name='Droid Sans Thai', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans.ttf', name='Droid Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/D050000L.otf', name='D050000L', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-BoldItalic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Regular.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Demi.otf', name='URW Gothic', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansJapanese.ttf', name='Droid Sans Japanese', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansFallback.ttf', name='Droid Sans Fallback', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-BookOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Bold.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Bold.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Bold.otf', name='Nimbus Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Bold.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=700, stretch='condensed', size='scalable')) = 10.535
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-BdIta.otf', name='C059', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-BoldItalic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Bold.otf', name='P052', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Oblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=400, stretch='condensed', size='scalable')) = 11.25
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Regular.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Italic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Italic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-BoldOblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=700, stretch='condensed', size='scalable')) = 11.535
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/Z003-MediumItalic.otf', name='Z003', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-BoldItalic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Bold.otf', name='Nimbus Roman', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArmenian.ttf', name='Droid Sans Armenian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Regular.otf', name='Nimbus Roman', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Bold.otf', name='C059', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Demi.otf', name='URW Bookman', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-LightItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
-2026-04-24 14:59:24   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Regular.otf', name='Cantarell', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
-2026-04-24 14:59:24   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0 to DejaVu Sans ('/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000.
-2026-04-24 14:59:24   Wrote block-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_stacked_barplot_blocks.png
-2026-04-24 14:59:30   Wrote barcode-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_barcodes_R1_cb1.png
-2026-04-24 14:59:37   Wrote barcode-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_barcodes_R1_cb2.png
-2026-04-24 14:59:38   Wrote barcode-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_barcodes_R1_sb.png
-2026-04-24 14:59:38   Wrote read-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_reads_stacked_barplot.png
-2026-04-24 14:59:38   Done
+2026-04-27 16:15:07   Writing log to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/bcwithqc_count.log
+2026-04-27 16:15:07   Writing output to:
+2026-04-27 16:15:07     /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/with_bc.bam
+2026-04-27 16:15:07   Using STAR results from /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/STAR_files
+2026-04-27 16:15:07   Found rec_names_and_tags1_*.txt files but no rec_names_and_tags2_*.txt files. This is normal for barcodes only on the forward read. Proceeding with only the rec_names_and_tags1_*.txt files.
+2026-04-27 16:15:07   Found equal number of BAM and tag files; treating outsourced STAR input like single-file pairing.
+2026-04-27 16:15:07   Adding barcode tags to mapped reads... 
+2026-04-27 16:15:07   Sorting bam...
+2026-04-27 16:15:07   Indexing bam...
+2026-04-27 16:15:07   Correcting UMIs...
+2026-04-27 16:15:07     cDNA_ROR1_chrom
+2026-04-27 16:15:07     cDNA_TSTD1_chrom
+2026-04-27 16:15:07     cDNA_NME7_chrom
+2026-04-27 16:15:07     cDNA_ATP1B1_chrom
+2026-04-27 16:15:07     cDNA_PDLIM1_chrom
+2026-04-27 16:15:07     cDNA_NANOG_chrom
+2026-04-27 16:15:07     cDNA_LTA4H_chrom
+2026-04-27 16:15:07     cDNA_KLF5_chrom
+2026-04-27 16:15:07     cDNA_PSME1_chrom
+2026-04-27 16:15:07     cDNA_EMC9_chrom
+2026-04-27 16:15:07     cDNA_PSME2_chrom
+2026-04-27 16:15:07     cDNA_ESRRB_chrom
+2026-04-27 16:15:07     cDNA_KATNBL1_chrom
+2026-04-27 16:15:07     cDNA_EMC4_chrom
+2026-04-27 16:15:07     cDNA_GOT2_chrom
+2026-04-27 16:15:07     cDNA_MYH10_chrom
+2026-04-27 16:15:07     cDNA_STAT3_chrom
+2026-04-27 16:15:08     cDNA_CNN2_chrom
+2026-04-27 16:15:08     cDNA_TCF3_chrom
+2026-04-27 16:15:08     cDNA_CARM1_chrom
+2026-04-27 16:15:08     cDNA_SPINT2_chrom
+2026-04-27 16:15:08     cDNA_ACTN4_chrom
+2026-04-27 16:15:08     cDNA_SOX11_chrom
+2026-04-27 16:15:08     cDNA_RTN4_chrom
+2026-04-27 16:15:08     cDNA_GULP1_chrom
+2026-04-27 16:15:08     cDNA_GBX2_chrom
+2026-04-27 16:15:08     cDNA_SOX12_chrom
+2026-04-27 16:15:08     cDNA_DNMT3B_chrom
+2026-04-27 16:15:08     cDNA_ERGIC3_chrom
+2026-04-27 16:15:08     cDNA_CPNE1_chrom
+2026-04-27 16:15:08     cDNA_RBM12_chrom
+2026-04-27 16:15:08     cDNA_ROMO1_chrom
+2026-04-27 16:15:08     cDNA_RBM39_chrom
+2026-04-27 16:15:08     cDNA_PHF20_chrom
+2026-04-27 16:15:08     cDNA_YWHAB_chrom
+2026-04-27 16:15:08     cDNA_STAU1_chrom
+2026-04-27 16:15:08     cDNA_DDX27_chrom
+2026-04-27 16:15:09     cDNA_COL18A1_chrom
+2026-04-27 16:15:09     cDNA_ATF4_chrom
+2026-04-27 16:15:09     cDNA_UBE2E1_chrom
+2026-04-27 16:15:09     cDNA_SOX2_chrom
+2026-04-27 16:15:09     cDNA_ANXA5_chrom
+2026-04-27 16:15:09     cDNA_TUBB2B_chrom
+2026-04-27 16:15:09     cDNA_SOX4_chrom
+2026-04-27 16:15:09     cDNA_POU5F1_chrom
+2026-04-27 16:15:09     cDNA_EPB41L2_chrom
+2026-04-27 16:15:09     cDNA_AKAP7_chrom
+2026-04-27 16:15:09     1_CROP_AIF1L_dCas9_chrom
+2026-04-27 16:15:09     2_CROP_ANXA5_dCas9_chrom
+2026-04-27 16:15:09     3_CROP_ATP1B1_dCas9_chrom
+2026-04-27 16:15:09     4_CROP_CARM1_dCas9_chrom
+2026-04-27 16:15:09     5_CROP_CNN2_dCas9_chrom
+2026-04-27 16:15:09     6_CROP_COL18A1_dCas9_chrom
+2026-04-27 16:15:09     7_CROP_CPNE1_dCas9_chrom
+2026-04-27 16:15:09     8_CROP_EMC4_dCas9_chrom
+2026-04-27 16:15:09     9_CROP_EPB41L2_dCas9_chrom
+2026-04-27 16:15:09     10_CROP_GOT2_dCas9_chrom
+2026-04-27 16:15:09     11_CROP_GULP1_dCas9_chrom
+2026-04-27 16:15:09     12_CROP_LTA4H_dCas9_chrom
+2026-04-27 16:15:09     13_CROP_PDLIM1_dCas9_chrom
+2026-04-27 16:15:09     14_CROP_PSME2_dCas9_chrom
+2026-04-27 16:15:09     15_CROP_ROR1_dCas9_chrom
+2026-04-27 16:15:09     16_CROP_RTN4_dCas9_chrom
+2026-04-27 16:15:09     17_CROP_SPINT2_dCas9_chrom
+2026-04-27 16:15:09     18_CROP_STAU1_dCas9_chrom
+2026-04-27 16:15:09     19_CROP_TSTD1_dCas9_chrom
+2026-04-27 16:15:09     20_CROP_UBE2E1_dCas9_chrom
+2026-04-27 16:15:09     21_CROP_YWHAB_dCas9_chrom
+2026-04-27 16:15:09     22_CROP_nC1_dCas9_chrom
+2026-04-27 16:15:09     23_CROP_nC2_dCas9_chrom
+2026-04-27 16:15:09     24_CROP_nC3_dCas9_chrom
+2026-04-27 16:15:09     25_CROP_nC4_dCas9_chrom
+2026-04-27 16:15:09     26_CROP_nC5_dCas9_chrom
+2026-04-27 16:15:09     27_CROP_nC6_dCas9_chrom
+2026-04-27 16:15:09     1_CROP_ANXA5_rs2306413_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     2_CROP_ATP1B1_rs10800424_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     3_CROP_CARM1_rs67987899_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     4_CROP_CNN2_rs4807440_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     5_CROP_COL18A1_rs78667666_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     6_CROP_COL18A1_rs35205716_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     7_CROP_CPNE1_rs2104417_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     8_CROP_CPNE1_rs73905926_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     9_CROP_CPNE1_rs6121020_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     10_CROP_CPNE1_rs2295355_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     11_CROP_EMC4_rs6495621_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     12_CROP_EPB41L2_rs3903759_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     13_CROP_GOT2_rs11558171_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     14_CROP_GOT2_rs727484_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     15_CROP_GULP1_rs6712056_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     16_CROP_LTA4H_rs3834482_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     17_CROP_PDLIM1_rs10218877_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     18_CROP_PSME2_rs2236352_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     19_CROP_ROR1_rs7517350_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     20_CROP_RTN4_rs2968787_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     21_CROP_RTN4_rs2044291_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     22_CROP_SPINT2_rs17554832_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     23_CROP_STAU1_rs7266044_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     24_CROP_STAU1_rs2252259_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     25_CROP_STAU1_rs3818066_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     26_CROP_TSTD1_rs10908821_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     27_CROP_UBE2E1_rs7651576_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     28_CROP_YWHAB_rs6031849_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     29_CROP_YWHAB_rs2072726_dCas9-pegRNA_chrom
+2026-04-27 16:15:09     30_CROP_ATF4_control_PE_chrom
+2026-04-27 16:15:10     31_CROP_SOX11_control_PE_chrom
+2026-04-27 16:15:10     32_CROP_SOX12_control_PE_chrom
+2026-04-27 16:15:10     33_CROP_MYH10_control_PE_chrom
+2026-04-27 16:15:10     34_CROP_SOX4_control_PE_chrom
+2026-04-27 16:15:10     Puro_GFP_chrom
+2026-04-27 16:15:10     Amplicon_ATF4_control_AMPL590829_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_ATP1B1_rs10800424_AMPL587857_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_CARM1_rs67987899_AMPL587792_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_CNN2_rs4807440_AMPL587791_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_COL18A1_rs35205716_AMPL590828_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_COL18A1_rs78667666_AMPL587799_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_CPNE1_rs2104417_AMPL587794_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_CPNE1_rs2295355_AMPL587796_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_CPNE1_rs73905926_CPNE1_rs6121020_AMPL587795_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_EMC4_rs6495621_AMPL587790_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_EPB41L2_rs3903759_AMPL587789_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_GOT2_rs11558171_AMPL587820_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_GOT2_rs727484_AMPL587821_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_GULP1_rs6712056_AMPL587815_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_LTA4H_rs3834482_AMPL587865_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_MYH10_control_AMPL590826_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_PDLIM1_rs10218877_AMPL587864_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_PSME2_rs2236352_AMPL587866_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_ROR1_rs7517350_AMPL587855_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_RTN4_rs2044291_AMPL587813_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_RTN4_rs2968787_AMPL587814_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_SOX11_control_AMPL590824_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_SOX12_control_AMPL590827_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_SOX4_control_AMPL590825_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_SPINT2_rs17554832_AMPL587824_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_STAU1_rs2252259_AMPL587830_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_STAU1_rs3818066_AMPL587832_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_STAU1_rs7266044_AMPL587831_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_TSTD1_rs10908821_AMPL587856_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_UBE2E1_rs7651576_AMPL587787_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_YWHAB_rs2072726_AMPL587798_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_YWHAB_rs6031849_AMPL587797_noHDR_chrom
+2026-04-27 16:15:10     Amplicon_ATF4_control_AMPL590829_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_ATP1B1_rs10800424_AMPL587857_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_CARM1_rs67987899_AMPL587792_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_CNN2_rs4807440_AMPL587791_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_COL18A1_rs35205716_AMPL590828_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_COL18A1_rs78667666_AMPL587799_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_CPNE1_rs2104417_AMPL587794_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_CPNE1_rs2295355_AMPL587796_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_CPNE1_rs73905926_CPNE1_rs6121020_AMPL587795_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_EMC4_rs6495621_AMPL587790_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_EPB41L2_rs3903759_AMPL587789_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_GOT2_rs11558171_AMPL587820_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_GOT2_rs727484_AMPL587821_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_GULP1_rs6712056_AMPL587815_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_LTA4H_rs3834482_AMPL587865_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_MYH10_control_AMPL590826_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_PDLIM1_rs10218877_AMPL587864_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_PSME2_rs2236352_AMPL587866_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_ROR1_rs7517350_AMPL587855_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_RTN4_rs2044291_AMPL587813_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_RTN4_rs2968787_AMPL587814_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_SOX11_control_AMPL590824_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_SOX12_control_AMPL590827_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_SOX4_control_AMPL590825_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_SPINT2_rs17554832_AMPL587824_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_STAU1_rs2252259_AMPL587830_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_STAU1_rs3818066_AMPL587832_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_STAU1_rs7266044_AMPL587831_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_TSTD1_rs10908821_AMPL587856_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_UBE2E1_rs7651576_AMPL587787_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_YWHAB_rs2072726_AMPL587798_withHDR_chrom
+2026-04-27 16:15:10     Amplicon_YWHAB_rs6031849_AMPL587797_withHDR_chrom
+2026-04-27 16:15:10   Sorting bam...
+2026-04-27 16:15:10   Indexing bam...
+2026-04-27 16:15:10   Finding all barcodes present...
+2026-04-27 16:15:10   Counting reads...
+2026-04-27 16:15:10   Writing raw read count matrix...
+2026-04-27 16:15:10   Preserving intermediary files in: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/intermediary_files
+2026-04-27 16:15:10   Loaded backend agg version v2.2.
+2026-04-27 16:15:10   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0.
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf', name='STIXSizeFiveSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf', name='cmtt10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf', name='DejaVu Sans Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf', name='cmb10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 1.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf', name='STIXGeneral', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf', name='cmsy10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 0.33499999999999996
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf', name='cmmi10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf', name='cmex10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf', name='DejaVu Serif Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf', name='STIXGeneral', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf', name='cmr10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf', name='STIXGeneral', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf', name='STIXGeneral', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf', name='cmss10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 0.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 1.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Bold.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansDevanagari-Regular.ttf', name='Droid Sans Devanagari', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Oblique.otf', name='Cantarell', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-DemiOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Italic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-BoldItalic.otf', name='P052', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Book.otf', name='URW Gothic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-DemiItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans-Bold.ttf', name='Droid Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-BoldOblique.otf', name='Cantarell', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Bold.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArabic.ttf', name='Droid Sans Arabic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Bold.otf', name='Cantarell', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Regular.otf', name='Nimbus Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Italic.otf', name='P052', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansGeorgian.ttf', name='Droid Sans Georgian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Light.otf', name='URW Bookman', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Roman.otf', name='P052', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Roman.otf', name='C059', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Regular.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Regular.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Italic.otf', name='C059', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Regular.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansThai.ttf', name='Droid Sans Thai', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans.ttf', name='Droid Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/D050000L.otf', name='D050000L', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-BoldItalic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Regular.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Demi.otf', name='URW Gothic', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansJapanese.ttf', name='Droid Sans Japanese', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansFallback.ttf', name='Droid Sans Fallback', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-BookOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Bold.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Bold.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Bold.otf', name='Nimbus Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Bold.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=700, stretch='condensed', size='scalable')) = 10.535
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-BdIta.otf', name='C059', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-BoldItalic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Bold.otf', name='P052', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Oblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=400, stretch='condensed', size='scalable')) = 11.25
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Regular.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Italic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Italic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-BoldOblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=700, stretch='condensed', size='scalable')) = 11.535
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/Z003-MediumItalic.otf', name='Z003', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-BoldItalic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Bold.otf', name='Nimbus Roman', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArmenian.ttf', name='Droid Sans Armenian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Regular.otf', name='Nimbus Roman', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Bold.otf', name='C059', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Demi.otf', name='URW Bookman', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-LightItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+2026-04-27 16:15:10   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Regular.otf', name='Cantarell', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:10   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000.
+2026-04-27 16:15:11   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0.
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf', name='STIXSizeFiveSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf', name='cmtt10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf', name='DejaVu Sans Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf', name='cmb10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 1.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf', name='STIXGeneral', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf', name='cmsy10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 0.33499999999999996
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf', name='cmmi10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf', name='cmex10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf', name='DejaVu Serif Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf', name='STIXGeneral', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf', name='cmr10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf', name='STIXGeneral', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf', name='STIXGeneral', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf', name='cmss10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 0.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 1.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Bold.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansDevanagari-Regular.ttf', name='Droid Sans Devanagari', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Oblique.otf', name='Cantarell', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-DemiOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Italic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-BoldItalic.otf', name='P052', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Book.otf', name='URW Gothic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-DemiItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans-Bold.ttf', name='Droid Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-BoldOblique.otf', name='Cantarell', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Bold.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArabic.ttf', name='Droid Sans Arabic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Bold.otf', name='Cantarell', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Regular.otf', name='Nimbus Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Italic.otf', name='P052', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansGeorgian.ttf', name='Droid Sans Georgian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Light.otf', name='URW Bookman', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Roman.otf', name='P052', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Roman.otf', name='C059', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansEthiopic-Regular.ttf', name='Droid Sans Ethiopic', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Regular.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Italic.otf', name='C059', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Regular.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansThai.ttf', name='Droid Sans Thai', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSans.ttf', name='Droid Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/D050000L.otf', name='D050000L', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-BoldItalic.otf', name='Nimbus Mono PS', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Regular.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-Demi.otf', name='URW Gothic', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansJapanese.ttf', name='Droid Sans Japanese', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansFallback.ttf', name='Droid Sans Fallback', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWGothic-BookOblique.otf', name='URW Gothic', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansTamil-Bold.ttf', name='Droid Sans Tamil', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusMonoPS-Bold.otf', name='Nimbus Mono PS', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Bold.otf', name='Nimbus Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Bold.otf', name='Nimbus Sans Narrow', style='normal', variant='normal', weight=700, stretch='condensed', size='scalable')) = 10.535
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-BdIta.otf', name='C059', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-BoldItalic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/P052-Bold.otf', name='P052', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-Oblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=400, stretch='condensed', size='scalable')) = 11.25
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansHebrew-Regular.ttf', name='Droid Sans Hebrew', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Italic.otf', name='Nimbus Roman', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-Italic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSansNarrow-BoldOblique.otf', name='Nimbus Sans Narrow', style='oblique', variant='normal', weight=700, stretch='condensed', size='scalable')) = 11.535
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/dejavu/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/Z003-MediumItalic.otf', name='Z003', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusSans-BoldItalic.otf', name='Nimbus Sans', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Bold.otf', name='Nimbus Roman', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/google-droid/DroidSansArmenian.ttf', name='Droid Sans Armenian', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/NimbusRoman-Regular.otf', name='Nimbus Roman', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/C059-Bold.otf', name='C059', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-Demi.otf', name='URW Bookman', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/urw-base35/URWBookman-LightItalic.otf', name='URW Bookman', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+2026-04-27 16:15:11   findfont: score(FontEntry(fname='/usr/share/fonts/abattis-cantarell/Cantarell-Regular.otf', name='Cantarell', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+2026-04-27 16:15:11   findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0 to DejaVu Sans ('/home/link/.conda/envs/py313/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000.
+2026-04-27 16:15:11   Wrote block-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_stacked_barplot_blocks.png
+2026-04-27 16:15:19   Wrote barcode-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_barcodes_R1_cb1.png
+2026-04-27 16:15:27   Wrote barcode-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_barcodes_R1_cb2.png
+2026-04-27 16:15:28   Wrote barcode-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_barcodes_R1_sb.png
+2026-04-27 16:15:28   Wrote read-level stacked barplot to: /home/link/John_UMIs/bcwithqc/tests/cDNA_paired_end/QC_metrics/QC_metrics_reads_stacked_barplot.png
+2026-04-27 16:15:28   Done

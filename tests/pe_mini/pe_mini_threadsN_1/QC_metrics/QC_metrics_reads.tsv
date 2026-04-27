@@ -1,6 +1,6 @@
 read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_status_2
 1	read_1:bc1:NoErrors:const:NoErrors:umi:One:1	exact	R1_bc_r1	exact	R2_bc_r2	exact
-2	read_2:bc1:1Sub:const:1Sub:umi:Two:1	corrected	R1_bc_r1	corrected	R2_bc_r2	corrected
+2	read_2:bc1:1Sub:const:1Sub:umi:Two:1	below_threshold	R1_bc_r1	corrected	R2_bc_r2	corrected
 3	read_3:bc1:2Sub:const:NoErrors:umi:Three:1	no_match	R1_bc_r1	no_match	R2_bc_r2	no_match
 4	read_4:bc1:NoErrors:const:1Ins:umi:Four:1	exact	R1_bc_r1	exact	R2_bc_r2	exact
 5	read_5:bc1:1Del:const:NoErrors:umi:Five:1	corrected	R1_bc_r1	corrected	R2_bc_r2	corrected
@@ -10,7 +10,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 9	read_9:bc2:NoErrors:const:NoErrors:umi:Two:1	exact	R1_bc_r1	exact	R2_bc_r2	exact
 10	read_10:bc3:NoErrors:const:NoErrors:umi:One:1	exact	R1_bc_r1	exact	R2_bc_r2	exact
 11	read_11:bc1:NoErrors:const:NoErrors:umi:One:1	exact	R1_bc_r1	exact	R2_bc_r2	exact
-12	read_12:bc1:1Sub:const:1Sub:umi:Two:1	corrected	R1_bc_r1	corrected	R2_bc_r2	corrected
+12	read_12:bc1:1Sub:const:1Sub:umi:Two:1	below_threshold	R1_bc_r1	corrected	R2_bc_r2	corrected
 13	read_13:bc1:2Sub:const:NoErrors:umi:Three:1	no_match	R1_bc_r1	no_match	R2_bc_r2	no_match
 14	read_14:bc1:NoErrors:const:1Ins:umi:Four:1	exact	R1_bc_r1	exact	R2_bc_r2	exact
 15	read_15:bc1:1Del:const:NoErrors:umi:Five:1	corrected	R1_bc_r1	corrected	R2_bc_r2	corrected
