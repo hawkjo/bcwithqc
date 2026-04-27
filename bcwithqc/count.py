@@ -221,7 +221,11 @@ def process_fastqs(arguments):
     do_single_file_pairing = False
 
     if arguments.single_end_reads:
-        if not arguments.star_output_path:
+        if not arguments.star_output_path: # This branch was deprecated, but the code still remains for future use. 
+            raise ValueError(
+                "Internal Processing with STAR not available."
+                "Please provide a path to the unsorted aligned BAM/SAM file with --STAR-output-dir"
+            ) 
             single_align_fqs_and_tags_fpaths = preprocess_fastqs(arguments)
 
             log.info('Running STAR alignment...')
@@ -259,7 +263,11 @@ def process_fastqs(arguments):
             star_bam_and_tags_fpaths = list(zip(bam_fpaths, tag_fpaths))
 
     else:        
-        if not arguments.star_output_path:
+        if not arguments.star_output_path: # This branch was deprecated, but the code still remains for future use. 
+            raise ValueError(
+                "Internal Processing with STAR not available."
+                "Please provide a path to the unsorted aligned BAM/SAM file with --STAR-output-dir"
+            )
             paired_align_fqs_and_tags_fpaths, namepairidxs = preprocess_fastqs(arguments)
 
             log.info(f'Running STAR alignment...')
@@ -301,17 +309,62 @@ def process_fastqs(arguments):
         else:
             log.info(f'Using STAR results from {arguments.star_output_path}')
             bam_fpaths = sorted(glob(os.path.join(arguments.star_output_path, "*Aligned.out.bam")))
-            tag_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags*.txt")))
-            namepairidx_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags*.pkl")))
+            tag1_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags1_*.txt")))
+            tag2_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "rec_names_and_tags2_*.txt")))
+            namepairidx_fpaths = sorted(glob(os.path.join(arguments.fastq_dir, "namepairidx_*.pkl")))
+
+            if len(tag1_fpaths) == 0 and len(tag2_fpaths) == 0:
+                raise FileNotFoundError(
+                    f"No tag files found in fastq/output directory: {arguments.fastq_dir}"
+                )
+            elif len(tag2_fpaths) == 0 and len(tag1_fpaths) > 0:
+                log.info(
+                    "Found rec_names_and_tags1_*.txt files but no rec_names_and_tags2_*.txt files. "
+                    "This is normal for barcodes only on the forward read. "
+                    "Proceeding with only the rec_names_and_tags1_*.txt files."
+                )
+                tag_fpaths = tag1_fpaths
+            elif len(tag1_fpaths) == 0 and len(tag2_fpaths) > 0:
+                log.info(
+                    "Found rec_names_and_tags2_*.txt files but no rec_names_and_tags1_*.txt files. "
+                    "This is normal for barcodes only on the reverse read. "
+                    "Proceeding with only the rec_names_and_tags2_*.txt files."
+                )
+                tag_fpaths = tag2_fpaths
+            elif len(tag1_fpaths) > 0 and len(tag2_fpaths) > 0 and len(tag1_fpaths) != len(tag2_fpaths):
+                raise ValueError(
+                    f"Unequal number of rec_names_and_tags1_*.txt files and rec_names_and_tags2_*.txt files found. "
+                    f"{len(tag1_fpaths)} rec_names_and_tags1_*.txt files found: {tag1_fpaths}. "
+                    f"{len(tag2_fpaths)} rec_names_and_tags2_*.txt files found: {tag2_fpaths}."
+                )
+            elif  len(tag1_fpaths) > 0 and len(tag2_fpaths) > 0 and len(tag1_fpaths) == len(tag2_fpaths):
+                log.info(
+                    f"Found equal number of rec_names_and_tags1_*.txt files and rec_names_and_tags2_*.txt files. "
+                    f"Proceeding with paired tag files."
+                )
+                tag_fpaths = [fpath for pair in zip(tag1_fpaths, tag2_fpaths) for fpath in pair]
+            else:
+                raise ValueError(
+                    f"Unexpected combination of rec_names_and_tags1_*.txt files and rec_names_and_tags2_*.txt files found. "
+                    f"This should never trigger if the above cases are correctly specified, but was added as a sanity check. "
+                    f"{len(tag1_fpaths)} rec_names_and_tags1_*.txt files found: {tag1_fpaths}. "
+                    f"{len(tag2_fpaths)} rec_names_and_tags2_*.txt files found: {tag2_fpaths}."
+                )
             
             if len(bam_fpaths) == 0:
                 raise FileNotFoundError(
                     f"No STAR BAM files found in STAR output directory: {arguments.star_output_path}"
                 )
-            if len(tag_fpaths) == 0:
+            if len(namepairidx_fpaths) == 0:
                 raise FileNotFoundError(
-                    f"No tag files found in fastq/output directory: {arguments.fastq_dir}"
-                )            
+                    f"No namepairidx .pkl files found in fastq/output directory: {arguments.fastq_dir}"
+                )
+            if len(namepairidx_fpaths) != len(bam_fpaths):
+                raise ValueError(
+                    f"Unequal number of BAM files and namepairidx files found. "
+                    f"{len(bam_fpaths)} BAM files found: {bam_fpaths}. "
+                    f"{len(namepairidx_fpaths)} namepairidx files found: {namepairidx_fpaths}."
+                )
             if len(bam_fpaths) == len(tag_fpaths):
                 log.info(
                     "Found equal number of BAM and tag files; treating outsourced STAR input like single-file pairing."
@@ -323,7 +376,7 @@ def process_fastqs(arguments):
                     f"Found {len(bam_fpaths)} BAM file(s) and {len(tag_fpaths)} tag file(s); "
                     "treating tags as paired entries per BAM."
                 )
-                star_bam_and_tags_fpaths = list(zip(bam_fpaths, tag_fpaths[::2], tag_fpaths[1::2]))
+                star_bam_and_tags_fpaths = list(zip(bam_fpaths, tag1_fpaths, tag2_fpaths))
             else:
                 raise ValueError(
                     "Mismatch between STAR BAM files and tag files in outsourced paired-end mode. "
@@ -525,6 +578,7 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
 
     # QC Metrics
     bc_qc = {
+        "read_name": str(bc_rec.id),
         "raw_bcs": raw_bcs,
         "decoded_bcs": bcs,
         "statuses": statuses,
@@ -663,13 +717,26 @@ def parse_tag_str(tag_str):
 
 
 def merge_tags(tags1, tags2):
-    if not len(tags2):
-        return tags1
-    tags1 = defaultdict(tags1, str)
-    tags2 = dict(tags2)
-    for name, val in tags2.items():
-        tags1[name] = ".".join(tags1[name], val)
-    return tags1.items()
+    """
+    Merge tags from read 1 and read 2.
+
+    String-like duplicated tags are concatenated with a dot.
+    Integer duplicated tags, such as FL, are summed.
+    Ask John if summing FL is the right thing to do,
+    but it seems reasonable since FL is just the total length of constant regions,
+    so summing should give the correct total length if both reads have constant regions.
+    """
+    merged = dict(tags1)
+
+    for name, val in dict(tags2).items():
+        if name not in merged:
+            merged[name] = val
+        elif isinstance(merged[name], int) and isinstance(val, int):
+            merged[name] += val
+        else:
+            merged[name] = ".".join([str(merged[name]), str(val)])
+
+    return merged.items()
 
 def serial_add_tags_to_reads(tags1_fpath, tags2_fpath, bam_fpath):
     """
@@ -895,7 +962,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
                 log.info(f'  {i:,d} processed,  {total_out:,d} output')
 
             scores = [0, 0]
-            sans_bc_rec = [None, True]
+            sans_bc_rec = [None, None]
             tags = [None, None]
             read_qcs = [None, None]
 
@@ -1036,7 +1103,7 @@ def worker_process_read(bc_recs):
     bc_rec1, bc_rec2 = bc_recs
 
     scores = [0, 0]
-    sans_bc_rec = [None, True]
+    sans_bc_rec = [None, None]
     tags = [None, None]
     read_qcs = [None, None]
 

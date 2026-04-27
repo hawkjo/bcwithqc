@@ -155,9 +155,10 @@ def iter_read_qc_rows(arguments, read_qcs):
                 )
             ):
                 meta = r1_meta[block_idx]
+                read_name = read_qc.get("read_name", meta["read_label"])
                 yield {
                     "read_index": read_idx,
-                    "read_label": meta["read_label"],
+                    "read_label": read_name,
                     "block_index": block_idx,
                     "blockname": meta["blockname"],
                     "raw_bc": raw_bc,
@@ -180,9 +181,10 @@ def iter_read_qc_rows(arguments, read_qcs):
                     )
                 ):
                     meta = meta_list[block_idx]
+                    read_name = read_qc.get("read_name", meta["read_label"])
                     yield {
                         "read_index": read_idx,
-                        "read_label": meta["read_label"],
+                        "read_label": read_name,
                         "block_index": block_idx,
                         "blockname": meta["blockname"],
                         "raw_bc": raw_bc,
@@ -190,7 +192,48 @@ def iter_read_qc_rows(arguments, read_qcs):
                         "status": status,
                         "conflict_bcs": ";".join(conflict_bcs) if conflict_bcs else "",
                     }
+def common_read_name(name1, name2):
+    """
+    Return the shared part of two paired-end read names.
 
+    Handles simple cases like:
+    read_1 / read_2
+    sample_R1_001 / sample_R2_001
+    """
+    if not name1:
+        return name2
+    if not name2:
+        return name1
+
+    if name1 == name2:
+        return name1
+
+    # Keep characters that are identical at the same positions
+    # Useful for names differing only by 1/2.
+    if len(name1) == len(name2):
+        shared = "".join(c1 for c1, c2 in zip(name1, name2) if c1 == c2)
+        return shared.rstrip("_/-:. ")
+
+    # Fallback: common prefix
+    prefix = os.path.commonprefix([name1, name2])
+    return prefix.rstrip("_/-:. ")
+
+
+def common_read_name_from_qc_pair(read_qc_pair):
+    read_names = [
+        read_qc.get("read_name")
+        for read_qc in read_qc_pair
+        if read_qc is not None and read_qc.get("read_name")
+    ]
+
+    if not read_names:
+        return ""
+
+    if len(read_names) == 1:
+        return read_names[0]
+
+    return common_read_name(read_names[0], read_names[1])
+    
 def generate_qc_metrics(arguments, read_qcs):
     """
     Generate barcode-level and block-level QC TSV files in output_dir/QC_metrics.
@@ -332,7 +375,7 @@ def generate_qc_metrics_reads(arguments, read_qcs):
 
             read_rows.append({
                 "read_index": read_idx,
-                "read_label": "R1",
+                "read_label": read_qc.get("read_name"),
                 "status": collapsed_status,
                 "block_entries": block_entries,
             })
@@ -363,12 +406,12 @@ def generate_qc_metrics_reads(arguments, read_qcs):
 
             read_rows.append({
                 "read_index": read_idx,
-                "read_label": "R1_R2",
+                "read_label": common_read_name_from_qc_pair(read_qc_pair),
                 "status": collapsed_status,
                 "block_entries": block_entries,
             })
 
-    header = ["read_index", "read_label", "status"]
+    header = ["read_index", "read_name", "read_status"]
     for i in range(1, max_blocks + 1):
         header.extend([f"block_name_{i}", f"block_status_{i}"])
 

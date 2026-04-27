@@ -1,0 +1,19 @@
+### STAR   --runMode genomeGenerate      --runThreadN 1   --genomeDir /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index   --genomeFastaFiles /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.fa      --genomeSAindexNbases 3   --sjdbGTFfile /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.gtf
+### GstrandBit 32
+versionGenome	2.7.4a
+genomeType	Full
+genomeFastaFiles	/home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.fa 
+genomeSAindexNbases	3
+genomeChrBinNbits	18
+genomeSAsparseD	1
+genomeTransformType	None
+genomeTransformVCF	-
+sjdbOverhang	100
+sjdbFileChrStartEnd	- 
+sjdbGTFfile	/home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.gtf
+sjdbGTFchrPrefix	-
+sjdbGTFfeatureExon	exon
+sjdbGTFtagExonParentTranscript	transcript_id
+sjdbGTFtagExonParentGene	gene_id
+sjdbInsertSave	Basic
+genomeFileSizes	262144 531

@@ -1,0 +1,75 @@
+{
+    "unknown_read_orientation": false,
+    "barcode_struct_r1": {
+        "keep_nonbarcode": false,
+        "blocks": [
+            {
+                "maxerrors": 1,
+                "blockfunction": "barcode",
+                "sequence": [
+                    "CCTTAACAT",
+                    "AGCGTAGAA",
+                    "TATAGGTGT",
+                    "GGCGACTCA"
+                ],
+                "blocktype": "barcodeList",
+                "blockname": "bc_r1",
+                "keepblock": false
+            },
+            {
+                "maxerrors": 1,
+                "blockfunction": "barcode",             
+                "sequence": [
+                    "GGGTCAGTACGTACGAGTCCC"
+                ],
+                "blocktype": "constantRegion",
+                "blockname": "con_r1",
+                "keepblock": true
+            },
+            {
+                "maxerrors": 0,
+                "blockfunction": "UMI",
+                "length": 6,
+                "blocktype": "randomBarcode",
+                "blockname": "umi_r1",
+                "keepblock": false
+            }
+        ]
+    },
+    "barcode_struct_r2": {
+        "keep_nonbarcode": true,
+        "blocks":[            
+            {
+                "maxerrors": 1,
+                "blockfunction": "barcode",
+                "sequence": [
+                    "CCTTAACAT",
+                    "AGCGTAGAA",
+                    "TATAGGTGT",
+                    "GGCGACTCA"
+                ],
+                "blocktype": "barcodeList",
+                "blockname": "bc_r2",
+                "keepblock": false
+            },
+            {
+                "maxerrors": 1,
+                "blockfunction": "barcode",             
+                "sequence": [
+                    "GGGTCAGTACGTACGAGTCCC"
+                ],
+                "blocktype": "constantRegion",
+                "blockname": "con_r2",
+                "keepblock": false
+            },
+            {
+                "maxerrors": 0,
+                "blockfunction": "UMI",
+                "length": 6,
+                "blocktype": "randomBarcode",
+                "blockname": "umi_r2",
+                "keepblock": false
+            }
+        ]
+    }   
+}
