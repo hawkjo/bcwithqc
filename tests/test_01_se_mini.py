@@ -143,7 +143,6 @@ def outsourced_star_output():
             f"--config={se_mini_config}",
             f"--output-dir={output_dir}",
             "--threads=1",
-            "--single-end-reads",
             "--block-type-for-STAR-alignment=constant",
             "-vvv",
         ]
@@ -179,7 +178,6 @@ def outsourced_star_output():
             f"--config={se_mini_config}",
             f"--output-dir={output_dir}",
             "--threads=1",
-            "--single-end-reads",
             "--keep-intermediary",
             "-vvv",
         ]

@@ -56,7 +56,7 @@ Genome version is compatible with current STAR
 Number of real (reference) chromosomes= 1
 1	toy_chr	64	0
 --sjdbOverhang = 100 taken from the generated genome
-Started loading the genome: Tue Apr 28 08:41:39 2026
+Started loading the genome: Tue Apr 28 09:54:10 2026
 
 Genome: size given as a parameter = 262144
 SA: size given as a parameter = 531
@@ -70,7 +70,7 @@ Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 262144 bytes
 SA file size: 531 bytes; state: good=1 eof=0 fail=0 bad=0
 Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 531 bytes
 Loading SAindex ... done: 411 bytes
-Finished loading the genome: Tue Apr 28 08:41:39 2026
+Finished loading the genome: Tue Apr 28 09:54:10 2026
 
 alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
 Loaded transcript database, nTr=1
@@ -80,9 +80,9 @@ Thread #1 end of input stream, nextChar=-1
 Completed: thread #0
 Completed: thread #1
 Joined thread # 1
-Apr 28 08:41:39 ..... finished mapping
+Apr 28 09:54:10 ..... finished mapping
 RAM after mapping:
-VmPeak:	  451152 kB; VmSize:	  384692 kB; VmHWM:	  207052 kB; VmRSS:	  207052 kB; 
+VmPeak:	  451152 kB; VmSize:	  384692 kB; VmHWM:	  206876 kB; VmRSS:	  206876 kB; 
 RAM after freeing genome index memory:
-VmPeak:	  451152 kB; VmSize:	  384432 kB; VmHWM:	  206928 kB; VmRSS:	  206796 kB; 
+VmPeak:	  451152 kB; VmSize:	  384432 kB; VmHWM:	  206620 kB; VmRSS:	  206620 kB; 
 ALL DONE!

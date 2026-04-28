@@ -2,10 +2,10 @@
 bcwithqc: Process sequencing barcodes and UMIs
 
 Usage:
-  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output-dir=<>) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output-dir=<>) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
-  bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--single-end-reads] [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
+  bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
 
 Options:
   --STAR-ref-dir=<>:                  Path to directory with STAR index.
@@ -24,7 +24,6 @@ Options:
   --random-tail-length=<>:            Mean (poisson) length of the random nucleotide tail [default: 20]. Set to a negative number to
                                         generate reads without tails.
   --keep-intermediary                 Keep intermediary files instead of deleting them [default: False].
-  --single-end-reads:                 Option for using single end instead of paired end reads [default: False]. 
   --block-type-for-STAR-alignment=<>: What part of the read is retained for STAR alignment [default: undefined_only] 
                                         'undefined_only' concatenates all parts that are not specified in the config.json
                                         'constant'  concatenates all 'constantRegion' blocktypes and unspecified parts

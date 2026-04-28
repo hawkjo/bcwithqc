@@ -166,7 +166,6 @@ def simulate_se_mini_output():
             "--nreads=10000",
             "--error-probability=0.1",
             "--substitution-probability=0.7",
-            "--single-end-reads",
             "-vvv",
         ]
 
@@ -182,7 +181,6 @@ def simulate_se_mini_output():
             f"--config={config}",
             f"--output-dir={count_dir}",
             "--threads=1",
-            "--single-end-reads",
             "-vvv",
         ]
         run_command(preprocess_command, env=env, label="Preprocess subprocess")
@@ -214,7 +212,6 @@ def simulate_se_mini_output():
             f"--config={config}",
             f"--output-dir={count_dir}",
             "--threads=1",
-            "--single-end-reads",
             "--keep-intermediary",
             "--block-type-for-STAR-alignment=constant",
             "-vvv",

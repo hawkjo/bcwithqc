@@ -104,7 +104,6 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
             f"--config={config}",
             f"--output-dir={output_dir}",
             "--threads=1",
-            "--single-end-reads",
             "-vvv",
         ]
         preprocess_result = run_command(preprocess_cmd, env)
@@ -144,7 +143,6 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
             f"--output-dir={output_dir}",
             "--threads=1",
             "--keep-intermediary",
-            "--single-end-reads",
             "-vvv",
         ]
         count_result = run_command(count_cmd, env)

@@ -84,7 +84,7 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
     
     @property
     def single_end_reads(self):
-        return self._arguments['--single-end-reads']
+        return self._config["single_end_reads"]
     
     @property
     def block_type_for_STAR_alignment(self):
@@ -132,4 +132,4 @@ class SimulationCommandLineArguments(CommandLineArgumentsBase):
         
     @property
     def single_end_reads(self):
-        return self._arguments['--single-end-reads']
+        return self._config["single_end_reads"]

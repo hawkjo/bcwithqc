@@ -163,7 +163,6 @@ def sample_dirs(request):
             f"--config={config}",
             f"--output-dir={tmp_dir}",
             f"--threads={threads}",
-            "--single-end-reads",
             "-vvv",
         ]
         preprocess_result = run_command(preprocess_cmd, env)
@@ -203,7 +202,6 @@ def sample_dirs(request):
             f"--output-dir={tmp_dir}",
             f"--threads={threads}",
             "--keep-intermediary",
-            "--single-end-reads",
             "-vvv",
         ]
         count_result = run_command(count_cmd, env)
