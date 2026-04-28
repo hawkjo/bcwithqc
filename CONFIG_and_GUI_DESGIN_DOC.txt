@@ -4,7 +4,7 @@ This is an instruction for how the GUI should create the config.json file, as we
 ## Under the Hood: 
 The GUI needs to produce a .json or .json.gz file (example below), that contains one dictionary/JSON object, which has the following key-value pairs: 
     1. "unknown_read_orientation": [BOL]
-    2. "single_end_reads":[BOL] (not currently implemented, right now this is done via command line option)
+    2. "single_end_reads":[BOL] 
     3. Create one (single end) or two (paired end) dictionaries "barcode_struct_r1" and "barcode_struct_r2", which each must contain the following key-value pairs:
         1. "keep_nonbarcode":[BOL]
         2. "blocks":[LIST of dicts] -> Each Block must contain the following key-value pairs:
@@ -22,9 +22,7 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
 
     1. Select once for the the entire config file: 
         1. If the reads were shuffled between r1 and r2 and need to be identified -> "unknown_read_orientation":[BOL]
-       (2.) Select if we are dealing with single end or paired end reads          -> "single_end_reads":[BOL]
-            (This is currently being handled via a command line option,
-            and still needs to be integrated to be config file based)
+        2. Select if we are dealing with single end or paired end reads          -> "single_end_reads":[BOL]
 
     2. Select for each read direction if the overhang should be kept or not 
                             -> "keep_nonbarcode":[BOL] in both "barcode_struct_r1" dictionary, and for paired end also in "barcode_struct_r2"

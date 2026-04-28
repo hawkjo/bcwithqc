@@ -213,7 +213,6 @@ def simulate_se_mini_output():
             f"--output-dir={count_dir}",
             "--threads=1",
             "--keep-intermediary",
-            "--block-type-for-STAR-alignment=constant",
             "-vvv",
         ]
         run_command(count_command, env=env, label="Count subprocess")

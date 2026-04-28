@@ -2,14 +2,13 @@
 bcwithqc: Process sequencing barcodes and UMIs
 
 Usage:
-  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output-dir=<>) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> --STAR-output-dir=<> --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
 
 Options:
-  --STAR-ref-dir=<>:                  Path to directory with STAR index.
-  --STAR-output-dir=<>:                   Path to STAR output directory. All (BAM/SAM) files with the suffix "*Aligned.out.bam" will be processed in lexographic order. 
+  --STAR-output-dir=<>:               Path to STAR output directory. All BAM/SAM files with the suffix "*Aligned.out.bam" will be processed in lexicographic order.
   --config=<>:                        Path to JSON configuration.
   --output-dir=<>:                    Path to output directory [default: .].
   --threads=<>:                       Number of threads [default: 1].
@@ -24,19 +23,20 @@ Options:
   --random-tail-length=<>:            Mean (poisson) length of the random nucleotide tail [default: 20]. Set to a negative number to
                                         generate reads without tails.
   --keep-intermediary                 Keep intermediary files instead of deleting them [default: False].
-  --block-type-for-STAR-alignment=<>: What part of the read is retained for STAR alignment [default: undefined_only] 
-                                        'undefined_only' concatenates all parts that are not specified in the config.json
-                                        'constant'  concatenates all 'constantRegion' blocktypes and unspecified parts
-                                        'constant_mask' retains 'constantRegion' blocktypes and unspecified parts and replaces the rest with Ns
   -h --help                           Show this screen.
   --version                           Show version.
 
 Commands:
   preprocess       Preprocess files such that STAR can be run on the output.
-  count            Process and count input files.
+  count            Process and count input files using an existing STAR output directory.
   count_matrix     Build a count matrix (or matrices) from an existing bam file.
   simulate_reads   Generate synthetic sequencing reads given a barcode configuration.
 """
+
+# --STAR-ref-dir=<> has been removed from bcwithqc count, and raiseValueErrors have been added
+# to block usage of that code branch, but the code itself has not been deleted for future use.
+
+
 import logging
 import os
 from docopt import docopt

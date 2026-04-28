@@ -224,7 +224,7 @@ def process_fastqs(arguments):
         if not arguments.star_output_path: # This branch was deprecated, but the code still remains for future use. 
             raise ValueError(
                 "Internal Processing with STAR not available."
-                "Please provide a path to the unsorted aligned BAM/SAM file with --STAR-output-dir"
+                "Please provide a path to the unsorted aligned BAM/SAM file(s) with --STAR-output-dir"
             ) 
             single_align_fqs_and_tags_fpaths = preprocess_fastqs(arguments)
 
@@ -266,7 +266,7 @@ def process_fastqs(arguments):
         if not arguments.star_output_path: # This branch was deprecated, but the code still remains for future use. 
             raise ValueError(
                 "Internal Processing with STAR not available."
-                "Please provide a path to the unsorted aligned BAM/SAM file with --STAR-output-dir"
+                "Please provide a path to the unsorted aligned BAM/SAM file(s) with --STAR-output-dir"
             )
             paired_align_fqs_and_tags_fpaths, namepairidxs = preprocess_fastqs(arguments)
 

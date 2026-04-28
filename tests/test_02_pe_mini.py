@@ -148,7 +148,6 @@ def outsourced_star_output(request):
             f"--config={pe_mini_config}",
             f"--output-dir={output_dir}",
             f"--threads={threads}",
-            "--block-type-for-STAR-alignment=constant",
             "-vvv",
         ]
         preprocess_result = run_command(preprocess_cmd, env)
