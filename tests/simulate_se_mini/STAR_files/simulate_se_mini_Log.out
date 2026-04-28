@@ -2,14 +2,14 @@ STAR version=2.7.11b
 STAR compilation time,server,dir=2025-05-14T08:52:47+00:00 jupyter-link:/home/link/local/lib/STAR-2.7.11b/source
 STAR git: 
 ##### Command Line:
-STAR --runThreadN 1 --genomeDir /home/link/John_UMIs/bcwithqc/tests/../examples/se_mini_genome_index --readFilesIn /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/sans_bc_simulate_se_mini_config.fq --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/STAR_files/sans_bc_simulate_se_mini_config_ --outFilterMultimapNmax 1 --outSAMtype BAM Unsorted --outSAMattributes NH HI AS nM GX GN
+STAR --runThreadN 1 --genomeDir /home/link/John_UMIs/bcwithqc/tests/../examples/se_mini_genome_index --readFilesIn /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/sans_bc_simulate_se_mini_config.fq --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/STAR_files/simulate_se_mini_ --outFilterMultimapNmax 1 --outSAMtype BAM Unsorted --outSAMattributes NH HI AS nM GX GN
 ##### Initial USER parameters from Command Line:
-outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/STAR_files/sans_bc_simulate_se_mini_config_
+outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/STAR_files/simulate_se_mini_
 ###### All USER parameters from Command Line:
 runThreadN                    1     ~RE-DEFINED
 genomeDir                     /home/link/John_UMIs/bcwithqc/tests/../examples/se_mini_genome_index     ~RE-DEFINED
 readFilesIn                   /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/sans_bc_simulate_se_mini_config.fq        ~RE-DEFINED
-outFileNamePrefix             /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/STAR_files/sans_bc_simulate_se_mini_config_     ~RE-DEFINED
+outFileNamePrefix             /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/STAR_files/simulate_se_mini_     ~RE-DEFINED
 outFilterMultimapNmax         1     ~RE-DEFINED
 outSAMtype                    BAM   Unsorted        ~RE-DEFINED
 outSAMattributes              NH   HI   AS   nM   GX   GN        ~RE-DEFINED
@@ -19,14 +19,14 @@ outSAMattributes              NH   HI   AS   nM   GX   GN        ~RE-DEFINED
 runThreadN                        1
 genomeDir                         /home/link/John_UMIs/bcwithqc/tests/../examples/se_mini_genome_index
 readFilesIn                       /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/sans_bc_simulate_se_mini_config.fq   
-outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/STAR_files/sans_bc_simulate_se_mini_config_
+outFileNamePrefix                 /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/STAR_files/simulate_se_mini_
 outSAMtype                        BAM   Unsorted   
 outSAMattributes                  NH   HI   AS   nM   GX   GN   
 outFilterMultimapNmax             1
 
 -------------------------------
 ##### Final effective command line:
-STAR   --runThreadN 1   --genomeDir /home/link/John_UMIs/bcwithqc/tests/../examples/se_mini_genome_index   --readFilesIn /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/sans_bc_simulate_se_mini_config.fq      --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/STAR_files/sans_bc_simulate_se_mini_config_   --outSAMtype BAM   Unsorted      --outSAMattributes NH   HI   AS   nM   GX   GN      --outFilterMultimapNmax 1
+STAR   --runThreadN 1   --genomeDir /home/link/John_UMIs/bcwithqc/tests/../examples/se_mini_genome_index   --readFilesIn /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/sans_bc_simulate_se_mini_config.fq      --outFileNamePrefix /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/STAR_files/simulate_se_mini_   --outSAMtype BAM   Unsorted      --outSAMattributes NH   HI   AS   nM   GX   GN      --outFilterMultimapNmax 1
 ----------------------------------------
 
 Number of fastq files for each mate = 1
@@ -56,7 +56,7 @@ Genome version is compatible with current STAR
 Number of real (reference) chromosomes= 1
 1	toy_chr	21	0
 --sjdbOverhang = 100 taken from the generated genome
-Started loading the genome: Fri Apr 24 15:36:21 2026
+Started loading the genome: Tue Apr 28 09:28:38 2026
 
 Genome: size given as a parameter = 262144
 SA: size given as a parameter = 177
@@ -70,16 +70,16 @@ Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 262144 bytes
 SA file size: 177 bytes; state: good=1 eof=0 fail=0 bad=0
 Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 177 bytes
 Loading SAindex ... done: 411 bytes
-Finished loading the genome: Fri Apr 24 15:36:21 2026
+Finished loading the genome: Tue Apr 28 09:28:38 2026
 
 alignIntronMax=alignMatesGapMax=0, the max intron size will be approximately determined by (2^winBinNbits)*winAnchorDistNbins=589824
 Loaded transcript database, nTr=1
 Loaded exon database, nEx=1
 Thread #0 end of input stream, nextChar=-1
 Completed: thread #0
-Apr 24 15:36:21 ..... finished mapping
+Apr 28 09:28:38 ..... finished mapping
 RAM after mapping:
-VmPeak:	  161072 kB; VmSize:	  159912 kB; VmHWM:	  107152 kB; VmRSS:	  107152 kB; 
+VmPeak:	  161072 kB; VmSize:	  159908 kB; VmHWM:	  107148 kB; VmRSS:	  107148 kB; 
 RAM after freeing genome index memory:
-VmPeak:	  161072 kB; VmSize:	  159652 kB; VmHWM:	  106892 kB; VmRSS:	  106892 kB; 
+VmPeak:	  161072 kB; VmSize:	  159648 kB; VmHWM:	  106888 kB; VmRSS:	  106888 kB; 
 ALL DONE!

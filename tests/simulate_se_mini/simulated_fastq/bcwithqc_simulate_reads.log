@@ -1,4 +1,4 @@
-2026-04-24 15:36:04   {'--STAR-output-dir': None,
+2026-04-28 09:28:20   {'--STAR-output-dir': None,
  '--STAR-ref-dir': None,
  '--block-type-for-STAR-alignment': None,
  '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/simulate_se_mini_config.json',
@@ -20,5 +20,5 @@
  'count_matrix': False,
  'preprocess': False,
  'simulate_reads': True}
-2026-04-24 15:36:04   Writing log to: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/simulated_fastq/bcwithqc_simulate_reads.log
-2026-04-24 15:36:04   Simulation mode: single-end. Reason: --single-end-reads was set and no barcode_struct_r2 is present.
+2026-04-28 09:28:20   Writing log to: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/simulated_fastq/bcwithqc_simulate_reads.log
+2026-04-28 09:28:20   Simulation mode: single-end. Reason: --single-end-reads was set and no barcode_struct_r2 is present.

@@ -1,0 +1,44 @@
+2026-04-28 09:28:26   {'--STAR-output-dir': None,
+ '--STAR-ref-dir': None,
+ '--block-type-for-STAR-alignment': None,
+ '--config': '/home/link/John_UMIs/bcwithqc/tests/../examples/simulate_se_mini_config.json',
+ '--error-probability': '0.1',
+ '--insertion-probability': '0.5',
+ '--keep-intermediary': False,
+ '--nreads': None,
+ '--output-dir': '/home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output',
+ '--random-tail-length': '20',
+ '--seed': '42',
+ '--single-end-reads': True,
+ '--substitution-probability': '0.7',
+ '--threads': '1',
+ '--unique-umis': '0.5',
+ '-v': 3,
+ '<bcwithqc_bam_file>': None,
+ '<fastq_dir>': '/home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/simulated_fastq',
+ 'count': False,
+ 'count_matrix': False,
+ 'preprocess': True,
+ 'simulate_reads': False}
+2026-04-28 09:28:26   Writing log to: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/bcwithqc_preprocess.log
+2026-04-28 09:28:26   Files to process:
+2026-04-28 09:28:26     /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/simulated_fastq/simulate_se_mini_config.txt.gz
+2026-04-28 09:28:26   Processing file:
+2026-04-28 09:28:26     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/simulated_fastq/simulate_se_mini_config.txt.gz
+2026-04-28 09:28:26     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/sans_bc_simulate_se_mini_config.fq
+2026-04-28 09:28:26     tags file:     /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/rec_names_and_tags1_simulate_se_mini_config.txt
+2026-04-28 09:28:26   Building aligners and barcode decoders
+2026-04-28 09:28:26   Creating converter from 7 to 5
+2026-04-28 09:28:26   Creating converter from 5 to 7
+2026-04-28 09:28:26   Creating converter from 7 to 5
+2026-04-28 09:28:26   Creating converter from 5 to 7
+2026-04-28 09:28:26   Processing first 10,000 for score threshold...
+2026-04-28 09:28:31   Score threshold: 0.33
+2026-04-28 09:28:31   Continuing...
+2026-04-28 09:28:38   10,000 barcode records processed
+2026-04-28 09:28:38   2,740 records output
+2026-04-28 09:28:38   Collected 10,000 read QC entries
+2026-04-28 09:28:38   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/QC_metrics/QC_metrics_bcs.tsv
+2026-04-28 09:28:38   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/QC_metrics/QC_metrics_bcs_summary.tsv
+2026-04-28 09:28:38   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/QC_metrics/QC_metrics_reads.tsv
+2026-04-28 09:28:38   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/simulate_se_mini/count_output/QC_metrics/QC_metrics_reads_summary.tsv

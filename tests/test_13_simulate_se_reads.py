@@ -15,17 +15,75 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 se_test_config = os.path.join(SCRIPT_DIR, "../examples/simulate_se_mini_config.json")
 star_index = os.path.join(SCRIPT_DIR, "../examples/se_mini_genome_index")
+star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
-USE_TEMP_OUTPUT = False
-USE_STAR_REF = True
-
+USE_TEMP_OUTPUT = True
 ERROR_SEGMENT_PATTERN = re.compile(r"S(\d+)D(\d+)I(\d+)")
+
+
+def get_star_env():
+    env = os.environ.copy()
+    if "GITHUB_ACTIONS" in env:
+        github_star_dir = "/home/runner/work/bcwithqc/bcwithqc/STAR-2.7.10b/source"
+        star_executable = os.path.join(github_star_dir, "STAR")
+        if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
+            raise RuntimeError(f"STAR executable not found at GitHub Actions path '{star_executable}'")
+        env["PATH"] = f"{github_star_dir}:{env.get('PATH', '')}"
+    else:
+        
+        star_executable = os.path.join(star_dir_local, "STAR")
+        if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
+            raise RuntimeError(
+                f"STAR executable not found or not executable at '{star_executable}'. "
+                "Please set 'star_dir_local' to the correct local STAR installation path."
+            )
+        env["PATH"] = f"{star_dir_local}:{env.get('PATH', '')}"
+    return env
+
+
+def run_command(command, env=None, workdir=None, label="Subprocess"):
+    try:
+        result = subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            cwd=workdir,
+            text=True,
+        )
+        print("COMMAND:", " ".join(command))
+        print("STDOUT:\n", result.stdout)
+        print("STDERR:\n", result.stderr)
+        return result
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write(f"{label} failed:\n")
+        sys.stderr.write(f"Return code: {e.returncode}\n")
+        sys.stderr.write(f"Command: {' '.join(command)}\n")
+        sys.stderr.write(f"STDOUT:\n{e.stdout}\n")
+        sys.stderr.write(f"STDERR:\n{e.stderr}\n")
+        sys.stderr.flush()
+        raise
+
+
+def find_single_preprocessed_fastq(output_dir):
+    candidates = glob.glob(os.path.join(output_dir, "sans_bc_*.fq"))
+    candidates += glob.glob(os.path.join(output_dir, "sans_bc_*.fastq"))
+    candidates += glob.glob(os.path.join(output_dir, "sans_bc_*.fq.gz"))
+    candidates += glob.glob(os.path.join(output_dir, "sans_bc_*.fastq.gz"))
+
+    assert len(candidates) == 1, (
+        f"Expected exactly one preprocessed sans_bc FASTQ, "
+        f"found {len(candidates)}: {candidates}"
+    )
+    return candidates[0]
 
 
 def open_maybe_gzip(path, mode="rt"):
     if path.endswith(".gz"):
         return gzip.open(path, mode)
     return open(path, mode)
+
 
 def write_error_combo_table(fastq_path, out_tsv):
     combo_counter = Counter()
@@ -80,22 +138,7 @@ def simulate_se_mini_output():
     config_dir = os.path.dirname(os.path.abspath(config))
     config_stem = os.path.splitext(os.path.basename(config))[0]
 
-    env = os.environ.copy()
-    if "GITHUB_ACTIONS" in env:
-        github_star_dir = "/home/runner/work/bcwithqc/bcwithqc/STAR-2.7.10b/source"
-        star_executable = os.path.join(github_star_dir, "STAR")
-        if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
-            raise RuntimeError(f"STAR executable not found at GitHub Actions path '{star_executable}'")
-        env["PATH"] = f"{github_star_dir}:{env.get('PATH', '')}"
-    else:
-        star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
-        star_executable = os.path.join(star_dir_local, "STAR")
-        if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
-            raise RuntimeError(
-                f"STAR executable not found or not executable at '{star_executable}'. "
-                "Please set 'star_dir_local' to the correct local STAR installation path."
-            )
-        env["PATH"] = f"{star_dir_local}:{env.get('PATH', '')}"
+    env = get_star_env()
 
     if USE_TEMP_OUTPUT:
         context = tempfile.TemporaryDirectory(prefix="simulate_se_mini_pipeline_")
@@ -109,8 +152,10 @@ def simulate_se_mini_output():
     with context as root_dir:
         sim_dir = os.path.join(root_dir, "simulated_fastq")
         count_dir = os.path.join(root_dir, "count_output")
+        star_dir = os.path.join(root_dir, "STAR_files")
         os.makedirs(sim_dir, exist_ok=True)
         os.makedirs(count_dir, exist_ok=True)
+        os.makedirs(star_dir, exist_ok=True)
 
         simulated_fastq = os.path.join(sim_dir, f"{config_stem}.txt.gz")
 
@@ -125,30 +170,47 @@ def simulate_se_mini_output():
             "-vvv",
         ]
 
-        try:
-            result = subprocess.run(
-                simulate_command,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            print(result.stdout)
-            print(result.stderr)
-        except subprocess.CalledProcessError as e:
-            sys.stderr.write("Simulation subprocess failed:\n")
-            sys.stderr.write(f"Return code: {e.returncode}\n")
-            sys.stderr.write(f"Simulation dir: {sim_dir}\n")
-            sys.stderr.write(f"STDOUT:\n{e.stdout}\n")
-            sys.stderr.write(f"STDERR:\n{e.stderr}\n")
-            sys.stderr.flush()
-            raise
+        run_command(simulate_command, label="Simulation subprocess")
 
         assert os.path.isfile(simulated_fastq), f"Expected simulated FASTQ not found: {simulated_fastq}"
 
+        # 1. bcwithqc preprocess
+        # This avoids relying on the internal STAR execution path in `bcwithqc count`.
+        preprocess_command = [
+            "python", "-m", "bcwithqc", "preprocess",
+            sim_dir,
+            f"--config={config}",
+            f"--output-dir={count_dir}",
+            "--threads=1",
+            "--single-end-reads",
+            "-vvv",
+        ]
+        run_command(preprocess_command, env=env, label="Preprocess subprocess")
+
+        sans_bc_fastq = find_single_preprocessed_fastq(count_dir)
+
+        # 2. external STAR alignment
+        star_prefix = os.path.join(star_dir, "simulate_se_mini_")
+        star_command = [
+            "STAR",
+            "--runThreadN", "1",
+            "--genomeDir", star_index,
+            "--readFilesIn", sans_bc_fastq,
+            "--outFileNamePrefix", star_prefix,
+            "--outFilterMultimapNmax", "1",
+            "--outSAMtype", "BAM", "Unsorted",
+            "--outSAMattributes", "NH", "HI", "AS", "nM", "GX", "GN",
+        ]
+        run_command(star_command, env=env, label="STAR subprocess")
+
+        aligned_bam = f"{star_prefix}Aligned.out.bam"
+        assert os.path.isfile(aligned_bam), f"Expected STAR BAM not found: {aligned_bam}"
+
+        # 3. bcwithqc count from existing STAR result
         count_command = [
             "python", "-m", "bcwithqc", "count",
-            sim_dir,
+            count_dir,
+            f"--STAR-output-dir={star_dir}",
             f"--config={config}",
             f"--output-dir={count_dir}",
             "--threads=1",
@@ -157,49 +219,20 @@ def simulate_se_mini_output():
             "--block-type-for-STAR-alignment=constant",
             "-vvv",
         ]
-        if USE_STAR_REF:
-            count_command.insert(4, f"--STAR-ref-dir={star_index}")
-
-        try:
-            result = subprocess.run(
-                count_command,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=env,
-                text=True,
-            )
-            print(result.stdout)
-            print(result.stderr)
-        except subprocess.CalledProcessError as e:
-            sys.stderr.write("Count subprocess failed:\n")
-            sys.stderr.write(f"Return code: {e.returncode}\n")
-            sys.stderr.write(f"Count output dir: {count_dir}\n")
-            sys.stderr.write(f"Command: {' '.join(count_command)}\n")
-            sys.stderr.write(f"STDOUT:\n{e.stdout}\n")
-            sys.stderr.write(f"STDERR:\n{e.stderr}\n")
-            sys.stderr.flush()
-            raise
+        run_command(count_command, env=env, label="Count subprocess")
 
         before_tsv = os.path.join(count_dir, "simulate_se_mini_before.tsv")
         after_tsv = os.path.join(count_dir, "simulate_se_mini_after.tsv")
+        sans_bc_fastq = find_single_preprocessed_fastq(os.path.join(count_dir, "intermediary_files"))
 
         write_error_combo_table(simulated_fastq, before_tsv)
-
-        sans_bc_candidates = glob.glob(
-            os.path.join(count_dir, "intermediary_files", "sans_bc_*.fq")
-        )
-        assert len(sans_bc_candidates) == 1, (
-            f"Expected exactly one sans_bc FASTQ, found {len(sans_bc_candidates)}: {sans_bc_candidates}"
-        )
-        sans_bc_fastq = sans_bc_candidates[0]
-
         write_error_combo_table(sans_bc_fastq, after_tsv)
 
         yield {
             "root_dir": root_dir,
             "sim_dir": sim_dir,
             "count_dir": count_dir,
+            "star_dir": star_dir,
             "simulated_fastq": simulated_fastq,
             "sans_bc_fastq": sans_bc_fastq,
             "before_tsv": before_tsv,

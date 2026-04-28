@@ -1,2 +1,2 @@
-read	blockname	exact	corrected	ambiguous	no_match	total
-R1	cb1	3968	3359	0	2673	10000
+read	blockname	exact	corrected	below_threshold	ambiguous	no_match	total
+R1	cb1	3968	1284	2075	0	2673	10000
