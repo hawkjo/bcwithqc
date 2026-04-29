@@ -179,18 +179,23 @@ def process_fastqs(arguments):
     log.info('Indexing bam...')
     pysam.index(star_w_bc_sorted_fpath)
 
-    log.info('Correcting UMIs...')
-    correct_UMIs(star_w_bc_sorted_fpath, star_w_bc_umi_fpath, arguments.threads)
+    has_umis = misc.config_has_umis(arguments.config)
+    if has_umis:
+        log.info('Correcting UMIs...')
+        correct_UMIs(star_w_bc_sorted_fpath, star_w_bc_umi_fpath, arguments.threads)
+    else:
+        star_w_bc_umi_fpath = star_w_bc_sorted_fpath
 
     log.info('Sorting bam...')
     pysam.sort('-@', str(arguments.threads), '-o', star_w_bc_umi_sorted_fpath, star_w_bc_umi_fpath)
     log.info('Indexing bam...')
     pysam.index(star_w_bc_umi_sorted_fpath)
-    os.remove(star_w_bc_umi_fpath)
     os.remove(star_w_bc_sorted_fpath)
     os.remove(star_w_bc_sorted_fpath + '.bai')
+    if has_umis:
+        os.remove(star_w_bc_umi_fpath)
 
-    count_matrix(arguments, star_w_bc_umi_sorted_fpath)
+    count_matrix(arguments, star_w_bc_umi_sorted_fpath, has_umis)
     log.info('Done')
 
 
@@ -524,26 +529,44 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
     log.info(f'{total_out:,d} pairs of records output')
 
 
-def count_parallel_wrapper(ref_and_input_bam_fpath):
+def count_parallel_wrapper_umis(ref_and_input_bam_fpath):
     ref, input_bam_fpath = ref_and_input_bam_fpath
     read_count_given_bc_then_feature_then_umi = defaultdict(lambda : defaultdict(Counter))
     for read in pysam.AlignmentFile(input_bam_fpath).fetch(ref):
         if not read.is_paired or read.is_read1 or (read.is_read2 and read.mate_is_unmapped):
             for gx_gn_tup in misc.gx_gn_tups_from_read(read): # count read toward all compatible genes
                 read_count_given_bc_then_feature_then_umi[read.get_tag('CB')][gx_gn_tup][read.get_tag('UB')] += 1
+
+    # for pickling for multiprocessing
     for k in read_count_given_bc_then_feature_then_umi.keys():
         read_count_given_bc_then_feature_then_umi[k] = dict(read_count_given_bc_then_feature_then_umi[k])
     read_count_given_bc_then_feature_then_umi = dict(read_count_given_bc_then_feature_then_umi)
+
     return ref, read_count_given_bc_then_feature_then_umi
 
+def count_parallel_wrapper_no_umis(ref_and_input_bam_fpath):
+    ref, input_bam_fpath = ref_and_input_bam_fpath
+    read_count_given_bc_then_feature = defaultdict(Counter)
+    for read in pysam.AlignmentFile(input_bam_fpath).fetch(ref):
+        if not read.is_paired or read.is_read1 or (read.is_read2 and read.mate_is_unmapped):
+            for gx_gn_tup in misc.gx_gn_tups_from_read(read): # count read toward all compatible genes
+                read_count_given_bc_then_feature[read.get_tag('CB')][gx_gn_tup] += 1
 
-def count_matrix(arguments, input_bam_fpath):
+    # for pickling for multiprocessing
+    read_count_given_bc_then_feature = dict(read_count_given_bc_then_feature)
+
+    return ref, read_count_given_bc_then_feature
+
+def count_matrix(arguments, input_bam_fpath, has_umis=True):
     """
     Counts the reads from the input bam file and outputs sparse matrices of read and UMI counts.
     """
     raw_reads_output_dir = os.path.join(arguments.output_dir, 'raw_reads_bc_matrix')
-    raw_umis_output_dir = os.path.join(arguments.output_dir, 'raw_umis_bc_matrix')
-    for out_dir in [raw_reads_output_dir, raw_umis_output_dir]:
+    out_dirs = [raw_reads_output_dir]
+    if has_umis:
+        raw_umis_output_dir = os.path.join(arguments.output_dir, 'raw_umis_bc_matrix')
+        out_dirs.append(raw_umis_output_dir)
+    for out_dir in out_dirs:
         if os.path.exists(out_dir):
             log.info('Matrix output folder exists. Skipping count matrix build')
             return
@@ -566,19 +589,28 @@ def count_matrix(arguments, input_bam_fpath):
 
     log.info('Counting reads...')
     M_reads = lil_matrix((len(sorted_features), len(sorted_complete_bcs)), dtype=int)
-    M_umis = lil_matrix((len(sorted_features), len(sorted_complete_bcs)), dtype=int)
+    if has_umis:
+        M_umis = lil_matrix((len(sorted_features), len(sorted_complete_bcs)), dtype=int)
+        countfun = count_parallel_wrapper_umis
+    else:
+        countfun = count_parallel_wrapper_no_umis
+
     with Pool(arguments.threads) as pool:
         for ref, read_count_given_bc_then_feature_then_umi in pool.imap_unordered(
-                count_parallel_wrapper,
+                countfun,
                 reference_names_with_input_bam):
-            for comp_bc, read_count_given_feature_then_umi in read_count_given_bc_then_feature_then_umi.items():
+            for comp_bc, read_count in read_count_given_bc_then_feature_then_umi.items():
                 j = j_given_complete_bc[comp_bc]
-                for gx_gn_tup, umi_cntr in read_count_given_feature_then_umi.items():
+                for gx_gn_tup, cntr in read_count.items():
                     i = i_given_feature[gx_gn_tup]
-                    for umi, count in umi_cntr.items():
-                        M_reads[i, j] += count
-                        M_umis[i, j] += 1
+                    if has_umis:
+                        for umi, count in cntr.items():
+                            M_reads[i, j] += count
+                            M_umis[i, j] += 1
+                    else:
+                        M_reads[i, j] += cntr
 
     log.info('Writing raw read count matrix...')
-    for out_dir, M in [(raw_reads_output_dir, M_reads), (raw_umis_output_dir, M_umis)]:
-        misc.write_matrix(M, sorted_complete_bcs, sorted_features, out_dir)
+    misc.write_matrix(M_reads, sorted_complete_bcs, sorted_features, raw_reads_output_dir)
+    if has_umis:
+        misc.write_matrix(M_umis, sorted_complete_bcs, sorted_features, raw_umis_output_dir)
