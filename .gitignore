@@ -5,3 +5,4 @@ envbcwithqc
 build
 dist
 bcwithqc.egg-info
+bcwithqc/_version.py

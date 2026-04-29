@@ -1,0 +1,51 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatch-vcs", "hatchling"]
+
+[project]
+name = "bcwithqc"
+description = "A tool for processing Single-cell DNA and RNA sequencing data."
+readme = "README.md"
+authors = [
+    {name="John Hawkins", email="john.hawkins@embl.de"},
+    {name="Ilia Kats", email="i.kats@dkfz-heidelberg.de"}
+]
+requires-python = ">=3.10"
+keywords = ["DNA", "NGS", "bioinformatics", "TAP-Seq", "multiomics"]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dynamic = [ "version" ]
+dependencies = [
+    "numpy>=1.20.0,<2.0.0",
+    "docopt-ng",
+    "biopython==1.79",
+    "matplotlib>=3.5.2",
+    "pysam>=0.23.0",
+    "scipy>=1.10.1",
+    "freebarcodes>=3.1.0",
+    "pywfa @ git+https://github.com/kcleal/pywfa.git@master"
+]
+urls.Home-page = "https://github.com/hawkjo/bcwithqc"
+urls.Source = "https://github.com/hawkjo/bcwithqc"
+
+[project.scripts]
+bcwithqc = "bcwithqc.main:main"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "bcwithqc/_version.py"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.metadata]
+allow-direct-references = true
