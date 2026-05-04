@@ -1,7 +1,14 @@
 summary	count
-any_block_ge_2_total_errors	7186
-first_block_exactly_1D_second_block_exactly_1I	27
-first_block_exactly_1I_second_block_exactly_1D	23
+Should Reject: 2+ errors in any block	7186
+Should Accept: 1- errors in each block	2814
+
+Indel Issues
+First block: 1D; Second block: 1I	27
+first block: 1I; Second block: 1D	23
+First block: 1D; Second block: 1 or fewer errors	248
+First block: 1I; Second block: 1 or fewer errors	189
+Second block: 1D; First block: 1 or fewer errors	342
+Second block: 1I; First block: 1 or fewer errors	271
 
 count	combination
 681	S0D0I0;S1D0I0
