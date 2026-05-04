@@ -33,7 +33,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 32	VH00821:189:AACHYFJM5:1:1101:22511:1000	exact	R1_bc1	exact	R1_bc2	exact
 33	VH00821:189:AACHYFJM5:1:1101:22662:1000	exact	R1_bc1	exact	R1_bc2	exact
 34	VH00821:189:AACHYFJM5:1:1101:22738:1000	exact	R1_bc1	exact	R1_bc2	exact
-35	VH00821:189:AACHYFJM5:1:1101:22927:1000	no_match	R1_bc1	exact	R1_bc2	no_match
+35	VH00821:189:AACHYFJM5:1:1101:22927:1000	corrected	R1_bc1	exact	R1_bc2	corrected
 36	VH00821:189:AACHYFJM5:1:1101:23041:1000	exact	R1_bc1	exact	R1_bc2	exact
 37	VH00821:189:AACHYFJM5:1:1101:23155:1000	exact	R1_bc1	exact	R1_bc2	exact
 38	VH00821:189:AACHYFJM5:1:1101:23457:1000	exact	R1_bc1	exact	R1_bc2	exact
@@ -117,7 +117,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 116	VH00821:189:AACHYFJM5:1:1101:33645:1000	corrected	R1_bc1	exact	R1_bc2	corrected
 117	VH00821:189:AACHYFJM5:1:1101:33796:1000	exact	R1_bc1	exact	R1_bc2	exact
 118	VH00821:189:AACHYFJM5:1:1101:33834:1000	exact	R1_bc1	exact	R1_bc2	exact
-119	VH00821:189:AACHYFJM5:1:1101:33948:1000	no_match	R1_bc1	no_match	R1_bc2	exact
+119	VH00821:189:AACHYFJM5:1:1101:33948:1000	corrected	R1_bc1	corrected	R1_bc2	exact
 120	VH00821:189:AACHYFJM5:1:1101:34061:1000	corrected	R1_bc1	corrected	R1_bc2	exact
 121	VH00821:189:AACHYFJM5:1:1101:34137:1000	exact	R1_bc1	exact	R1_bc2	exact
 122	VH00821:189:AACHYFJM5:1:1101:34364:1000	exact	R1_bc1	exact	R1_bc2	exact
@@ -161,7 +161,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 160	VH00821:189:AACHYFJM5:1:1101:38909:1000	no_match	R1_bc1	no_match	R1_bc2	exact
 161	VH00821:189:AACHYFJM5:1:1101:39174:1000	corrected	R1_bc1	corrected	R1_bc2	exact
 162	VH00821:189:AACHYFJM5:1:1101:39363:1000	no_match	R1_bc1	no_match	R1_bc2	corrected
-163	VH00821:189:AACHYFJM5:1:1101:39401:1000	no_match	R1_bc1	no_match	R1_bc2	exact
+163	VH00821:189:AACHYFJM5:1:1101:39401:1000	corrected	R1_bc1	corrected	R1_bc2	exact
 164	VH00821:189:AACHYFJM5:1:1101:39477:1000	no_match	R1_bc1	no_match	R1_bc2	exact
 165	VH00821:189:AACHYFJM5:1:1101:39515:1000	corrected	R1_bc1	corrected	R1_bc2	corrected
 166	VH00821:189:AACHYFJM5:1:1101:39591:1000	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -178,7 +178,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 177	VH00821:189:AACHYFJM5:1:1101:40878:1000	no_match	R1_bc1	no_match	R1_bc2	exact
 178	VH00821:189:AACHYFJM5:1:1101:40954:1000	no_match	R1_bc1	no_match	R1_bc2	exact
 179	VH00821:189:AACHYFJM5:1:1101:40992:1000	corrected	R1_bc1	corrected	R1_bc2	exact
-180	VH00821:189:AACHYFJM5:1:1101:41295:1000	no_match	R1_bc1	no_match	R1_bc2	exact
+180	VH00821:189:AACHYFJM5:1:1101:41295:1000	corrected	R1_bc1	corrected	R1_bc2	exact
 181	VH00821:189:AACHYFJM5:1:1101:41370:1000	no_match	R1_bc1	no_match	R1_bc2	exact
 182	VH00821:189:AACHYFJM5:1:1101:41598:1000	no_match	R1_bc1	no_match	R1_bc2	exact
 183	VH00821:189:AACHYFJM5:1:1101:41711:1000	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -301,7 +301,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 300	VH00821:189:AACHYFJM5:1:1101:31846:1019	exact	R1_bc1	exact	R1_bc2	exact
 301	VH00821:189:AACHYFJM5:1:1101:31997:1019	exact	R1_bc1	exact	R1_bc2	exact
 302	VH00821:189:AACHYFJM5:1:1101:32262:1019	exact	R1_bc1	exact	R1_bc2	exact
-303	VH00821:189:AACHYFJM5:1:1101:32300:1019	no_match	R1_bc1	exact	R1_bc2	no_match
+303	VH00821:189:AACHYFJM5:1:1101:32300:1019	corrected	R1_bc1	exact	R1_bc2	corrected
 304	VH00821:189:AACHYFJM5:1:1101:32338:1019	exact	R1_bc1	exact	R1_bc2	exact
 305	VH00821:189:AACHYFJM5:1:1101:32452:1019	exact	R1_bc1	exact	R1_bc2	exact
 306	VH00821:189:AACHYFJM5:1:1101:32490:1019	exact	R1_bc1	exact	R1_bc2	exact
@@ -351,7 +351,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 350	VH00821:189:AACHYFJM5:1:1101:37943:1019	exact	R1_bc1	exact	R1_bc2	exact
 351	VH00821:189:AACHYFJM5:1:1101:38019:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 352	VH00821:189:AACHYFJM5:1:1101:38132:1019	corrected	R1_bc1	corrected	R1_bc2	exact
-353	VH00821:189:AACHYFJM5:1:1101:38208:1019	no_match	R1_bc1	no_match	R1_bc2	exact
+353	VH00821:189:AACHYFJM5:1:1101:38208:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 354	VH00821:189:AACHYFJM5:1:1101:38549:1019	exact	R1_bc1	exact	R1_bc2	exact
 355	VH00821:189:AACHYFJM5:1:1101:38587:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 356	VH00821:189:AACHYFJM5:1:1101:38814:1019	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -372,7 +372,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 371	VH00821:189:AACHYFJM5:1:1101:40253:1019	exact	R1_bc1	exact	R1_bc2	exact
 372	VH00821:189:AACHYFJM5:1:1101:40518:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 373	VH00821:189:AACHYFJM5:1:1101:40670:1019	corrected	R1_bc1	corrected	R1_bc2	exact
-374	VH00821:189:AACHYFJM5:1:1101:40708:1019	no_match	R1_bc1	no_match	R1_bc2	exact
+374	VH00821:189:AACHYFJM5:1:1101:40708:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 375	VH00821:189:AACHYFJM5:1:1101:41011:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 376	VH00821:189:AACHYFJM5:1:1101:41086:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 377	VH00821:189:AACHYFJM5:1:1101:41389:1019	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -380,7 +380,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 379	VH00821:189:AACHYFJM5:1:1101:41844:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 380	VH00821:189:AACHYFJM5:1:1101:41882:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 381	VH00821:189:AACHYFJM5:1:1101:41957:1019	no_match	R1_bc1	no_match	R1_bc2	exact
-382	VH00821:189:AACHYFJM5:1:1101:42109:1019	no_match	R1_bc1	no_match	R1_bc2	exact
+382	VH00821:189:AACHYFJM5:1:1101:42109:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 383	VH00821:189:AACHYFJM5:1:1101:42260:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 384	VH00821:189:AACHYFJM5:1:1101:42450:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 385	VH00821:189:AACHYFJM5:1:1101:42563:1019	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -388,9 +388,9 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 387	VH00821:189:AACHYFJM5:1:1101:42715:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 388	VH00821:189:AACHYFJM5:1:1101:42791:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 389	VH00821:189:AACHYFJM5:1:1101:43018:1019	corrected	R1_bc1	corrected	R1_bc2	exact
-390	VH00821:189:AACHYFJM5:1:1101:43245:1019	no_match	R1_bc1	no_match	R1_bc2	exact
+390	VH00821:189:AACHYFJM5:1:1101:43245:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 391	VH00821:189:AACHYFJM5:1:1101:43283:1019	corrected	R1_bc1	corrected	R1_bc2	exact
-392	VH00821:189:AACHYFJM5:1:1101:43662:1019	no_match	R1_bc1	no_match	R1_bc2	exact
+392	VH00821:189:AACHYFJM5:1:1101:43662:1019	corrected	R1_bc1	corrected	R1_bc2	exact
 393	VH00821:189:AACHYFJM5:1:1101:43737:1019	no_match	R1_bc1	no_match	R1_bc2	exact
 394	VH00821:189:AACHYFJM5:1:1101:18269:1038	exact	R1_bc1	exact	R1_bc2	exact
 395	VH00821:189:AACHYFJM5:1:1101:18383:1038	exact	R1_bc1	exact	R1_bc2	exact
@@ -415,7 +415,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 414	VH00821:189:AACHYFJM5:1:1101:20844:1038	exact	R1_bc1	exact	R1_bc2	exact
 415	VH00821:189:AACHYFJM5:1:1101:21034:1038	exact	R1_bc1	exact	R1_bc2	exact
 416	VH00821:189:AACHYFJM5:1:1101:21185:1038	exact	R1_bc1	exact	R1_bc2	exact
-417	VH00821:189:AACHYFJM5:1:1101:21299:1038	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+417	VH00821:189:AACHYFJM5:1:1101:21299:1038	exact	R1_bc1	exact	R1_bc2	exact
 418	VH00821:189:AACHYFJM5:1:1101:21412:1038	exact	R1_bc1	exact	R1_bc2	exact
 419	VH00821:189:AACHYFJM5:1:1101:21526:1038	exact	R1_bc1	exact	R1_bc2	exact
 420	VH00821:189:AACHYFJM5:1:1101:21640:1038	exact	R1_bc1	exact	R1_bc2	exact
@@ -426,7 +426,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 425	VH00821:189:AACHYFJM5:1:1101:22018:1038	exact	R1_bc1	exact	R1_bc2	exact
 426	VH00821:189:AACHYFJM5:1:1101:22246:1038	exact	R1_bc1	exact	R1_bc2	exact
 427	VH00821:189:AACHYFJM5:1:1101:22359:1038	exact	R1_bc1	exact	R1_bc2	exact
-428	VH00821:189:AACHYFJM5:1:1101:22662:1038	no_match	R1_bc1	no_match	R1_bc2	exact
+428	VH00821:189:AACHYFJM5:1:1101:22662:1038	corrected	R1_bc1	corrected	R1_bc2	exact
 429	VH00821:189:AACHYFJM5:1:1101:22776:1038	exact	R1_bc1	exact	R1_bc2	exact
 430	VH00821:189:AACHYFJM5:1:1101:23155:1038	exact	R1_bc1	exact	R1_bc2	exact
 431	VH00821:189:AACHYFJM5:1:1101:23306:1038	exact	R1_bc1	exact	R1_bc2	exact
@@ -584,8 +584,8 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 583	VH00821:189:AACHYFJM5:1:1101:43491:1038	no_match	R1_bc1	no_match	R1_bc2	exact
 584	VH00821:189:AACHYFJM5:1:1101:43643:1038	corrected	R1_bc1	corrected	R1_bc2	exact
 585	VH00821:189:AACHYFJM5:1:1101:43870:1038	corrected	R1_bc1	corrected	R1_bc2	exact
-586	VH00821:189:AACHYFJM5:1:1101:44097:1038	no_match	R1_bc1	no_match	R1_bc2	exact
-587	VH00821:189:AACHYFJM5:1:1101:44400:1038	no_match	R1_bc1	no_match	R1_bc2	exact
+586	VH00821:189:AACHYFJM5:1:1101:44097:1038	corrected	R1_bc1	corrected	R1_bc2	exact
+587	VH00821:189:AACHYFJM5:1:1101:44400:1038	corrected	R1_bc1	corrected	R1_bc2	exact
 588	VH00821:189:AACHYFJM5:1:1101:44552:1038	corrected	R1_bc1	corrected	R1_bc2	exact
 589	VH00821:189:AACHYFJM5:1:1101:44589:1038	corrected	R1_bc1	corrected	R1_bc2	exact
 590	VH00821:189:AACHYFJM5:1:1101:44627:1038	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -801,7 +801,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 800	VH00821:189:AACHYFJM5:1:1101:44457:1057	exact	R1_bc1	exact	R1_bc2	exact
 801	VH00821:189:AACHYFJM5:1:1101:44608:1057	corrected	R1_bc1	corrected	R1_bc2	exact
 802	VH00821:189:AACHYFJM5:1:1101:44684:1057	no_match	R1_bc1	no_match	R1_bc2	exact
-803	VH00821:189:AACHYFJM5:1:1101:44760:1057	no_match	R1_bc1	no_match	R1_bc2	exact
+803	VH00821:189:AACHYFJM5:1:1101:44760:1057	corrected	R1_bc1	corrected	R1_bc2	exact
 804	VH00821:189:AACHYFJM5:1:1101:44874:1057	no_match	R1_bc1	no_match	R1_bc2	exact
 805	VH00821:189:AACHYFJM5:1:1101:44949:1057	no_match	R1_bc1	no_match	R1_bc2	exact
 806	VH00821:189:AACHYFJM5:1:1101:45025:1057	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -809,13 +809,13 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 808	VH00821:189:AACHYFJM5:1:1101:45214:1057	no_match	R1_bc1	no_match	R1_bc2	exact
 809	VH00821:189:AACHYFJM5:1:1101:45252:1057	corrected	R1_bc1	corrected	R1_bc2	exact
 810	VH00821:189:AACHYFJM5:1:1101:45366:1057	no_match	R1_bc1	no_match	R1_bc2	exact
-811	VH00821:189:AACHYFJM5:1:1101:45404:1057	no_match	R1_bc1	no_match	R1_bc2	exact
+811	VH00821:189:AACHYFJM5:1:1101:45404:1057	corrected	R1_bc1	corrected	R1_bc2	exact
 812	VH00821:189:AACHYFJM5:1:1101:45442:1057	no_match	R1_bc1	no_match	R1_bc2	exact
-813	VH00821:189:AACHYFJM5:1:1101:45479:1057	no_match	R1_bc1	no_match	R1_bc2	exact
+813	VH00821:189:AACHYFJM5:1:1101:45479:1057	corrected	R1_bc1	corrected	R1_bc2	exact
 814	VH00821:189:AACHYFJM5:1:1101:45820:1057	no_match	R1_bc1	no_match	R1_bc2	exact
 815	VH00821:189:AACHYFJM5:1:1101:46010:1057	corrected	R1_bc1	corrected	R1_bc2	exact
 816	VH00821:189:AACHYFJM5:1:1101:46161:1057	no_match	R1_bc1	no_match	R1_bc2	exact
-817	VH00821:189:AACHYFJM5:1:1101:46237:1057	no_match	R1_bc1	no_match	R1_bc2	exact
+817	VH00821:189:AACHYFJM5:1:1101:46237:1057	corrected	R1_bc1	corrected	R1_bc2	exact
 818	VH00821:189:AACHYFJM5:1:1101:46388:1057	no_match	R1_bc1	no_match	R1_bc2	exact
 819	VH00821:189:AACHYFJM5:1:1101:46540:1057	no_match	R1_bc1	no_match	R1_bc2	exact
 820	VH00821:189:AACHYFJM5:1:1101:46578:1057	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -1301,8 +1301,8 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 1300	VH00821:189:AACHYFJM5:1:1101:49153:1095	exact	R1_bc1	exact	R1_bc2	exact
 1301	VH00821:189:AACHYFJM5:1:1101:49191:1095	corrected	R1_bc1	corrected	R1_bc2	exact
 1302	VH00821:189:AACHYFJM5:1:1101:49418:1095	no_match	R1_bc1	no_match	R1_bc2	exact
-1303	VH00821:189:AACHYFJM5:1:1101:49570:1095	no_match	R1_bc1	no_match	R1_bc2	exact
-1304	VH00821:189:AACHYFJM5:1:1101:49721:1095	no_match	R1_bc1	no_match	R1_bc2	exact
+1303	VH00821:189:AACHYFJM5:1:1101:49570:1095	corrected	R1_bc1	corrected	R1_bc2	exact
+1304	VH00821:189:AACHYFJM5:1:1101:49721:1095	corrected	R1_bc1	corrected	R1_bc2	exact
 1305	VH00821:189:AACHYFJM5:1:1101:49759:1095	corrected	R1_bc1	corrected	R1_bc2	exact
 1306	VH00821:189:AACHYFJM5:1:1101:49835:1095	no_match	R1_bc1	no_match	R1_bc2	exact
 1307	VH00821:189:AACHYFJM5:1:1101:49910:1095	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -1547,7 +1547,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 1546	VH00821:189:AACHYFJM5:1:1101:49967:1114	no_match	R1_bc1	no_match	R1_bc2	exact
 1547	VH00821:189:AACHYFJM5:1:1101:50573:1114	corrected	R1_bc1	corrected	R1_bc2	exact
 1548	VH00821:189:AACHYFJM5:1:1101:50762:1114	corrected	R1_bc1	corrected	R1_bc2	exact
-1549	VH00821:189:AACHYFJM5:1:1101:50914:1114	no_match	R1_bc1	no_match	R1_bc2	exact
+1549	VH00821:189:AACHYFJM5:1:1101:50914:1114	corrected	R1_bc1	corrected	R1_bc2	exact
 1550	VH00821:189:AACHYFJM5:1:1101:50990:1114	corrected	R1_bc1	corrected	R1_bc2	exact
 1551	VH00821:189:AACHYFJM5:1:1101:51103:1114	no_match	R1_bc1	no_match	R1_bc2	exact
 1552	VH00821:189:AACHYFJM5:1:1101:51217:1114	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -1657,7 +1657,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 1656	VH00821:189:AACHYFJM5:1:1101:30596:1133	exact	R1_bc1	exact	R1_bc2	exact
 1657	VH00821:189:AACHYFJM5:1:1101:30634:1133	exact	R1_bc1	exact	R1_bc2	exact
 1658	VH00821:189:AACHYFJM5:1:1101:30748:1133	exact	R1_bc1	exact	R1_bc2	exact
-1659	VH00821:189:AACHYFJM5:1:1101:30899:1133	below_threshold	R1_bc1	exact	R1_bc2	exact
+1659	VH00821:189:AACHYFJM5:1:1101:30899:1133	below_threshold	R1_bc1	corrected	R1_bc2	exact
 1660	VH00821:189:AACHYFJM5:1:1101:30937:1133	exact	R1_bc1	exact	R1_bc2	exact
 1661	VH00821:189:AACHYFJM5:1:1101:31013:1133	corrected	R1_bc1	corrected	R1_bc2	exact
 1662	VH00821:189:AACHYFJM5:1:1101:31051:1133	exact	R1_bc1	exact	R1_bc2	exact
@@ -1799,14 +1799,14 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 1798	VH00821:189:AACHYFJM5:1:1101:50781:1133	no_match	R1_bc1	no_match	R1_bc2	exact
 1799	VH00821:189:AACHYFJM5:1:1101:51009:1133	corrected	R1_bc1	corrected	R1_bc2	exact
 1800	VH00821:189:AACHYFJM5:1:1101:51084:1133	corrected	R1_bc1	corrected	R1_bc2	exact
-1801	VH00821:189:AACHYFJM5:1:1101:51160:1133	no_match	R1_bc1	no_match	R1_bc2	exact
+1801	VH00821:189:AACHYFJM5:1:1101:51160:1133	corrected	R1_bc1	corrected	R1_bc2	exact
 1802	VH00821:189:AACHYFJM5:1:1101:51236:1133	exact	R1_bc1	exact	R1_bc2	exact
 1803	VH00821:189:AACHYFJM5:1:1101:51312:1133	corrected	R1_bc1	corrected	R1_bc2	exact
 1804	VH00821:189:AACHYFJM5:1:1101:51387:1133	no_match	R1_bc1	no_match	R1_bc2	exact
 1805	VH00821:189:AACHYFJM5:1:1101:51539:1133	no_match	R1_bc1	no_match	R1_bc2	exact
-1806	VH00821:189:AACHYFJM5:1:1101:51652:1133	no_match	R1_bc1	no_match	R1_bc2	exact
+1806	VH00821:189:AACHYFJM5:1:1101:51652:1133	corrected	R1_bc1	corrected	R1_bc2	exact
 1807	VH00821:189:AACHYFJM5:1:1101:51728:1133	no_match	R1_bc1	no_match	R1_bc2	exact
-1808	VH00821:189:AACHYFJM5:1:1101:51842:1133	no_match	R1_bc1	no_match	R1_bc2	exact
+1808	VH00821:189:AACHYFJM5:1:1101:51842:1133	corrected	R1_bc1	corrected	R1_bc2	exact
 1809	VH00821:189:AACHYFJM5:1:1101:51918:1133	corrected	R1_bc1	corrected	R1_bc2	exact
 1810	VH00821:189:AACHYFJM5:1:1101:51993:1133	exact	R1_bc1	exact	R1_bc2	exact
 1811	VH00821:189:AACHYFJM5:1:1101:52031:1133	corrected	R1_bc1	corrected	R1_bc2	corrected
@@ -2021,7 +2021,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2020	VH00821:189:AACHYFJM5:1:1101:42166:1151	corrected	R1_bc1	exact	R1_bc2	corrected
 2021	VH00821:189:AACHYFJM5:1:1101:42204:1151	corrected	R1_bc1	exact	R1_bc2	corrected
 2022	VH00821:189:AACHYFJM5:1:1101:42317:1151	exact	R1_bc1	exact	R1_bc2	exact
-2023	VH00821:189:AACHYFJM5:1:1101:42355:1151	no_match	R1_bc1	exact	R1_bc2	no_match
+2023	VH00821:189:AACHYFJM5:1:1101:42355:1151	corrected	R1_bc1	exact	R1_bc2	corrected
 2024	VH00821:189:AACHYFJM5:1:1101:42431:1151	exact	R1_bc1	exact	R1_bc2	exact
 2025	VH00821:189:AACHYFJM5:1:1101:42507:1151	exact	R1_bc1	exact	R1_bc2	exact
 2026	VH00821:189:AACHYFJM5:1:1101:42544:1151	exact	R1_bc1	exact	R1_bc2	exact
@@ -2100,7 +2100,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2099	VH00821:189:AACHYFJM5:1:1101:51823:1151	corrected	R1_bc1	corrected	R1_bc2	corrected
 2100	VH00821:189:AACHYFJM5:1:1101:52012:1151	exact	R1_bc1	exact	R1_bc2	exact
 2101	VH00821:189:AACHYFJM5:1:1101:52542:1151	corrected	R1_bc1	corrected	R1_bc2	corrected
-2102	VH00821:189:AACHYFJM5:1:1101:52580:1151	no_match	R1_bc1	no_match	R1_bc2	exact
+2102	VH00821:189:AACHYFJM5:1:1101:52580:1151	corrected	R1_bc1	corrected	R1_bc2	exact
 2103	VH00821:189:AACHYFJM5:1:1101:52770:1151	corrected	R1_bc1	corrected	R1_bc2	exact
 2104	VH00821:189:AACHYFJM5:1:1101:52807:1151	corrected	R1_bc1	corrected	R1_bc2	exact
 2105	VH00821:189:AACHYFJM5:1:1101:53262:1151	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -2225,7 +2225,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2224	VH00821:189:AACHYFJM5:1:1101:31543:1170	exact	R1_bc1	exact	R1_bc2	exact
 2225	VH00821:189:AACHYFJM5:1:1101:31581:1170	exact	R1_bc1	exact	R1_bc2	exact
 2226	VH00821:189:AACHYFJM5:1:1101:31922:1170	exact	R1_bc1	exact	R1_bc2	exact
-2227	VH00821:189:AACHYFJM5:1:1101:31997:1170	no_match	R1_bc1	exact	R1_bc2	no_match
+2227	VH00821:189:AACHYFJM5:1:1101:31997:1170	corrected	R1_bc1	exact	R1_bc2	corrected
 2228	VH00821:189:AACHYFJM5:1:1101:32111:1170	exact	R1_bc1	exact	R1_bc2	exact
 2229	VH00821:189:AACHYFJM5:1:1101:32149:1170	exact	R1_bc1	exact	R1_bc2	exact
 2230	VH00821:189:AACHYFJM5:1:1101:32528:1170	exact	R1_bc1	exact	R1_bc2	exact
@@ -2385,7 +2385,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2384	VH00821:189:AACHYFJM5:1:1101:52751:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2385	VH00821:189:AACHYFJM5:1:1101:52826:1170	exact	R1_bc1	exact	R1_bc2	exact
 2386	VH00821:189:AACHYFJM5:1:1101:53054:1170	corrected	R1_bc1	corrected	R1_bc2	exact
-2387	VH00821:189:AACHYFJM5:1:1101:53092:1170	ambiguous	R1_bc1	corrected	R1_bc2	ambiguous
+2387	VH00821:189:AACHYFJM5:1:1101:53092:1170	corrected	R1_bc1	corrected	R1_bc2	corrected
 2388	VH00821:189:AACHYFJM5:1:1101:53205:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2389	VH00821:189:AACHYFJM5:1:1101:53243:1170	no_match	R1_bc1	no_match	R1_bc2	exact
 2390	VH00821:189:AACHYFJM5:1:1101:53281:1170	exact	R1_bc1	exact	R1_bc2	exact
@@ -2396,7 +2396,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2395	VH00821:189:AACHYFJM5:1:1101:53963:1170	no_match	R1_bc1	no_match	R1_bc2	exact
 2396	VH00821:189:AACHYFJM5:1:1101:54000:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2397	VH00821:189:AACHYFJM5:1:1101:54038:1170	corrected	R1_bc1	corrected	R1_bc2	exact
-2398	VH00821:189:AACHYFJM5:1:1101:54076:1170	no_match	R1_bc1	no_match	R1_bc2	exact
+2398	VH00821:189:AACHYFJM5:1:1101:54076:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2399	VH00821:189:AACHYFJM5:1:1101:54114:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2400	VH00821:189:AACHYFJM5:1:1101:54152:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2401	VH00821:189:AACHYFJM5:1:1101:54190:1170	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -2408,7 +2408,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2407	VH00821:189:AACHYFJM5:1:1101:55174:1170	no_match	R1_bc1	no_match	R1_bc2	exact
 2408	VH00821:189:AACHYFJM5:1:1101:55288:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2409	VH00821:189:AACHYFJM5:1:1101:55440:1170	corrected	R1_bc1	corrected	R1_bc2	exact
-2410	VH00821:189:AACHYFJM5:1:1101:55742:1170	no_match	R1_bc1	no_match	R1_bc2	exact
+2410	VH00821:189:AACHYFJM5:1:1101:55742:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2411	VH00821:189:AACHYFJM5:1:1101:55932:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2412	VH00821:189:AACHYFJM5:1:1101:56008:1170	corrected	R1_bc1	corrected	R1_bc2	exact
 2413	VH00821:189:AACHYFJM5:1:1101:56045:1170	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -2693,7 +2693,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2692	VH00821:189:AACHYFJM5:1:1101:51936:1189	exact	R1_bc1	exact	R1_bc2	exact
 2693	VH00821:189:AACHYFJM5:1:1101:52164:1189	exact	R1_bc1	exact	R1_bc2	exact
 2694	VH00821:189:AACHYFJM5:1:1101:52202:1189	exact	R1_bc1	exact	R1_bc2	exact
-2695	VH00821:189:AACHYFJM5:1:1101:52277:1189	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+2695	VH00821:189:AACHYFJM5:1:1101:52277:1189	exact	R1_bc1	exact	R1_bc2	exact
 2696	VH00821:189:AACHYFJM5:1:1101:52429:1189	exact	R1_bc1	exact	R1_bc2	exact
 2697	VH00821:189:AACHYFJM5:1:1101:52467:1189	exact	R1_bc1	exact	R1_bc2	exact
 2698	VH00821:189:AACHYFJM5:1:1101:52505:1189	exact	R1_bc1	exact	R1_bc2	exact
@@ -2722,7 +2722,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2721	VH00821:189:AACHYFJM5:1:1101:54777:1189	corrected	R1_bc1	exact	R1_bc2	corrected
 2722	VH00821:189:AACHYFJM5:1:1101:54966:1189	exact	R1_bc1	exact	R1_bc2	exact
 2723	VH00821:189:AACHYFJM5:1:1101:55307:1189	corrected	R1_bc1	corrected	R1_bc2	exact
-2724	VH00821:189:AACHYFJM5:1:1101:55383:1189	no_match	R1_bc1	no_match	R1_bc2	exact
+2724	VH00821:189:AACHYFJM5:1:1101:55383:1189	corrected	R1_bc1	corrected	R1_bc2	exact
 2725	VH00821:189:AACHYFJM5:1:1101:55534:1189	corrected	R1_bc1	corrected	R1_bc2	exact
 2726	VH00821:189:AACHYFJM5:1:1101:55875:1189	no_match	R1_bc1	no_match	R1_bc2	corrected
 2727	VH00821:189:AACHYFJM5:1:1101:56178:1189	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -2732,9 +2732,9 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2731	VH00821:189:AACHYFJM5:1:1101:56784:1189	no_match	R1_bc1	no_match	R1_bc2	exact
 2732	VH00821:189:AACHYFJM5:1:1101:56860:1189	no_match	R1_bc1	no_match	R1_bc2	exact
 2733	VH00821:189:AACHYFJM5:1:1101:57428:1189	corrected	R1_bc1	corrected	R1_bc2	exact
-2734	VH00821:189:AACHYFJM5:1:1101:57466:1189	no_match	R1_bc1	no_match	R1_bc2	exact
-2735	VH00821:189:AACHYFJM5:1:1101:57541:1189	no_match	R1_bc1	no_match	R1_bc2	exact
-2736	VH00821:189:AACHYFJM5:1:1101:57617:1189	no_match	R1_bc1	no_match	R1_bc2	exact
+2734	VH00821:189:AACHYFJM5:1:1101:57466:1189	corrected	R1_bc1	corrected	R1_bc2	exact
+2735	VH00821:189:AACHYFJM5:1:1101:57541:1189	corrected	R1_bc1	corrected	R1_bc2	exact
+2736	VH00821:189:AACHYFJM5:1:1101:57617:1189	corrected	R1_bc1	corrected	R1_bc2	exact
 2737	VH00821:189:AACHYFJM5:1:1101:57655:1189	no_match	R1_bc1	no_match	R1_bc2	exact
 2738	VH00821:189:AACHYFJM5:1:1101:57769:1189	corrected	R1_bc1	corrected	R1_bc2	exact
 2739	VH00821:189:AACHYFJM5:1:1101:58261:1189	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -2981,7 +2981,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 2980	VH00821:189:AACHYFJM5:1:1101:48206:1208	exact	R1_bc1	exact	R1_bc2	exact
 2981	VH00821:189:AACHYFJM5:1:1101:48585:1208	exact	R1_bc1	exact	R1_bc2	exact
 2982	VH00821:189:AACHYFJM5:1:1101:48774:1208	exact	R1_bc1	exact	R1_bc2	exact
-2983	VH00821:189:AACHYFJM5:1:1101:49039:1208	no_match	R1_bc1	exact	R1_bc2	no_match
+2983	VH00821:189:AACHYFJM5:1:1101:49039:1208	corrected	R1_bc1	exact	R1_bc2	corrected
 2984	VH00821:189:AACHYFJM5:1:1101:49077:1208	exact	R1_bc1	exact	R1_bc2	exact
 2985	VH00821:189:AACHYFJM5:1:1101:49115:1208	exact	R1_bc1	exact	R1_bc2	exact
 2986	VH00821:189:AACHYFJM5:1:1101:49304:1208	exact	R1_bc1	exact	R1_bc2	exact
@@ -3012,7 +3012,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3011	VH00821:189:AACHYFJM5:1:1101:52864:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3012	VH00821:189:AACHYFJM5:1:1101:52940:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3013	VH00821:189:AACHYFJM5:1:1101:53016:1208	exact	R1_bc1	exact	R1_bc2	exact
-3014	VH00821:189:AACHYFJM5:1:1101:53167:1208	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+3014	VH00821:189:AACHYFJM5:1:1101:53167:1208	exact	R1_bc1	exact	R1_bc2	exact
 3015	VH00821:189:AACHYFJM5:1:1101:53205:1208	exact	R1_bc1	exact	R1_bc2	exact
 3016	VH00821:189:AACHYFJM5:1:1101:53432:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3017	VH00821:189:AACHYFJM5:1:1101:53697:1208	exact	R1_bc1	exact	R1_bc2	exact
@@ -3034,7 +3034,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3033	VH00821:189:AACHYFJM5:1:1101:56008:1208	exact	R1_bc1	exact	R1_bc2	exact
 3034	VH00821:189:AACHYFJM5:1:1101:56197:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3035	VH00821:189:AACHYFJM5:1:1101:56500:1208	corrected	R1_bc1	corrected	R1_bc2	exact
-3036	VH00821:189:AACHYFJM5:1:1101:56765:1208	no_match	R1_bc1	no_match	R1_bc2	exact
+3036	VH00821:189:AACHYFJM5:1:1101:56765:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3037	VH00821:189:AACHYFJM5:1:1101:56879:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3038	VH00821:189:AACHYFJM5:1:1101:56992:1208	no_match	R1_bc1	no_match	R1_bc2	exact
 3039	VH00821:189:AACHYFJM5:1:1101:57068:1208	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -3047,7 +3047,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3046	VH00821:189:AACHYFJM5:1:1101:57674:1208	no_match	R1_bc1	no_match	R1_bc2	exact
 3047	VH00821:189:AACHYFJM5:1:1101:57977:1208	no_match	R1_bc1	no_match	R1_bc2	exact
 3048	VH00821:189:AACHYFJM5:1:1101:58242:1208	no_match	R1_bc1	no_match	R1_bc2	exact
-3049	VH00821:189:AACHYFJM5:1:1101:58469:1208	no_match	R1_bc1	no_match	R1_bc2	exact
+3049	VH00821:189:AACHYFJM5:1:1101:58469:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3050	VH00821:189:AACHYFJM5:1:1101:58545:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3051	VH00821:189:AACHYFJM5:1:1101:58696:1208	corrected	R1_bc1	corrected	R1_bc2	exact
 3052	VH00821:189:AACHYFJM5:1:1101:58734:1208	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -3351,7 +3351,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3350	VH00821:189:AACHYFJM5:1:1101:54133:1227	exact	R1_bc1	exact	R1_bc2	exact
 3351	VH00821:189:AACHYFJM5:1:1101:54209:1227	exact	R1_bc1	exact	R1_bc2	exact
 3352	VH00821:189:AACHYFJM5:1:1101:54284:1227	exact	R1_bc1	exact	R1_bc2	exact
-3353	VH00821:189:AACHYFJM5:1:1101:54360:1227	no_match	R1_bc1	no_match	R1_bc2	exact
+3353	VH00821:189:AACHYFJM5:1:1101:54360:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3354	VH00821:189:AACHYFJM5:1:1101:54398:1227	exact	R1_bc1	exact	R1_bc2	exact
 3355	VH00821:189:AACHYFJM5:1:1101:54436:1227	exact	R1_bc1	exact	R1_bc2	exact
 3356	VH00821:189:AACHYFJM5:1:1101:54512:1227	exact	R1_bc1	exact	R1_bc2	exact
@@ -3388,16 +3388,16 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3387	VH00821:189:AACHYFJM5:1:1101:59170:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3388	VH00821:189:AACHYFJM5:1:1101:59208:1227	exact	R1_bc1	exact	R1_bc2	exact
 3389	VH00821:189:AACHYFJM5:1:1101:59435:1227	corrected	R1_bc1	corrected	R1_bc2	exact
-3390	VH00821:189:AACHYFJM5:1:1101:59624:1227	no_match	R1_bc1	no_match	R1_bc2	exact
+3390	VH00821:189:AACHYFJM5:1:1101:59624:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3391	VH00821:189:AACHYFJM5:1:1101:59700:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3392	VH00821:189:AACHYFJM5:1:1101:59814:1227	no_match	R1_bc1	no_match	R1_bc2	exact
 3393	VH00821:189:AACHYFJM5:1:1101:59965:1227	corrected	R1_bc1	corrected	R1_bc2	corrected
-3394	VH00821:189:AACHYFJM5:1:1101:60003:1227	no_match	R1_bc1	no_match	R1_bc2	exact
+3394	VH00821:189:AACHYFJM5:1:1101:60003:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3395	VH00821:189:AACHYFJM5:1:1101:60117:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3396	VH00821:189:AACHYFJM5:1:1101:60230:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3397	VH00821:189:AACHYFJM5:1:1101:60457:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3398	VH00821:189:AACHYFJM5:1:1101:60571:1227	no_match	R1_bc1	no_match	R1_bc2	exact
-3399	VH00821:189:AACHYFJM5:1:1101:60723:1227	no_match	R1_bc1	no_match	R1_bc2	exact
+3399	VH00821:189:AACHYFJM5:1:1101:60723:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3400	VH00821:189:AACHYFJM5:1:1101:60760:1227	no_match	R1_bc1	no_match	R1_bc2	exact
 3401	VH00821:189:AACHYFJM5:1:1101:61025:1227	corrected	R1_bc1	corrected	R1_bc2	exact
 3402	VH00821:189:AACHYFJM5:1:1101:61139:1227	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -3425,7 +3425,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3424	VH00821:189:AACHYFJM5:1:1101:19651:1246	exact	R1_bc1	exact	R1_bc2	exact
 3425	VH00821:189:AACHYFJM5:1:1101:19689:1246	exact	R1_bc1	exact	R1_bc2	exact
 3426	VH00821:189:AACHYFJM5:1:1101:19727:1246	exact	R1_bc1	exact	R1_bc2	exact
-3427	VH00821:189:AACHYFJM5:1:1101:19765:1246	no_match	R1_bc1	exact	R1_bc2	no_match
+3427	VH00821:189:AACHYFJM5:1:1101:19765:1246	corrected	R1_bc1	exact	R1_bc2	corrected
 3428	VH00821:189:AACHYFJM5:1:1101:19917:1246	exact	R1_bc1	exact	R1_bc2	exact
 3429	VH00821:189:AACHYFJM5:1:1101:19992:1246	exact	R1_bc1	exact	R1_bc2	exact
 3430	VH00821:189:AACHYFJM5:1:1101:20030:1246	exact	R1_bc1	exact	R1_bc2	exact
@@ -3495,7 +3495,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3494	VH00821:189:AACHYFJM5:1:1101:28475:1246	exact	R1_bc1	exact	R1_bc2	exact
 3495	VH00821:189:AACHYFJM5:1:1101:28513:1246	exact	R1_bc1	exact	R1_bc2	exact
 3496	VH00821:189:AACHYFJM5:1:1101:28551:1246	exact	R1_bc1	exact	R1_bc2	exact
-3497	VH00821:189:AACHYFJM5:1:1101:28589:1246	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+3497	VH00821:189:AACHYFJM5:1:1101:28589:1246	corrected	R1_bc1	exact	R1_bc2	corrected
 3498	VH00821:189:AACHYFJM5:1:1101:28740:1246	exact	R1_bc1	exact	R1_bc2	exact
 3499	VH00821:189:AACHYFJM5:1:1101:29006:1246	exact	R1_bc1	exact	R1_bc2	exact
 3500	VH00821:189:AACHYFJM5:1:1101:29043:1246	exact	R1_bc1	exact	R1_bc2	exact
@@ -3595,7 +3595,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3594	VH00821:189:AACHYFJM5:1:1101:38625:1246	exact	R1_bc1	exact	R1_bc2	exact
 3595	VH00821:189:AACHYFJM5:1:1101:38852:1246	exact	R1_bc1	exact	R1_bc2	exact
 3596	VH00821:189:AACHYFJM5:1:1101:38928:1246	exact	R1_bc1	exact	R1_bc2	exact
-3597	VH00821:189:AACHYFJM5:1:1101:38966:1246	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+3597	VH00821:189:AACHYFJM5:1:1101:38966:1246	exact	R1_bc1	exact	R1_bc2	exact
 3598	VH00821:189:AACHYFJM5:1:1101:39041:1246	exact	R1_bc1	exact	R1_bc2	exact
 3599	VH00821:189:AACHYFJM5:1:1101:39079:1246	exact	R1_bc1	exact	R1_bc2	exact
 3600	VH00821:189:AACHYFJM5:1:1101:39117:1246	exact	R1_bc1	exact	R1_bc2	exact
@@ -3762,7 +3762,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3761	VH00821:189:AACHYFJM5:1:1101:59833:1246	exact	R1_bc1	exact	R1_bc2	exact
 3762	VH00821:189:AACHYFJM5:1:1101:60136:1246	corrected	R1_bc1	corrected	R1_bc2	corrected
 3763	VH00821:189:AACHYFJM5:1:1101:60173:1246	no_match	R1_bc1	no_match	R1_bc2	exact
-3764	VH00821:189:AACHYFJM5:1:1101:60438:1246	no_match	R1_bc1	no_match	R1_bc2	exact
+3764	VH00821:189:AACHYFJM5:1:1101:60438:1246	corrected	R1_bc1	corrected	R1_bc2	exact
 3765	VH00821:189:AACHYFJM5:1:1101:60514:1246	no_match	R1_bc1	no_match	R1_bc2	exact
 3766	VH00821:189:AACHYFJM5:1:1101:60590:1246	corrected	R1_bc1	corrected	R1_bc2	exact
 3767	VH00821:189:AACHYFJM5:1:1101:60628:1246	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -3783,12 +3783,12 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3782	VH00821:189:AACHYFJM5:1:1101:62218:1246	corrected	R1_bc1	corrected	R1_bc2	exact
 3783	VH00821:189:AACHYFJM5:1:1101:62597:1246	no_match	R1_bc1	no_match	R1_bc2	exact
 3784	VH00821:189:AACHYFJM5:1:1101:62786:1246	corrected	R1_bc1	corrected	R1_bc2	exact
-3785	VH00821:189:AACHYFJM5:1:1101:62938:1246	no_match	R1_bc1	no_match	R1_bc2	exact
+3785	VH00821:189:AACHYFJM5:1:1101:62938:1246	corrected	R1_bc1	corrected	R1_bc2	exact
 3786	VH00821:189:AACHYFJM5:1:1101:63014:1246	no_match	R1_bc1	no_match	R1_bc2	exact
-3787	VH00821:189:AACHYFJM5:1:1101:63089:1246	no_match	R1_bc1	no_match	R1_bc2	exact
+3787	VH00821:189:AACHYFJM5:1:1101:63089:1246	corrected	R1_bc1	corrected	R1_bc2	exact
 3788	VH00821:189:AACHYFJM5:1:1101:63279:1246	corrected	R1_bc1	corrected	R1_bc2	exact
 3789	VH00821:189:AACHYFJM5:1:1101:63355:1246	no_match	R1_bc1	no_match	R1_bc2	exact
-3790	VH00821:189:AACHYFJM5:1:1101:63544:1246	no_match	R1_bc1	no_match	R1_bc2	exact
+3790	VH00821:189:AACHYFJM5:1:1101:63544:1246	corrected	R1_bc1	corrected	R1_bc2	exact
 3791	VH00821:189:AACHYFJM5:1:1101:63658:1246	no_match	R1_bc1	no_match	R1_bc2	exact
 3792	VH00821:189:AACHYFJM5:1:1101:17966:1265	exact	R1_bc1	exact	R1_bc2	exact
 3793	VH00821:189:AACHYFJM5:1:1101:18156:1265	exact	R1_bc1	exact	R1_bc2	exact
@@ -3893,7 +3893,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 3892	VH00821:189:AACHYFJM5:1:1101:31032:1265	exact	R1_bc1	exact	R1_bc2	exact
 3893	VH00821:189:AACHYFJM5:1:1101:31221:1265	exact	R1_bc1	exact	R1_bc2	exact
 3894	VH00821:189:AACHYFJM5:1:1101:31335:1265	exact	R1_bc1	exact	R1_bc2	exact
-3895	VH00821:189:AACHYFJM5:1:1101:31524:1265	no_match	R1_bc1	no_match	R1_bc2	exact
+3895	VH00821:189:AACHYFJM5:1:1101:31524:1265	corrected	R1_bc1	corrected	R1_bc2	exact
 3896	VH00821:189:AACHYFJM5:1:1101:31638:1265	exact	R1_bc1	exact	R1_bc2	exact
 3897	VH00821:189:AACHYFJM5:1:1101:31675:1265	exact	R1_bc1	exact	R1_bc2	exact
 3898	VH00821:189:AACHYFJM5:1:1101:31751:1265	exact	R1_bc1	exact	R1_bc2	exact
@@ -4117,7 +4117,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4116	VH00821:189:AACHYFJM5:1:1101:61442:1265	exact	R1_bc1	exact	R1_bc2	exact
 4117	VH00821:189:AACHYFJM5:1:1101:61707:1265	corrected	R1_bc1	corrected	R1_bc2	exact
 4118	VH00821:189:AACHYFJM5:1:1101:61745:1265	corrected	R1_bc1	corrected	R1_bc2	exact
-4119	VH00821:189:AACHYFJM5:1:1101:61821:1265	no_match	R1_bc1	no_match	R1_bc2	exact
+4119	VH00821:189:AACHYFJM5:1:1101:61821:1265	corrected	R1_bc1	corrected	R1_bc2	exact
 4120	VH00821:189:AACHYFJM5:1:1101:62048:1265	no_match	R1_bc1	no_match	R1_bc2	exact
 4121	VH00821:189:AACHYFJM5:1:1101:62086:1265	corrected	R1_bc1	corrected	R1_bc2	exact
 4122	VH00821:189:AACHYFJM5:1:1101:62124:1265	no_match	R1_bc1	no_match	R1_bc2	exact
@@ -4137,7 +4137,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4136	VH00821:189:AACHYFJM5:1:1101:64434:1265	no_match	R1_bc1	no_match	R1_bc2	exact
 4137	VH00821:189:AACHYFJM5:1:1101:64547:1265	corrected	R1_bc1	corrected	R1_bc2	exact
 4138	VH00821:189:AACHYFJM5:1:1101:64888:1265	corrected	R1_bc1	corrected	R1_bc2	exact
-4139	VH00821:189:AACHYFJM5:1:1101:64926:1265	no_match	R1_bc1	no_match	R1_bc2	exact
+4139	VH00821:189:AACHYFJM5:1:1101:64926:1265	corrected	R1_bc1	corrected	R1_bc2	exact
 4140	VH00821:189:AACHYFJM5:1:1101:65078:1265	no_match	R1_bc1	no_match	R1_bc2	exact
 4141	VH00821:189:AACHYFJM5:1:1101:65116:1265	corrected	R1_bc1	corrected	R1_bc2	exact
 4142	VH00821:189:AACHYFJM5:1:1101:65191:1265	no_match	R1_bc1	no_match	R1_bc2	corrected
@@ -4168,7 +4168,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4167	VH00821:189:AACHYFJM5:1:1101:20485:1284	exact	R1_bc1	exact	R1_bc2	exact
 4168	VH00821:189:AACHYFJM5:1:1101:20788:1284	exact	R1_bc1	exact	R1_bc2	exact
 4169	VH00821:189:AACHYFJM5:1:1101:20863:1284	exact	R1_bc1	exact	R1_bc2	exact
-4170	VH00821:189:AACHYFJM5:1:1101:21015:1284	no_match	R1_bc1	exact	R1_bc2	no_match
+4170	VH00821:189:AACHYFJM5:1:1101:21015:1284	below_threshold	R1_bc1	exact	R1_bc2	corrected
 4171	VH00821:189:AACHYFJM5:1:1101:21053:1284	exact	R1_bc1	exact	R1_bc2	exact
 4172	VH00821:189:AACHYFJM5:1:1101:21696:1284	exact	R1_bc1	exact	R1_bc2	exact
 4173	VH00821:189:AACHYFJM5:1:1101:21734:1284	exact	R1_bc1	exact	R1_bc2	exact
@@ -4245,7 +4245,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4244	VH00821:189:AACHYFJM5:1:1101:31051:1284	exact	R1_bc1	exact	R1_bc2	exact
 4245	VH00821:189:AACHYFJM5:1:1101:31429:1284	exact	R1_bc1	exact	R1_bc2	exact
 4246	VH00821:189:AACHYFJM5:1:1101:31505:1284	corrected	R1_bc1	exact	R1_bc2	corrected
-4247	VH00821:189:AACHYFJM5:1:1101:31581:1284	no_match	R1_bc1	no_match	R1_bc2	exact
+4247	VH00821:189:AACHYFJM5:1:1101:31581:1284	corrected	R1_bc1	corrected	R1_bc2	exact
 4248	VH00821:189:AACHYFJM5:1:1101:31694:1284	exact	R1_bc1	exact	R1_bc2	exact
 4249	VH00821:189:AACHYFJM5:1:1101:31922:1284	exact	R1_bc1	exact	R1_bc2	exact
 4250	VH00821:189:AACHYFJM5:1:1101:31960:1284	exact	R1_bc1	exact	R1_bc2	exact
@@ -4335,7 +4335,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4334	VH00821:189:AACHYFJM5:1:1101:42715:1284	exact	R1_bc1	exact	R1_bc2	exact
 4335	VH00821:189:AACHYFJM5:1:1101:42791:1284	exact	R1_bc1	exact	R1_bc2	exact
 4336	VH00821:189:AACHYFJM5:1:1101:42828:1284	exact	R1_bc1	exact	R1_bc2	exact
-4337	VH00821:189:AACHYFJM5:1:1101:42942:1284	no_match	R1_bc1	exact	R1_bc2	no_match
+4337	VH00821:189:AACHYFJM5:1:1101:42942:1284	corrected	R1_bc1	exact	R1_bc2	corrected
 4338	VH00821:189:AACHYFJM5:1:1101:43056:1284	exact	R1_bc1	exact	R1_bc2	exact
 4339	VH00821:189:AACHYFJM5:1:1101:43548:1284	exact	R1_bc1	exact	R1_bc2	exact
 4340	VH00821:189:AACHYFJM5:1:1101:43775:1284	exact	R1_bc1	exact	R1_bc2	exact
@@ -4434,7 +4434,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4433	VH00821:189:AACHYFJM5:1:1101:54228:1284	corrected	R1_bc1	exact	R1_bc2	corrected
 4434	VH00821:189:AACHYFJM5:1:1101:54417:1284	exact	R1_bc1	exact	R1_bc2	exact
 4435	VH00821:189:AACHYFJM5:1:1101:54455:1284	exact	R1_bc1	exact	R1_bc2	exact
-4436	VH00821:189:AACHYFJM5:1:1101:54568:1284	no_match	R1_bc1	no_match	R1_bc2	exact
+4436	VH00821:189:AACHYFJM5:1:1101:54568:1284	corrected	R1_bc1	corrected	R1_bc2	exact
 4437	VH00821:189:AACHYFJM5:1:1101:54644:1284	exact	R1_bc1	exact	R1_bc2	exact
 4438	VH00821:189:AACHYFJM5:1:1101:54834:1284	exact	R1_bc1	exact	R1_bc2	exact
 4439	VH00821:189:AACHYFJM5:1:1101:54871:1284	exact	R1_bc1	exact	R1_bc2	exact
@@ -4496,7 +4496,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4495	VH00821:189:AACHYFJM5:1:1101:63355:1284	no_match	R1_bc1	no_match	R1_bc2	exact
 4496	VH00821:189:AACHYFJM5:1:1101:63468:1284	corrected	R1_bc1	corrected	R1_bc2	exact
 4497	VH00821:189:AACHYFJM5:1:1101:63658:1284	corrected	R1_bc1	corrected	R1_bc2	exact
-4498	VH00821:189:AACHYFJM5:1:1101:63923:1284	no_match	R1_bc1	no_match	R1_bc2	exact
+4498	VH00821:189:AACHYFJM5:1:1101:63923:1284	corrected	R1_bc1	corrected	R1_bc2	exact
 4499	VH00821:189:AACHYFJM5:1:1101:63960:1284	corrected	R1_bc1	corrected	R1_bc2	exact
 4500	VH00821:189:AACHYFJM5:1:1101:63998:1284	no_match	R1_bc1	no_match	R1_bc2	exact
 4501	VH00821:189:AACHYFJM5:1:1101:64188:1284	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -4540,7 +4540,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4539	VH00821:189:AACHYFJM5:1:1101:21109:1303	exact	R1_bc1	exact	R1_bc2	exact
 4540	VH00821:189:AACHYFJM5:1:1101:21450:1303	exact	R1_bc1	exact	R1_bc2	exact
 4541	VH00821:189:AACHYFJM5:1:1101:21488:1303	exact	R1_bc1	exact	R1_bc2	exact
-4542	VH00821:189:AACHYFJM5:1:1101:21602:1303	no_match	R1_bc1	exact	R1_bc2	no_match
+4542	VH00821:189:AACHYFJM5:1:1101:21602:1303	corrected	R1_bc1	exact	R1_bc2	corrected
 4543	VH00821:189:AACHYFJM5:1:1101:21715:1303	exact	R1_bc1	exact	R1_bc2	exact
 4544	VH00821:189:AACHYFJM5:1:1101:21829:1303	exact	R1_bc1	exact	R1_bc2	exact
 4545	VH00821:189:AACHYFJM5:1:1101:22132:1303	exact	R1_bc1	exact	R1_bc2	exact
@@ -4947,7 +4947,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 4946	VH00821:189:AACHYFJM5:1:1101:25105:1322	exact	R1_bc1	exact	R1_bc2	exact
 4947	VH00821:189:AACHYFJM5:1:1101:25218:1322	exact	R1_bc1	exact	R1_bc2	exact
 4948	VH00821:189:AACHYFJM5:1:1101:25332:1322	exact	R1_bc1	exact	R1_bc2	exact
-4949	VH00821:189:AACHYFJM5:1:1101:25408:1322	no_match	R1_bc1	no_match	R1_bc2	exact
+4949	VH00821:189:AACHYFJM5:1:1101:25408:1322	corrected	R1_bc1	corrected	R1_bc2	exact
 4950	VH00821:189:AACHYFJM5:1:1101:25559:1322	exact	R1_bc1	exact	R1_bc2	exact
 4951	VH00821:189:AACHYFJM5:1:1101:25635:1322	corrected	R1_bc1	corrected	R1_bc2	exact
 4952	VH00821:189:AACHYFJM5:1:1101:25673:1322	exact	R1_bc1	exact	R1_bc2	exact
@@ -5119,7 +5119,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 5118	VH00821:189:AACHYFJM5:1:1101:45063:1322	exact	R1_bc1	exact	R1_bc2	exact
 5119	VH00821:189:AACHYFJM5:1:1101:45404:1322	exact	R1_bc1	exact	R1_bc2	exact
 5120	VH00821:189:AACHYFJM5:1:1101:45442:1322	exact	R1_bc1	exact	R1_bc2	exact
-5121	VH00821:189:AACHYFJM5:1:1101:45782:1322	no_match	R1_bc1	no_match	R1_bc2	exact
+5121	VH00821:189:AACHYFJM5:1:1101:45782:1322	corrected	R1_bc1	corrected	R1_bc2	exact
 5122	VH00821:189:AACHYFJM5:1:1101:45820:1322	exact	R1_bc1	exact	R1_bc2	exact
 5123	VH00821:189:AACHYFJM5:1:1101:45858:1322	exact	R1_bc1	exact	R1_bc2	exact
 5124	VH00821:189:AACHYFJM5:1:1101:45934:1322	exact	R1_bc1	exact	R1_bc2	exact
@@ -5801,7 +5801,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 5800	VH00821:189:AACHYFJM5:1:1101:35671:1360	exact	R1_bc1	exact	R1_bc2	exact
 5801	VH00821:189:AACHYFJM5:1:1101:35709:1360	exact	R1_bc1	exact	R1_bc2	exact
 5802	VH00821:189:AACHYFJM5:1:1101:35822:1360	exact	R1_bc1	exact	R1_bc2	exact
-5803	VH00821:189:AACHYFJM5:1:1101:36012:1360	no_match	R1_bc1	no_match	R1_bc2	exact
+5803	VH00821:189:AACHYFJM5:1:1101:36012:1360	corrected	R1_bc1	corrected	R1_bc2	exact
 5804	VH00821:189:AACHYFJM5:1:1101:36050:1360	exact	R1_bc1	exact	R1_bc2	exact
 5805	VH00821:189:AACHYFJM5:1:1101:36201:1360	exact	R1_bc1	exact	R1_bc2	exact
 5806	VH00821:189:AACHYFJM5:1:1101:36239:1360	exact	R1_bc1	exact	R1_bc2	exact
@@ -5989,7 +5989,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 5988	VH00821:189:AACHYFJM5:1:1101:60628:1360	exact	R1_bc1	exact	R1_bc2	exact
 5989	VH00821:189:AACHYFJM5:1:1101:60741:1360	exact	R1_bc1	exact	R1_bc2	exact
 5990	VH00821:189:AACHYFJM5:1:1101:60817:1360	exact	R1_bc1	exact	R1_bc2	exact
-5991	VH00821:189:AACHYFJM5:1:1101:61764:1360	no_match	R1_bc1	corrected	R1_bc2	no_match
+5991	VH00821:189:AACHYFJM5:1:1101:61764:1360	corrected	R1_bc1	corrected	R1_bc2	corrected
 5992	VH00821:189:AACHYFJM5:1:1101:62143:1360	exact	R1_bc1	exact	R1_bc2	exact
 5993	VH00821:189:AACHYFJM5:1:1101:62218:1360	exact	R1_bc1	exact	R1_bc2	exact
 5994	VH00821:189:AACHYFJM5:1:1101:62294:1360	exact	R1_bc1	exact	R1_bc2	exact
@@ -6026,8 +6026,8 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 6025	VH00821:189:AACHYFJM5:1:1101:66195:1360	exact	R1_bc1	exact	R1_bc2	exact
 6026	VH00821:189:AACHYFJM5:1:1101:17853:1379	exact	R1_bc1	exact	R1_bc2	exact
 6027	VH00821:189:AACHYFJM5:1:1101:17890:1379	exact	R1_bc1	exact	R1_bc2	exact
-6028	VH00821:189:AACHYFJM5:1:1101:17928:1379	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
-6029	VH00821:189:AACHYFJM5:1:1101:18193:1379	no_match	R1_bc1	exact	R1_bc2	no_match
+6028	VH00821:189:AACHYFJM5:1:1101:17928:1379	corrected	R1_bc1	exact	R1_bc2	corrected
+6029	VH00821:189:AACHYFJM5:1:1101:18193:1379	corrected	R1_bc1	exact	R1_bc2	corrected
 6030	VH00821:189:AACHYFJM5:1:1101:18345:1379	exact	R1_bc1	exact	R1_bc2	exact
 6031	VH00821:189:AACHYFJM5:1:1101:18572:1379	exact	R1_bc1	exact	R1_bc2	exact
 6032	VH00821:189:AACHYFJM5:1:1101:18686:1379	exact	R1_bc1	exact	R1_bc2	exact
@@ -6195,7 +6195,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 6194	VH00821:189:AACHYFJM5:1:1101:39098:1379	corrected	R1_bc1	exact	R1_bc2	corrected
 6195	VH00821:189:AACHYFJM5:1:1101:39136:1379	exact	R1_bc1	exact	R1_bc2	exact
 6196	VH00821:189:AACHYFJM5:1:1101:39250:1379	exact	R1_bc1	exact	R1_bc2	exact
-6197	VH00821:189:AACHYFJM5:1:1101:39439:1379	no_match	R1_bc1	exact	R1_bc2	no_match
+6197	VH00821:189:AACHYFJM5:1:1101:39439:1379	corrected	R1_bc1	exact	R1_bc2	corrected
 6198	VH00821:189:AACHYFJM5:1:1101:39818:1379	exact	R1_bc1	exact	R1_bc2	exact
 6199	VH00821:189:AACHYFJM5:1:1101:39856:1379	exact	R1_bc1	exact	R1_bc2	exact
 6200	VH00821:189:AACHYFJM5:1:1101:40007:1379	exact	R1_bc1	exact	R1_bc2	exact
@@ -6299,7 +6299,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 6298	VH00821:189:AACHYFJM5:1:1101:52921:1379	below_threshold	R1_bc1	exact	R1_bc2	corrected
 6299	VH00821:189:AACHYFJM5:1:1101:53073:1379	no_match	R1_bc1	corrected	R1_bc2	no_match
 6300	VH00821:189:AACHYFJM5:1:1101:53110:1379	exact	R1_bc1	exact	R1_bc2	exact
-6301	VH00821:189:AACHYFJM5:1:1101:53186:1379	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+6301	VH00821:189:AACHYFJM5:1:1101:53186:1379	corrected	R1_bc1	exact	R1_bc2	corrected
 6302	VH00821:189:AACHYFJM5:1:1101:53262:1379	exact	R1_bc1	exact	R1_bc2	exact
 6303	VH00821:189:AACHYFJM5:1:1101:53338:1379	exact	R1_bc1	exact	R1_bc2	exact
 6304	VH00821:189:AACHYFJM5:1:1101:53489:1379	exact	R1_bc1	exact	R1_bc2	exact
@@ -6333,7 +6333,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 6332	VH00821:189:AACHYFJM5:1:1101:56973:1379	exact	R1_bc1	exact	R1_bc2	exact
 6333	VH00821:189:AACHYFJM5:1:1101:57125:1379	exact	R1_bc1	exact	R1_bc2	exact
 6334	VH00821:189:AACHYFJM5:1:1101:57163:1379	exact	R1_bc1	exact	R1_bc2	exact
-6335	VH00821:189:AACHYFJM5:1:1101:57201:1379	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+6335	VH00821:189:AACHYFJM5:1:1101:57201:1379	corrected	R1_bc1	exact	R1_bc2	corrected
 6336	VH00821:189:AACHYFJM5:1:1101:57276:1379	exact	R1_bc1	exact	R1_bc2	exact
 6337	VH00821:189:AACHYFJM5:1:1101:57466:1379	exact	R1_bc1	exact	R1_bc2	exact
 6338	VH00821:189:AACHYFJM5:1:1101:57769:1379	exact	R1_bc1	exact	R1_bc2	exact
@@ -6763,7 +6763,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 6762	VH00821:189:AACHYFJM5:1:1101:58772:1398	exact	R1_bc1	exact	R1_bc2	exact
 6763	VH00821:189:AACHYFJM5:1:1101:58848:1398	exact	R1_bc1	exact	R1_bc2	exact
 6764	VH00821:189:AACHYFJM5:1:1101:59037:1398	exact	R1_bc1	exact	R1_bc2	exact
-6765	VH00821:189:AACHYFJM5:1:1101:59340:1398	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+6765	VH00821:189:AACHYFJM5:1:1101:59340:1398	corrected	R1_bc1	exact	R1_bc2	corrected
 6766	VH00821:189:AACHYFJM5:1:1101:59416:1398	exact	R1_bc1	exact	R1_bc2	exact
 6767	VH00821:189:AACHYFJM5:1:1101:60022:1398	exact	R1_bc1	exact	R1_bc2	exact
 6768	VH00821:189:AACHYFJM5:1:1101:60098:1398	exact	R1_bc1	exact	R1_bc2	exact
@@ -6843,7 +6843,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 6842	VH00821:189:AACHYFJM5:1:1101:19746:1417	exact	R1_bc1	exact	R1_bc2	exact
 6843	VH00821:189:AACHYFJM5:1:1101:19784:1417	exact	R1_bc1	exact	R1_bc2	exact
 6844	VH00821:189:AACHYFJM5:1:1101:19898:1417	exact	R1_bc1	exact	R1_bc2	exact
-6845	VH00821:189:AACHYFJM5:1:1101:20011:1417	no_match	R1_bc1	no_match	R1_bc2	exact
+6845	VH00821:189:AACHYFJM5:1:1101:20011:1417	corrected	R1_bc1	corrected	R1_bc2	exact
 6846	VH00821:189:AACHYFJM5:1:1101:20125:1417	exact	R1_bc1	exact	R1_bc2	exact
 6847	VH00821:189:AACHYFJM5:1:1101:20314:1417	exact	R1_bc1	exact	R1_bc2	exact
 6848	VH00821:189:AACHYFJM5:1:1101:20352:1417	exact	R1_bc1	exact	R1_bc2	exact
@@ -7090,7 +7090,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 7089	VH00821:189:AACHYFJM5:1:1101:50194:1417	exact	R1_bc1	exact	R1_bc2	exact
 7090	VH00821:189:AACHYFJM5:1:1101:50232:1417	exact	R1_bc1	exact	R1_bc2	exact
 7091	VH00821:189:AACHYFJM5:1:1101:50459:1417	exact	R1_bc1	exact	R1_bc2	exact
-7092	VH00821:189:AACHYFJM5:1:1101:50687:1417	no_match	R1_bc1	exact	R1_bc2	no_match
+7092	VH00821:189:AACHYFJM5:1:1101:50687:1417	corrected	R1_bc1	exact	R1_bc2	corrected
 7093	VH00821:189:AACHYFJM5:1:1101:50838:1417	exact	R1_bc1	exact	R1_bc2	exact
 7094	VH00821:189:AACHYFJM5:1:1101:50952:1417	exact	R1_bc1	exact	R1_bc2	exact
 7095	VH00821:189:AACHYFJM5:1:1101:51065:1417	exact	R1_bc1	exact	R1_bc2	exact
@@ -7384,7 +7384,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 7383	VH00821:189:AACHYFJM5:1:1101:36807:1435	exact	R1_bc1	exact	R1_bc2	exact
 7384	VH00821:189:AACHYFJM5:1:1101:36845:1435	no_match	R1_bc1	exact	R1_bc2	no_match
 7385	VH00821:189:AACHYFJM5:1:1101:36883:1435	exact	R1_bc1	exact	R1_bc2	exact
-7386	VH00821:189:AACHYFJM5:1:1101:36996:1435	no_match	R1_bc1	exact	R1_bc2	no_match
+7386	VH00821:189:AACHYFJM5:1:1101:36996:1435	corrected	R1_bc1	exact	R1_bc2	corrected
 7387	VH00821:189:AACHYFJM5:1:1101:37072:1435	exact	R1_bc1	exact	R1_bc2	exact
 7388	VH00821:189:AACHYFJM5:1:1101:37261:1435	exact	R1_bc1	exact	R1_bc2	exact
 7389	VH00821:189:AACHYFJM5:1:1101:37299:1435	exact	R1_bc1	exact	R1_bc2	exact
@@ -7448,7 +7448,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 7447	VH00821:189:AACHYFJM5:1:1101:44571:1435	exact	R1_bc1	exact	R1_bc2	exact
 7448	VH00821:189:AACHYFJM5:1:1101:44760:1435	exact	R1_bc1	exact	R1_bc2	exact
 7449	VH00821:189:AACHYFJM5:1:1101:44836:1435	exact	R1_bc1	exact	R1_bc2	exact
-7450	VH00821:189:AACHYFJM5:1:1101:44911:1435	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+7450	VH00821:189:AACHYFJM5:1:1101:44911:1435	corrected	R1_bc1	exact	R1_bc2	corrected
 7451	VH00821:189:AACHYFJM5:1:1101:44949:1435	exact	R1_bc1	exact	R1_bc2	exact
 7452	VH00821:189:AACHYFJM5:1:1101:45025:1435	exact	R1_bc1	exact	R1_bc2	exact
 7453	VH00821:189:AACHYFJM5:1:1101:45101:1435	exact	R1_bc1	exact	R1_bc2	exact
@@ -7669,7 +7669,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 7668	VH00821:189:AACHYFJM5:1:1101:22208:1454	exact	R1_bc1	exact	R1_bc2	exact
 7669	VH00821:189:AACHYFJM5:1:1101:22511:1454	exact	R1_bc1	exact	R1_bc2	exact
 7670	VH00821:189:AACHYFJM5:1:1101:22549:1454	exact	R1_bc1	exact	R1_bc2	exact
-7671	VH00821:189:AACHYFJM5:1:1101:22624:1454	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+7671	VH00821:189:AACHYFJM5:1:1101:22624:1454	corrected	R1_bc1	exact	R1_bc2	corrected
 7672	VH00821:189:AACHYFJM5:1:1101:22889:1454	exact	R1_bc1	exact	R1_bc2	exact
 7673	VH00821:189:AACHYFJM5:1:1101:23117:1454	exact	R1_bc1	exact	R1_bc2	exact
 7674	VH00821:189:AACHYFJM5:1:1101:23192:1454	exact	R1_bc1	exact	R1_bc2	exact
@@ -7898,7 +7898,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 7897	VH00821:189:AACHYFJM5:1:1101:51444:1454	exact	R1_bc1	exact	R1_bc2	exact
 7898	VH00821:189:AACHYFJM5:1:1101:51482:1454	exact	R1_bc1	exact	R1_bc2	exact
 7899	VH00821:189:AACHYFJM5:1:1101:51520:1454	exact	R1_bc1	exact	R1_bc2	exact
-7900	VH00821:189:AACHYFJM5:1:1101:51709:1454	no_match	R1_bc1	no_match	R1_bc2	exact
+7900	VH00821:189:AACHYFJM5:1:1101:51709:1454	corrected	R1_bc1	corrected	R1_bc2	exact
 7901	VH00821:189:AACHYFJM5:1:1101:51823:1454	exact	R1_bc1	exact	R1_bc2	exact
 7902	VH00821:189:AACHYFJM5:1:1101:51899:1454	exact	R1_bc1	exact	R1_bc2	exact
 7903	VH00821:189:AACHYFJM5:1:1101:52050:1454	exact	R1_bc1	exact	R1_bc2	exact
@@ -8219,7 +8219,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8218	VH00821:189:AACHYFJM5:1:1101:45290:1473	exact	R1_bc1	exact	R1_bc2	exact
 8219	VH00821:189:AACHYFJM5:1:1101:45366:1473	exact	R1_bc1	exact	R1_bc2	exact
 8220	VH00821:189:AACHYFJM5:1:1101:45479:1473	exact	R1_bc1	exact	R1_bc2	exact
-8221	VH00821:189:AACHYFJM5:1:1101:45593:1473	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+8221	VH00821:189:AACHYFJM5:1:1101:45593:1473	corrected	R1_bc1	exact	R1_bc2	corrected
 8222	VH00821:189:AACHYFJM5:1:1101:45631:1473	exact	R1_bc1	exact	R1_bc2	exact
 8223	VH00821:189:AACHYFJM5:1:1101:45820:1473	exact	R1_bc1	exact	R1_bc2	exact
 8224	VH00821:189:AACHYFJM5:1:1101:45934:1473	exact	R1_bc1	exact	R1_bc2	exact
@@ -8398,7 +8398,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8397	VH00821:189:AACHYFJM5:1:1101:19102:1492	exact	R1_bc1	exact	R1_bc2	exact
 8398	VH00821:189:AACHYFJM5:1:1101:19292:1492	corrected	R1_bc1	corrected	R1_bc2	exact
 8399	VH00821:189:AACHYFJM5:1:1101:19330:1492	exact	R1_bc1	exact	R1_bc2	exact
-8400	VH00821:189:AACHYFJM5:1:1101:19367:1492	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+8400	VH00821:189:AACHYFJM5:1:1101:19367:1492	corrected	R1_bc1	exact	R1_bc2	corrected
 8401	VH00821:189:AACHYFJM5:1:1101:19784:1492	exact	R1_bc1	exact	R1_bc2	exact
 8402	VH00821:189:AACHYFJM5:1:1101:19935:1492	exact	R1_bc1	exact	R1_bc2	exact
 8403	VH00821:189:AACHYFJM5:1:1101:20201:1492	exact	R1_bc1	exact	R1_bc2	exact
@@ -8553,7 +8553,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8552	VH00821:189:AACHYFJM5:1:1101:41901:1492	exact	R1_bc1	exact	R1_bc2	exact
 8553	VH00821:189:AACHYFJM5:1:1101:42014:1492	exact	R1_bc1	exact	R1_bc2	exact
 8554	VH00821:189:AACHYFJM5:1:1101:42090:1492	exact	R1_bc1	exact	R1_bc2	exact
-8555	VH00821:189:AACHYFJM5:1:1101:42279:1492	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+8555	VH00821:189:AACHYFJM5:1:1101:42279:1492	exact	R1_bc1	exact	R1_bc2	exact
 8556	VH00821:189:AACHYFJM5:1:1101:42393:1492	no_match	R1_bc1	exact	R1_bc2	no_match
 8557	VH00821:189:AACHYFJM5:1:1101:42431:1492	exact	R1_bc1	exact	R1_bc2	exact
 8558	VH00821:189:AACHYFJM5:1:1101:42544:1492	exact	R1_bc1	exact	R1_bc2	exact
@@ -8605,7 +8605,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8604	VH00821:189:AACHYFJM5:1:1101:48528:1492	exact	R1_bc1	exact	R1_bc2	exact
 8605	VH00821:189:AACHYFJM5:1:1101:48642:1492	exact	R1_bc1	exact	R1_bc2	exact
 8606	VH00821:189:AACHYFJM5:1:1101:48680:1492	exact	R1_bc1	exact	R1_bc2	exact
-8607	VH00821:189:AACHYFJM5:1:1101:48755:1492	no_match	R1_bc1	no_match	R1_bc2	exact
+8607	VH00821:189:AACHYFJM5:1:1101:48755:1492	corrected	R1_bc1	corrected	R1_bc2	exact
 8608	VH00821:189:AACHYFJM5:1:1101:48983:1492	exact	R1_bc1	exact	R1_bc2	exact
 8609	VH00821:189:AACHYFJM5:1:1101:49323:1492	exact	R1_bc1	exact	R1_bc2	exact
 8610	VH00821:189:AACHYFJM5:1:1101:49399:1492	exact	R1_bc1	exact	R1_bc2	exact
@@ -8693,7 +8693,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8692	VH00821:189:AACHYFJM5:1:1101:59889:1492	exact	R1_bc1	exact	R1_bc2	exact
 8693	VH00821:189:AACHYFJM5:1:1101:59927:1492	exact	R1_bc1	exact	R1_bc2	exact
 8694	VH00821:189:AACHYFJM5:1:1101:59965:1492	exact	R1_bc1	exact	R1_bc2	exact
-8695	VH00821:189:AACHYFJM5:1:1101:60003:1492	no_match	R1_bc1	no_match	R1_bc2	exact
+8695	VH00821:189:AACHYFJM5:1:1101:60003:1492	corrected	R1_bc1	corrected	R1_bc2	exact
 8696	VH00821:189:AACHYFJM5:1:1101:60041:1492	exact	R1_bc1	exact	R1_bc2	exact
 8697	VH00821:189:AACHYFJM5:1:1101:60382:1492	exact	R1_bc1	exact	R1_bc2	exact
 8698	VH00821:189:AACHYFJM5:1:1101:60609:1492	exact	R1_bc1	exact	R1_bc2	exact
@@ -8806,7 +8806,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8805	VH00821:189:AACHYFJM5:1:1101:23969:1511	exact	R1_bc1	exact	R1_bc2	exact
 8806	VH00821:189:AACHYFJM5:1:1101:24158:1511	exact	R1_bc1	exact	R1_bc2	exact
 8807	VH00821:189:AACHYFJM5:1:1101:24347:1511	exact	R1_bc1	exact	R1_bc2	exact
-8808	VH00821:189:AACHYFJM5:1:1101:24499:1511	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+8808	VH00821:189:AACHYFJM5:1:1101:24499:1511	corrected	R1_bc1	exact	R1_bc2	corrected
 8809	VH00821:189:AACHYFJM5:1:1101:24688:1511	exact	R1_bc1	exact	R1_bc2	exact
 8810	VH00821:189:AACHYFJM5:1:1101:24953:1511	exact	R1_bc1	exact	R1_bc2	exact
 8811	VH00821:189:AACHYFJM5:1:1101:25143:1511	exact	R1_bc1	exact	R1_bc2	exact
@@ -8957,7 +8957,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8956	VH00821:189:AACHYFJM5:1:1101:43965:1511	exact	R1_bc1	exact	R1_bc2	exact
 8957	VH00821:189:AACHYFJM5:1:1101:44040:1511	exact	R1_bc1	exact	R1_bc2	exact
 8958	VH00821:189:AACHYFJM5:1:1101:44116:1511	exact	R1_bc1	exact	R1_bc2	exact
-8959	VH00821:189:AACHYFJM5:1:1101:44154:1511	no_match	R1_bc1	exact	R1_bc2	no_match
+8959	VH00821:189:AACHYFJM5:1:1101:44154:1511	corrected	R1_bc1	exact	R1_bc2	corrected
 8960	VH00821:189:AACHYFJM5:1:1101:44268:1511	exact	R1_bc1	exact	R1_bc2	exact
 8961	VH00821:189:AACHYFJM5:1:1101:44571:1511	corrected	R1_bc1	exact	R1_bc2	corrected
 8962	VH00821:189:AACHYFJM5:1:1101:44836:1511	exact	R1_bc1	exact	R1_bc2	exact
@@ -8988,7 +8988,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 8987	VH00821:189:AACHYFJM5:1:1101:49191:1511	exact	R1_bc1	exact	R1_bc2	exact
 8988	VH00821:189:AACHYFJM5:1:1101:49304:1511	exact	R1_bc1	exact	R1_bc2	exact
 8989	VH00821:189:AACHYFJM5:1:1101:49456:1511	corrected	R1_bc1	exact	R1_bc2	corrected
-8990	VH00821:189:AACHYFJM5:1:1101:49759:1511	no_match	R1_bc1	no_match	R1_bc2	exact
+8990	VH00821:189:AACHYFJM5:1:1101:49759:1511	corrected	R1_bc1	corrected	R1_bc2	exact
 8991	VH00821:189:AACHYFJM5:1:1101:49797:1511	exact	R1_bc1	exact	R1_bc2	exact
 8992	VH00821:189:AACHYFJM5:1:1101:50024:1511	exact	R1_bc1	exact	R1_bc2	exact
 8993	VH00821:189:AACHYFJM5:1:1101:50138:1511	exact	R1_bc1	exact	R1_bc2	exact
@@ -9036,7 +9036,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 9035	VH00821:189:AACHYFJM5:1:1101:55932:1511	exact	R1_bc1	exact	R1_bc2	exact
 9036	VH00821:189:AACHYFJM5:1:1101:55970:1511	exact	R1_bc1	exact	R1_bc2	exact
 9037	VH00821:189:AACHYFJM5:1:1101:56045:1511	exact	R1_bc1	exact	R1_bc2	exact
-9038	VH00821:189:AACHYFJM5:1:1101:56538:1511	no_match	R1_bc1	exact	R1_bc2	no_match
+9038	VH00821:189:AACHYFJM5:1:1101:56538:1511	corrected	R1_bc1	exact	R1_bc2	corrected
 9039	VH00821:189:AACHYFJM5:1:1101:56614:1511	exact	R1_bc1	exact	R1_bc2	exact
 9040	VH00821:189:AACHYFJM5:1:1101:56727:1511	corrected	R1_bc1	exact	R1_bc2	corrected
 9041	VH00821:189:AACHYFJM5:1:1101:56879:1511	exact	R1_bc1	exact	R1_bc2	exact
@@ -9344,7 +9344,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 9343	VH00821:189:AACHYFJM5:1:1101:43984:1530	exact	R1_bc1	exact	R1_bc2	exact
 9344	VH00821:189:AACHYFJM5:1:1101:44135:1530	exact	R1_bc1	exact	R1_bc2	exact
 9345	VH00821:189:AACHYFJM5:1:1101:44287:1530	exact	R1_bc1	exact	R1_bc2	exact
-9346	VH00821:189:AACHYFJM5:1:1101:44324:1530	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+9346	VH00821:189:AACHYFJM5:1:1101:44324:1530	corrected	R1_bc1	exact	R1_bc2	corrected
 9347	VH00821:189:AACHYFJM5:1:1101:44362:1530	exact	R1_bc1	exact	R1_bc2	exact
 9348	VH00821:189:AACHYFJM5:1:1101:44514:1530	exact	R1_bc1	exact	R1_bc2	exact
 9349	VH00821:189:AACHYFJM5:1:1101:44589:1530	exact	R1_bc1	exact	R1_bc2	exact
@@ -9363,7 +9363,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 9362	VH00821:189:AACHYFJM5:1:1101:46559:1530	exact	R1_bc1	exact	R1_bc2	exact
 9363	VH00821:189:AACHYFJM5:1:1101:46748:1530	exact	R1_bc1	exact	R1_bc2	exact
 9364	VH00821:189:AACHYFJM5:1:1101:46824:1530	exact	R1_bc1	exact	R1_bc2	exact
-9365	VH00821:189:AACHYFJM5:1:1101:46975:1530	no_match	R1_bc1	no_match	R1_bc2	exact
+9365	VH00821:189:AACHYFJM5:1:1101:46975:1530	corrected	R1_bc1	corrected	R1_bc2	exact
 9366	VH00821:189:AACHYFJM5:1:1101:47013:1530	exact	R1_bc1	exact	R1_bc2	exact
 9367	VH00821:189:AACHYFJM5:1:1101:47089:1530	exact	R1_bc1	exact	R1_bc2	exact
 9368	VH00821:189:AACHYFJM5:1:1101:47127:1530	exact	R1_bc1	exact	R1_bc2	exact
@@ -10093,7 +10093,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 10092	VH00821:189:AACHYFJM5:1:1101:40121:1568	exact	R1_bc1	exact	R1_bc2	exact
 10093	VH00821:189:AACHYFJM5:1:1101:40159:1568	exact	R1_bc1	exact	R1_bc2	exact
 10094	VH00821:189:AACHYFJM5:1:1101:40386:1568	exact	R1_bc1	exact	R1_bc2	exact
-10095	VH00821:189:AACHYFJM5:1:1101:40462:1568	no_match	R1_bc1	exact	R1_bc2	no_match
+10095	VH00821:189:AACHYFJM5:1:1101:40462:1568	corrected	R1_bc1	exact	R1_bc2	corrected
 10096	VH00821:189:AACHYFJM5:1:1101:40499:1568	exact	R1_bc1	exact	R1_bc2	exact
 10097	VH00821:189:AACHYFJM5:1:1101:40651:1568	exact	R1_bc1	exact	R1_bc2	exact
 10098	VH00821:189:AACHYFJM5:1:1101:40878:1568	corrected	R1_bc1	corrected	R1_bc2	corrected
@@ -10536,7 +10536,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 10535	VH00821:189:AACHYFJM5:1:1101:49607:1587	exact	R1_bc1	exact	R1_bc2	exact
 10536	VH00821:189:AACHYFJM5:1:1101:49910:1587	exact	R1_bc1	exact	R1_bc2	exact
 10537	VH00821:189:AACHYFJM5:1:1101:49948:1587	exact	R1_bc1	exact	R1_bc2	exact
-10538	VH00821:189:AACHYFJM5:1:1101:49986:1587	no_match	R1_bc1	exact	R1_bc2	no_match
+10538	VH00821:189:AACHYFJM5:1:1101:49986:1587	corrected	R1_bc1	exact	R1_bc2	corrected
 10539	VH00821:189:AACHYFJM5:1:1101:50175:1587	exact	R1_bc1	exact	R1_bc2	exact
 10540	VH00821:189:AACHYFJM5:1:1101:50213:1587	exact	R1_bc1	exact	R1_bc2	exact
 10541	VH00821:189:AACHYFJM5:1:1101:50365:1587	exact	R1_bc1	exact	R1_bc2	exact
@@ -10563,7 +10563,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 10562	VH00821:189:AACHYFJM5:1:1101:52789:1587	exact	R1_bc1	exact	R1_bc2	exact
 10563	VH00821:189:AACHYFJM5:1:1101:53167:1587	exact	R1_bc1	exact	R1_bc2	exact
 10564	VH00821:189:AACHYFJM5:1:1101:53243:1587	exact	R1_bc1	exact	R1_bc2	exact
-10565	VH00821:189:AACHYFJM5:1:1101:53319:1587	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+10565	VH00821:189:AACHYFJM5:1:1101:53319:1587	corrected	R1_bc1	exact	R1_bc2	corrected
 10566	VH00821:189:AACHYFJM5:1:1101:53546:1587	exact	R1_bc1	exact	R1_bc2	exact
 10567	VH00821:189:AACHYFJM5:1:1101:53584:1587	exact	R1_bc1	exact	R1_bc2	exact
 10568	VH00821:189:AACHYFJM5:1:1101:54076:1587	exact	R1_bc1	exact	R1_bc2	exact
@@ -10638,7 +10638,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 10637	VH00821:189:AACHYFJM5:1:1101:63658:1587	exact	R1_bc1	exact	R1_bc2	exact
 10638	VH00821:189:AACHYFJM5:1:1101:63771:1587	exact	R1_bc1	exact	R1_bc2	exact
 10639	VH00821:189:AACHYFJM5:1:1101:63809:1587	exact	R1_bc1	exact	R1_bc2	exact
-10640	VH00821:189:AACHYFJM5:1:1101:63885:1587	no_match	R1_bc1	exact	R1_bc2	no_match
+10640	VH00821:189:AACHYFJM5:1:1101:63885:1587	corrected	R1_bc1	exact	R1_bc2	corrected
 10641	VH00821:189:AACHYFJM5:1:1101:63998:1587	exact	R1_bc1	exact	R1_bc2	exact
 10642	VH00821:189:AACHYFJM5:1:1101:64150:1587	exact	R1_bc1	exact	R1_bc2	exact
 10643	VH00821:189:AACHYFJM5:1:1101:64188:1587	exact	R1_bc1	exact	R1_bc2	exact
@@ -10697,7 +10697,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 10696	VH00821:189:AACHYFJM5:1:1101:23647:1606	exact	R1_bc1	exact	R1_bc2	exact
 10697	VH00821:189:AACHYFJM5:1:1101:23760:1606	exact	R1_bc1	exact	R1_bc2	exact
 10698	VH00821:189:AACHYFJM5:1:1101:23874:1606	exact	R1_bc1	exact	R1_bc2	exact
-10699	VH00821:189:AACHYFJM5:1:1101:23988:1606	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+10699	VH00821:189:AACHYFJM5:1:1101:23988:1606	corrected	R1_bc1	exact	R1_bc2	corrected
 10700	VH00821:189:AACHYFJM5:1:1101:24026:1606	exact	R1_bc1	exact	R1_bc2	exact
 10701	VH00821:189:AACHYFJM5:1:1101:24291:1606	exact	R1_bc1	exact	R1_bc2	exact
 10702	VH00821:189:AACHYFJM5:1:1101:24480:1606	exact	R1_bc1	exact	R1_bc2	exact
@@ -10713,8 +10713,8 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 10712	VH00821:189:AACHYFJM5:1:1101:25616:1606	exact	R1_bc1	exact	R1_bc2	exact
 10713	VH00821:189:AACHYFJM5:1:1101:25692:1606	exact	R1_bc1	exact	R1_bc2	exact
 10714	VH00821:189:AACHYFJM5:1:1101:25768:1606	exact	R1_bc1	exact	R1_bc2	exact
-10715	VH00821:189:AACHYFJM5:1:1101:26033:1606	no_match	R1_bc1	no_match	R1_bc2	exact
-10716	VH00821:189:AACHYFJM5:1:1101:26071:1606	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+10715	VH00821:189:AACHYFJM5:1:1101:26033:1606	corrected	R1_bc1	corrected	R1_bc2	exact
+10716	VH00821:189:AACHYFJM5:1:1101:26071:1606	exact	R1_bc1	exact	R1_bc2	exact
 10717	VH00821:189:AACHYFJM5:1:1101:26108:1606	exact	R1_bc1	exact	R1_bc2	exact
 10718	VH00821:189:AACHYFJM5:1:1101:26260:1606	exact	R1_bc1	exact	R1_bc2	exact
 10719	VH00821:189:AACHYFJM5:1:1101:26336:1606	exact	R1_bc1	exact	R1_bc2	exact
@@ -11108,7 +11108,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 11107	VH00821:189:AACHYFJM5:1:1101:25597:1625	exact	R1_bc1	exact	R1_bc2	exact
 11108	VH00821:189:AACHYFJM5:1:1101:25635:1625	exact	R1_bc1	exact	R1_bc2	exact
 11109	VH00821:189:AACHYFJM5:1:1101:25711:1625	exact	R1_bc1	exact	R1_bc2	exact
-11110	VH00821:189:AACHYFJM5:1:1101:25749:1625	no_match	R1_bc1	exact	R1_bc2	no_match
+11110	VH00821:189:AACHYFJM5:1:1101:25749:1625	corrected	R1_bc1	exact	R1_bc2	corrected
 11111	VH00821:189:AACHYFJM5:1:1101:25862:1625	exact	R1_bc1	exact	R1_bc2	exact
 11112	VH00821:189:AACHYFJM5:1:1101:25900:1625	exact	R1_bc1	exact	R1_bc2	exact
 11113	VH00821:189:AACHYFJM5:1:1101:25976:1625	exact	R1_bc1	exact	R1_bc2	exact
@@ -11896,7 +11896,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 11895	VH00821:189:AACHYFJM5:1:1101:23590:1663	exact	R1_bc1	exact	R1_bc2	exact
 11896	VH00821:189:AACHYFJM5:1:1101:23628:1663	exact	R1_bc1	exact	R1_bc2	exact
 11897	VH00821:189:AACHYFJM5:1:1101:23666:1663	exact	R1_bc1	exact	R1_bc2	exact
-11898	VH00821:189:AACHYFJM5:1:1101:23704:1663	no_match	R1_bc1	exact	R1_bc2	no_match
+11898	VH00821:189:AACHYFJM5:1:1101:23704:1663	corrected	R1_bc1	exact	R1_bc2	corrected
 11899	VH00821:189:AACHYFJM5:1:1101:23779:1663	exact	R1_bc1	exact	R1_bc2	exact
 11900	VH00821:189:AACHYFJM5:1:1101:23931:1663	exact	R1_bc1	exact	R1_bc2	exact
 11901	VH00821:189:AACHYFJM5:1:1101:24007:1663	exact	R1_bc1	exact	R1_bc2	exact
@@ -11958,7 +11958,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 11957	VH00821:189:AACHYFJM5:1:1101:31467:1663	exact	R1_bc1	exact	R1_bc2	exact
 11958	VH00821:189:AACHYFJM5:1:1101:31619:1663	exact	R1_bc1	exact	R1_bc2	exact
 11959	VH00821:189:AACHYFJM5:1:1101:31884:1663	exact	R1_bc1	exact	R1_bc2	exact
-11960	VH00821:189:AACHYFJM5:1:1101:31960:1663	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+11960	VH00821:189:AACHYFJM5:1:1101:31960:1663	exact	R1_bc1	exact	R1_bc2	exact
 11961	VH00821:189:AACHYFJM5:1:1101:32111:1663	exact	R1_bc1	exact	R1_bc2	exact
 11962	VH00821:189:AACHYFJM5:1:1101:32603:1663	exact	R1_bc1	exact	R1_bc2	exact
 11963	VH00821:189:AACHYFJM5:1:1101:32717:1663	exact	R1_bc1	exact	R1_bc2	exact
@@ -12104,7 +12104,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 12103	VH00821:189:AACHYFJM5:1:1101:49418:1663	exact	R1_bc1	exact	R1_bc2	exact
 12104	VH00821:189:AACHYFJM5:1:1101:49456:1663	exact	R1_bc1	exact	R1_bc2	exact
 12105	VH00821:189:AACHYFJM5:1:1101:49645:1663	exact	R1_bc1	exact	R1_bc2	exact
-12106	VH00821:189:AACHYFJM5:1:1101:49683:1663	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+12106	VH00821:189:AACHYFJM5:1:1101:49683:1663	corrected	R1_bc1	exact	R1_bc2	corrected
 12107	VH00821:189:AACHYFJM5:1:1101:49759:1663	exact	R1_bc1	exact	R1_bc2	exact
 12108	VH00821:189:AACHYFJM5:1:1101:49835:1663	exact	R1_bc1	exact	R1_bc2	exact
 12109	VH00821:189:AACHYFJM5:1:1101:49986:1663	exact	R1_bc1	exact	R1_bc2	exact
@@ -12445,7 +12445,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 12444	VH00821:189:AACHYFJM5:1:1101:47846:1682	corrected	R1_bc1	exact	R1_bc2	corrected
 12445	VH00821:189:AACHYFJM5:1:1101:47884:1682	exact	R1_bc1	exact	R1_bc2	exact
 12446	VH00821:189:AACHYFJM5:1:1101:47922:1682	exact	R1_bc1	exact	R1_bc2	exact
-12447	VH00821:189:AACHYFJM5:1:1101:48149:1682	no_match	R1_bc1	exact	R1_bc2	no_match
+12447	VH00821:189:AACHYFJM5:1:1101:48149:1682	corrected	R1_bc1	exact	R1_bc2	corrected
 12448	VH00821:189:AACHYFJM5:1:1101:48187:1682	exact	R1_bc1	exact	R1_bc2	exact
 12449	VH00821:189:AACHYFJM5:1:1101:48339:1682	exact	R1_bc1	exact	R1_bc2	exact
 12450	VH00821:189:AACHYFJM5:1:1101:48452:1682	exact	R1_bc1	exact	R1_bc2	exact
@@ -12531,7 +12531,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 12530	VH00821:189:AACHYFJM5:1:1101:57693:1682	exact	R1_bc1	exact	R1_bc2	exact
 12531	VH00821:189:AACHYFJM5:1:1101:57731:1682	exact	R1_bc1	exact	R1_bc2	exact
 12532	VH00821:189:AACHYFJM5:1:1101:57844:1682	exact	R1_bc1	exact	R1_bc2	exact
-12533	VH00821:189:AACHYFJM5:1:1101:57882:1682	no_match	R1_bc1	no_match	R1_bc2	exact
+12533	VH00821:189:AACHYFJM5:1:1101:57882:1682	corrected	R1_bc1	corrected	R1_bc2	exact
 12534	VH00821:189:AACHYFJM5:1:1101:58185:1682	corrected	R1_bc1	exact	R1_bc2	corrected
 12535	VH00821:189:AACHYFJM5:1:1101:58337:1682	exact	R1_bc1	exact	R1_bc2	exact
 12536	VH00821:189:AACHYFJM5:1:1101:58450:1682	exact	R1_bc1	exact	R1_bc2	exact
@@ -12597,7 +12597,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 12596	VH00821:189:AACHYFJM5:1:1101:65381:1682	exact	R1_bc1	exact	R1_bc2	exact
 12597	VH00821:189:AACHYFJM5:1:1101:65419:1682	exact	R1_bc1	exact	R1_bc2	exact
 12598	VH00821:189:AACHYFJM5:1:1101:66024:1682	exact	R1_bc1	exact	R1_bc2	exact
-12599	VH00821:189:AACHYFJM5:1:1101:66176:1682	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+12599	VH00821:189:AACHYFJM5:1:1101:66176:1682	exact	R1_bc1	exact	R1_bc2	exact
 12600	VH00821:189:AACHYFJM5:1:1101:66252:1682	exact	R1_bc1	exact	R1_bc2	exact
 12601	VH00821:189:AACHYFJM5:1:1101:66403:1682	exact	R1_bc1	exact	R1_bc2	exact
 12602	VH00821:189:AACHYFJM5:1:1101:66441:1682	exact	R1_bc1	exact	R1_bc2	exact
@@ -12776,7 +12776,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 12775	VH00821:189:AACHYFJM5:1:1101:38549:1700	exact	R1_bc1	exact	R1_bc2	exact
 12776	VH00821:189:AACHYFJM5:1:1101:38625:1700	exact	R1_bc1	exact	R1_bc2	exact
 12777	VH00821:189:AACHYFJM5:1:1101:38663:1700	exact	R1_bc1	exact	R1_bc2	exact
-12778	VH00821:189:AACHYFJM5:1:1101:38738:1700	no_match	R1_bc1	exact	R1_bc2	no_match
+12778	VH00821:189:AACHYFJM5:1:1101:38738:1700	corrected	R1_bc1	exact	R1_bc2	corrected
 12779	VH00821:189:AACHYFJM5:1:1101:38776:1700	exact	R1_bc1	exact	R1_bc2	exact
 12780	VH00821:189:AACHYFJM5:1:1101:38814:1700	exact	R1_bc1	exact	R1_bc2	exact
 12781	VH00821:189:AACHYFJM5:1:1101:38852:1700	exact	R1_bc1	exact	R1_bc2	exact
@@ -12833,7 +12833,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 12832	VH00821:189:AACHYFJM5:1:1101:45745:1700	exact	R1_bc1	exact	R1_bc2	exact
 12833	VH00821:189:AACHYFJM5:1:1101:45782:1700	exact	R1_bc1	exact	R1_bc2	exact
 12834	VH00821:189:AACHYFJM5:1:1101:46048:1700	exact	R1_bc1	exact	R1_bc2	exact
-12835	VH00821:189:AACHYFJM5:1:1101:46123:1700	no_match	R1_bc1	exact	R1_bc2	no_match
+12835	VH00821:189:AACHYFJM5:1:1101:46123:1700	corrected	R1_bc1	exact	R1_bc2	corrected
 12836	VH00821:189:AACHYFJM5:1:1101:46161:1700	corrected	R1_bc1	corrected	R1_bc2	exact
 12837	VH00821:189:AACHYFJM5:1:1101:46540:1700	exact	R1_bc1	exact	R1_bc2	exact
 12838	VH00821:189:AACHYFJM5:1:1101:46729:1700	exact	R1_bc1	exact	R1_bc2	exact
@@ -12919,7 +12919,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 12918	VH00821:189:AACHYFJM5:1:1101:57863:1700	exact	R1_bc1	exact	R1_bc2	exact
 12919	VH00821:189:AACHYFJM5:1:1101:57977:1700	exact	R1_bc1	exact	R1_bc2	exact
 12920	VH00821:189:AACHYFJM5:1:1101:58090:1700	exact	R1_bc1	exact	R1_bc2	exact
-12921	VH00821:189:AACHYFJM5:1:1101:58166:1700	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+12921	VH00821:189:AACHYFJM5:1:1101:58166:1700	corrected	R1_bc1	exact	R1_bc2	corrected
 12922	VH00821:189:AACHYFJM5:1:1101:58242:1700	exact	R1_bc1	exact	R1_bc2	exact
 12923	VH00821:189:AACHYFJM5:1:1101:58318:1700	exact	R1_bc1	exact	R1_bc2	exact
 12924	VH00821:189:AACHYFJM5:1:1101:58356:1700	corrected	R1_bc1	exact	R1_bc2	corrected
@@ -13038,7 +13038,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 13037	VH00821:189:AACHYFJM5:1:1101:24139:1719	exact	R1_bc1	exact	R1_bc2	exact
 13038	VH00821:189:AACHYFJM5:1:1101:24442:1719	exact	R1_bc1	exact	R1_bc2	exact
 13039	VH00821:189:AACHYFJM5:1:1101:24556:1719	below_threshold	R1_bc1	corrected	R1_bc2	corrected
-13040	VH00821:189:AACHYFJM5:1:1101:24594:1719	no_match	R1_bc1	exact	R1_bc2	no_match
+13040	VH00821:189:AACHYFJM5:1:1101:24594:1719	below_threshold	R1_bc1	exact	R1_bc2	corrected
 13041	VH00821:189:AACHYFJM5:1:1101:24631:1719	exact	R1_bc1	exact	R1_bc2	exact
 13042	VH00821:189:AACHYFJM5:1:1101:24745:1719	exact	R1_bc1	exact	R1_bc2	exact
 13043	VH00821:189:AACHYFJM5:1:1101:24783:1719	exact	R1_bc1	exact	R1_bc2	exact
@@ -13592,7 +13592,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 13591	VH00821:189:AACHYFJM5:1:1101:44911:1738	exact	R1_bc1	exact	R1_bc2	exact
 13592	VH00821:189:AACHYFJM5:1:1101:44949:1738	exact	R1_bc1	exact	R1_bc2	exact
 13593	VH00821:189:AACHYFJM5:1:1101:45025:1738	exact	R1_bc1	exact	R1_bc2	exact
-13594	VH00821:189:AACHYFJM5:1:1101:45176:1738	no_match	R1_bc1	exact	R1_bc2	no_match
+13594	VH00821:189:AACHYFJM5:1:1101:45176:1738	corrected	R1_bc1	exact	R1_bc2	corrected
 13595	VH00821:189:AACHYFJM5:1:1101:45555:1738	exact	R1_bc1	exact	R1_bc2	exact
 13596	VH00821:189:AACHYFJM5:1:1101:45593:1738	exact	R1_bc1	exact	R1_bc2	exact
 13597	VH00821:189:AACHYFJM5:1:1101:45707:1738	corrected	R1_bc1	exact	R1_bc2	corrected
@@ -13983,7 +13983,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 13982	VH00821:189:AACHYFJM5:1:1101:43378:1757	exact	R1_bc1	exact	R1_bc2	exact
 13983	VH00821:189:AACHYFJM5:1:1101:43756:1757	corrected	R1_bc1	corrected	R1_bc2	exact
 13984	VH00821:189:AACHYFJM5:1:1101:43870:1757	exact	R1_bc1	exact	R1_bc2	exact
-13985	VH00821:189:AACHYFJM5:1:1101:43908:1757	no_match	R1_bc1	no_match	R1_bc2	exact
+13985	VH00821:189:AACHYFJM5:1:1101:43908:1757	corrected	R1_bc1	corrected	R1_bc2	exact
 13986	VH00821:189:AACHYFJM5:1:1101:44021:1757	no_match	R1_bc1	no_match	R1_bc2	no_match
 13987	VH00821:189:AACHYFJM5:1:1101:44097:1757	exact	R1_bc1	exact	R1_bc2	exact
 13988	VH00821:189:AACHYFJM5:1:1101:44249:1757	exact	R1_bc1	exact	R1_bc2	exact
@@ -14232,7 +14232,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14231	VH00821:189:AACHYFJM5:1:1101:22605:1776	exact	R1_bc1	exact	R1_bc2	exact
 14232	VH00821:189:AACHYFJM5:1:1101:22643:1776	exact	R1_bc1	exact	R1_bc2	exact
 14233	VH00821:189:AACHYFJM5:1:1101:22719:1776	exact	R1_bc1	exact	R1_bc2	exact
-14234	VH00821:189:AACHYFJM5:1:1101:22757:1776	no_match	R1_bc1	exact	R1_bc2	no_match
+14234	VH00821:189:AACHYFJM5:1:1101:22757:1776	corrected	R1_bc1	exact	R1_bc2	corrected
 14235	VH00821:189:AACHYFJM5:1:1101:22984:1776	exact	R1_bc1	exact	R1_bc2	exact
 14236	VH00821:189:AACHYFJM5:1:1101:23022:1776	exact	R1_bc1	exact	R1_bc2	exact
 14237	VH00821:189:AACHYFJM5:1:1101:23363:1776	exact	R1_bc1	exact	R1_bc2	exact
@@ -14349,7 +14349,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14348	VH00821:189:AACHYFJM5:1:1101:37830:1776	exact	R1_bc1	exact	R1_bc2	exact
 14349	VH00821:189:AACHYFJM5:1:1101:37867:1776	exact	R1_bc1	exact	R1_bc2	exact
 14350	VH00821:189:AACHYFJM5:1:1101:38057:1776	exact	R1_bc1	exact	R1_bc2	exact
-14351	VH00821:189:AACHYFJM5:1:1101:38095:1776	no_match	R1_bc1	corrected	R1_bc2	no_match
+14351	VH00821:189:AACHYFJM5:1:1101:38095:1776	corrected	R1_bc1	corrected	R1_bc2	corrected
 14352	VH00821:189:AACHYFJM5:1:1101:38208:1776	exact	R1_bc1	exact	R1_bc2	exact
 14353	VH00821:189:AACHYFJM5:1:1101:38246:1776	exact	R1_bc1	exact	R1_bc2	exact
 14354	VH00821:189:AACHYFJM5:1:1101:38398:1776	exact	R1_bc1	exact	R1_bc2	exact
@@ -14621,7 +14621,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14620	VH00821:189:AACHYFJM5:1:1101:21526:1795	exact	R1_bc1	exact	R1_bc2	exact
 14621	VH00821:189:AACHYFJM5:1:1101:21678:1795	exact	R1_bc1	exact	R1_bc2	exact
 14622	VH00821:189:AACHYFJM5:1:1101:22170:1795	no_match	R1_bc1	exact	R1_bc2	no_match
-14623	VH00821:189:AACHYFJM5:1:1101:22208:1795	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+14623	VH00821:189:AACHYFJM5:1:1101:22208:1795	corrected	R1_bc1	exact	R1_bc2	corrected
 14624	VH00821:189:AACHYFJM5:1:1101:22435:1795	exact	R1_bc1	exact	R1_bc2	exact
 14625	VH00821:189:AACHYFJM5:1:1101:22586:1795	exact	R1_bc1	exact	R1_bc2	exact
 14626	VH00821:189:AACHYFJM5:1:1101:22814:1795	exact	R1_bc1	exact	R1_bc2	exact
@@ -14682,7 +14682,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14681	VH00821:189:AACHYFJM5:1:1101:28343:1795	exact	R1_bc1	exact	R1_bc2	exact
 14682	VH00821:189:AACHYFJM5:1:1101:28419:1795	exact	R1_bc1	exact	R1_bc2	exact
 14683	VH00821:189:AACHYFJM5:1:1101:28873:1795	exact	R1_bc1	exact	R1_bc2	exact
-14684	VH00821:189:AACHYFJM5:1:1101:28911:1795	no_match	R1_bc1	exact	R1_bc2	no_match
+14684	VH00821:189:AACHYFJM5:1:1101:28911:1795	corrected	R1_bc1	exact	R1_bc2	corrected
 14685	VH00821:189:AACHYFJM5:1:1101:28987:1795	exact	R1_bc1	exact	R1_bc2	exact
 14686	VH00821:189:AACHYFJM5:1:1101:29062:1795	exact	R1_bc1	exact	R1_bc2	exact
 14687	VH00821:189:AACHYFJM5:1:1101:29252:1795	exact	R1_bc1	exact	R1_bc2	exact
@@ -14861,7 +14861,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14860	VH00821:189:AACHYFJM5:1:1101:52845:1795	exact	R1_bc1	exact	R1_bc2	exact
 14861	VH00821:189:AACHYFJM5:1:1101:52921:1795	exact	R1_bc1	exact	R1_bc2	exact
 14862	VH00821:189:AACHYFJM5:1:1101:52959:1795	exact	R1_bc1	exact	R1_bc2	exact
-14863	VH00821:189:AACHYFJM5:1:1101:52997:1795	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+14863	VH00821:189:AACHYFJM5:1:1101:52997:1795	corrected	R1_bc1	exact	R1_bc2	corrected
 14864	VH00821:189:AACHYFJM5:1:1101:53186:1795	corrected	R1_bc1	exact	R1_bc2	corrected
 14865	VH00821:189:AACHYFJM5:1:1101:53262:1795	exact	R1_bc1	exact	R1_bc2	exact
 14866	VH00821:189:AACHYFJM5:1:1101:53338:1795	no_match	R1_bc1	exact	R1_bc2	no_match
@@ -14883,7 +14883,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14882	VH00821:189:AACHYFJM5:1:1101:55534:1795	exact	R1_bc1	exact	R1_bc2	exact
 14883	VH00821:189:AACHYFJM5:1:1101:55761:1795	exact	R1_bc1	exact	R1_bc2	exact
 14884	VH00821:189:AACHYFJM5:1:1101:55837:1795	exact	R1_bc1	exact	R1_bc2	exact
-14885	VH00821:189:AACHYFJM5:1:1101:55913:1795	no_match	R1_bc1	no_match	R1_bc2	exact
+14885	VH00821:189:AACHYFJM5:1:1101:55913:1795	corrected	R1_bc1	corrected	R1_bc2	exact
 14886	VH00821:189:AACHYFJM5:1:1101:56027:1795	exact	R1_bc1	exact	R1_bc2	exact
 14887	VH00821:189:AACHYFJM5:1:1101:56178:1795	exact	R1_bc1	exact	R1_bc2	exact
 14888	VH00821:189:AACHYFJM5:1:1101:56329:1795	exact	R1_bc1	exact	R1_bc2	exact
@@ -14926,7 +14926,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14925	VH00821:189:AACHYFJM5:1:1101:60647:1795	exact	R1_bc1	exact	R1_bc2	exact
 14926	VH00821:189:AACHYFJM5:1:1101:60760:1795	exact	R1_bc1	exact	R1_bc2	exact
 14927	VH00821:189:AACHYFJM5:1:1101:60798:1795	exact	R1_bc1	exact	R1_bc2	exact
-14928	VH00821:189:AACHYFJM5:1:1101:60836:1795	no_match	R1_bc1	exact	R1_bc2	no_match
+14928	VH00821:189:AACHYFJM5:1:1101:60836:1795	corrected	R1_bc1	exact	R1_bc2	corrected
 14929	VH00821:189:AACHYFJM5:1:1101:60874:1795	exact	R1_bc1	exact	R1_bc2	exact
 14930	VH00821:189:AACHYFJM5:1:1101:60988:1795	exact	R1_bc1	exact	R1_bc2	exact
 14931	VH00821:189:AACHYFJM5:1:1101:61177:1795	exact	R1_bc1	exact	R1_bc2	exact
@@ -14974,7 +14974,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 14973	VH00821:189:AACHYFJM5:1:1101:66252:1795	exact	R1_bc1	exact	R1_bc2	exact
 14974	VH00821:189:AACHYFJM5:1:1101:66479:1795	exact	R1_bc1	exact	R1_bc2	exact
 14975	VH00821:189:AACHYFJM5:1:1101:66517:1795	exact	R1_bc1	exact	R1_bc2	exact
-14976	VH00821:189:AACHYFJM5:1:1101:66593:1795	below_threshold	R1_bc1	exact	R1_bc2	exact
+14976	VH00821:189:AACHYFJM5:1:1101:66593:1795	below_threshold	R1_bc1	corrected	R1_bc2	exact
 14977	VH00821:189:AACHYFJM5:1:1101:66668:1795	exact	R1_bc1	exact	R1_bc2	exact
 14978	VH00821:189:AACHYFJM5:1:1101:17455:1814	exact	R1_bc1	exact	R1_bc2	exact
 14979	VH00821:189:AACHYFJM5:1:1101:17758:1814	exact	R1_bc1	exact	R1_bc2	exact
@@ -15087,7 +15087,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 15086	VH00821:189:AACHYFJM5:1:1101:31619:1814	exact	R1_bc1	exact	R1_bc2	exact
 15087	VH00821:189:AACHYFJM5:1:1101:31694:1814	exact	R1_bc1	exact	R1_bc2	exact
 15088	VH00821:189:AACHYFJM5:1:1101:31770:1814	exact	R1_bc1	exact	R1_bc2	exact
-15089	VH00821:189:AACHYFJM5:1:1101:32111:1814	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+15089	VH00821:189:AACHYFJM5:1:1101:32111:1814	exact	R1_bc1	exact	R1_bc2	exact
 15090	VH00821:189:AACHYFJM5:1:1101:32338:1814	exact	R1_bc1	exact	R1_bc2	exact
 15091	VH00821:189:AACHYFJM5:1:1101:32641:1814	exact	R1_bc1	exact	R1_bc2	exact
 15092	VH00821:189:AACHYFJM5:1:1101:32717:1814	exact	R1_bc1	exact	R1_bc2	exact
@@ -15462,7 +15462,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 15461	VH00821:189:AACHYFJM5:1:1101:32622:1833	corrected	R1_bc1	exact	R1_bc2	corrected
 15462	VH00821:189:AACHYFJM5:1:1101:33039:1833	exact	R1_bc1	exact	R1_bc2	exact
 15463	VH00821:189:AACHYFJM5:1:1101:33077:1833	corrected	R1_bc1	exact	R1_bc2	corrected
-15464	VH00821:189:AACHYFJM5:1:1101:33152:1833	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+15464	VH00821:189:AACHYFJM5:1:1101:33152:1833	corrected	R1_bc1	exact	R1_bc2	corrected
 15465	VH00821:189:AACHYFJM5:1:1101:33190:1833	exact	R1_bc1	exact	R1_bc2	exact
 15466	VH00821:189:AACHYFJM5:1:1101:33455:1833	exact	R1_bc1	exact	R1_bc2	exact
 15467	VH00821:189:AACHYFJM5:1:1101:33569:1833	corrected	R1_bc1	corrected	R1_bc2	exact
@@ -15595,7 +15595,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 15594	VH00821:189:AACHYFJM5:1:1101:48831:1833	exact	R1_bc1	exact	R1_bc2	exact
 15595	VH00821:189:AACHYFJM5:1:1101:49020:1833	exact	R1_bc1	exact	R1_bc2	exact
 15596	VH00821:189:AACHYFJM5:1:1101:49134:1833	exact	R1_bc1	exact	R1_bc2	exact
-15597	VH00821:189:AACHYFJM5:1:1101:49248:1833	no_match	R1_bc1	exact	R1_bc2	no_match
+15597	VH00821:189:AACHYFJM5:1:1101:49248:1833	corrected	R1_bc1	exact	R1_bc2	corrected
 15598	VH00821:189:AACHYFJM5:1:1101:49361:1833	exact	R1_bc1	exact	R1_bc2	exact
 15599	VH00821:189:AACHYFJM5:1:1101:49399:1833	exact	R1_bc1	exact	R1_bc2	exact
 15600	VH00821:189:AACHYFJM5:1:1101:49588:1833	exact	R1_bc1	exact	R1_bc2	exact
@@ -15610,8 +15610,8 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 15609	VH00821:189:AACHYFJM5:1:1101:51141:1833	corrected	R1_bc1	exact	R1_bc2	corrected
 15610	VH00821:189:AACHYFJM5:1:1101:51331:1833	exact	R1_bc1	exact	R1_bc2	exact
 15611	VH00821:189:AACHYFJM5:1:1101:51520:1833	exact	R1_bc1	exact	R1_bc2	exact
-15612	VH00821:189:AACHYFJM5:1:1101:51633:1833	no_match	R1_bc1	exact	R1_bc2	no_match
-15613	VH00821:189:AACHYFJM5:1:1101:51861:1833	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+15612	VH00821:189:AACHYFJM5:1:1101:51633:1833	corrected	R1_bc1	exact	R1_bc2	corrected
+15613	VH00821:189:AACHYFJM5:1:1101:51861:1833	exact	R1_bc1	exact	R1_bc2	exact
 15614	VH00821:189:AACHYFJM5:1:1101:51936:1833	exact	R1_bc1	exact	R1_bc2	exact
 15615	VH00821:189:AACHYFJM5:1:1101:51974:1833	exact	R1_bc1	exact	R1_bc2	exact
 15616	VH00821:189:AACHYFJM5:1:1101:52088:1833	exact	R1_bc1	exact	R1_bc2	exact
@@ -15643,7 +15643,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 15642	VH00821:189:AACHYFJM5:1:1101:55458:1833	exact	R1_bc1	exact	R1_bc2	exact
 15643	VH00821:189:AACHYFJM5:1:1101:55610:1833	exact	R1_bc1	exact	R1_bc2	exact
 15644	VH00821:189:AACHYFJM5:1:1101:55648:1833	exact	R1_bc1	exact	R1_bc2	exact
-15645	VH00821:189:AACHYFJM5:1:1101:55724:1833	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+15645	VH00821:189:AACHYFJM5:1:1101:55724:1833	corrected	R1_bc1	exact	R1_bc2	corrected
 15646	VH00821:189:AACHYFJM5:1:1101:56027:1833	exact	R1_bc1	exact	R1_bc2	exact
 15647	VH00821:189:AACHYFJM5:1:1101:56178:1833	exact	R1_bc1	exact	R1_bc2	exact
 15648	VH00821:189:AACHYFJM5:1:1101:56292:1833	exact	R1_bc1	exact	R1_bc2	exact
@@ -15806,7 +15806,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 15805	VH00821:189:AACHYFJM5:1:1101:26961:1852	exact	R1_bc1	exact	R1_bc2	exact
 15806	VH00821:189:AACHYFJM5:1:1101:26998:1852	exact	R1_bc1	exact	R1_bc2	exact
 15807	VH00821:189:AACHYFJM5:1:1101:27112:1852	exact	R1_bc1	exact	R1_bc2	exact
-15808	VH00821:189:AACHYFJM5:1:1101:27150:1852	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+15808	VH00821:189:AACHYFJM5:1:1101:27150:1852	corrected	R1_bc1	exact	R1_bc2	corrected
 15809	VH00821:189:AACHYFJM5:1:1101:27188:1852	exact	R1_bc1	exact	R1_bc2	exact
 15810	VH00821:189:AACHYFJM5:1:1101:27301:1852	exact	R1_bc1	exact	R1_bc2	exact
 15811	VH00821:189:AACHYFJM5:1:1101:27339:1852	exact	R1_bc1	exact	R1_bc2	exact
@@ -16309,7 +16309,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 16308	VH00821:189:AACHYFJM5:1:1101:40537:1871	exact	R1_bc1	exact	R1_bc2	exact
 16309	VH00821:189:AACHYFJM5:1:1101:40613:1871	exact	R1_bc1	exact	R1_bc2	exact
 16310	VH00821:189:AACHYFJM5:1:1101:40651:1871	exact	R1_bc1	exact	R1_bc2	exact
-16311	VH00821:189:AACHYFJM5:1:1101:40689:1871	no_match	R1_bc1	no_match	R1_bc2	exact
+16311	VH00821:189:AACHYFJM5:1:1101:40689:1871	corrected	R1_bc1	corrected	R1_bc2	exact
 16312	VH00821:189:AACHYFJM5:1:1101:40916:1871	exact	R1_bc1	exact	R1_bc2	exact
 16313	VH00821:189:AACHYFJM5:1:1101:40992:1871	exact	R1_bc1	exact	R1_bc2	exact
 16314	VH00821:189:AACHYFJM5:1:1101:41181:1871	exact	R1_bc1	exact	R1_bc2	exact
@@ -16336,7 +16336,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 16335	VH00821:189:AACHYFJM5:1:1101:43908:1871	exact	R1_bc1	exact	R1_bc2	exact
 16336	VH00821:189:AACHYFJM5:1:1101:44135:1871	exact	R1_bc1	exact	R1_bc2	exact
 16337	VH00821:189:AACHYFJM5:1:1101:44173:1871	exact	R1_bc1	exact	R1_bc2	exact
-16338	VH00821:189:AACHYFJM5:1:1101:44324:1871	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+16338	VH00821:189:AACHYFJM5:1:1101:44324:1871	exact	R1_bc1	exact	R1_bc2	exact
 16339	VH00821:189:AACHYFJM5:1:1101:44514:1871	exact	R1_bc1	exact	R1_bc2	exact
 16340	VH00821:189:AACHYFJM5:1:1101:44552:1871	exact	R1_bc1	exact	R1_bc2	exact
 16341	VH00821:189:AACHYFJM5:1:1101:44627:1871	exact	R1_bc1	exact	R1_bc2	exact
@@ -16470,7 +16470,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 16469	VH00821:189:AACHYFJM5:1:1101:60836:1871	exact	R1_bc1	exact	R1_bc2	exact
 16470	VH00821:189:AACHYFJM5:1:1101:60874:1871	exact	R1_bc1	exact	R1_bc2	exact
 16471	VH00821:189:AACHYFJM5:1:1101:60912:1871	exact	R1_bc1	exact	R1_bc2	exact
-16472	VH00821:189:AACHYFJM5:1:1101:61025:1871	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+16472	VH00821:189:AACHYFJM5:1:1101:61025:1871	exact	R1_bc1	exact	R1_bc2	exact
 16473	VH00821:189:AACHYFJM5:1:1101:61177:1871	exact	R1_bc1	exact	R1_bc2	exact
 16474	VH00821:189:AACHYFJM5:1:1101:61594:1871	exact	R1_bc1	exact	R1_bc2	exact
 16475	VH00821:189:AACHYFJM5:1:1101:61631:1871	exact	R1_bc1	exact	R1_bc2	exact
@@ -17201,10 +17201,10 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 17200	VH00821:189:AACHYFJM5:1:1101:55307:1909	exact	R1_bc1	exact	R1_bc2	exact
 17201	VH00821:189:AACHYFJM5:1:1101:55345:1909	exact	R1_bc1	exact	R1_bc2	exact
 17202	VH00821:189:AACHYFJM5:1:1101:55421:1909	exact	R1_bc1	exact	R1_bc2	exact
-17203	VH00821:189:AACHYFJM5:1:1101:55496:1909	no_match	R1_bc1	no_match	R1_bc2	exact
+17203	VH00821:189:AACHYFJM5:1:1101:55496:1909	corrected	R1_bc1	corrected	R1_bc2	exact
 17204	VH00821:189:AACHYFJM5:1:1101:55572:1909	exact	R1_bc1	exact	R1_bc2	exact
 17205	VH00821:189:AACHYFJM5:1:1101:55761:1909	exact	R1_bc1	exact	R1_bc2	exact
-17206	VH00821:189:AACHYFJM5:1:1101:55913:1909	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+17206	VH00821:189:AACHYFJM5:1:1101:55913:1909	exact	R1_bc1	exact	R1_bc2	exact
 17207	VH00821:189:AACHYFJM5:1:1101:55951:1909	exact	R1_bc1	exact	R1_bc2	exact
 17208	VH00821:189:AACHYFJM5:1:1101:56102:1909	exact	R1_bc1	exact	R1_bc2	exact
 17209	VH00821:189:AACHYFJM5:1:1101:56178:1909	exact	R1_bc1	exact	R1_bc2	exact
@@ -17257,7 +17257,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 17256	VH00821:189:AACHYFJM5:1:1101:61934:1909	exact	R1_bc1	exact	R1_bc2	exact
 17257	VH00821:189:AACHYFJM5:1:1101:62010:1909	exact	R1_bc1	exact	R1_bc2	exact
 17258	VH00821:189:AACHYFJM5:1:1101:62124:1909	exact	R1_bc1	exact	R1_bc2	exact
-17259	VH00821:189:AACHYFJM5:1:1101:62162:1909	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+17259	VH00821:189:AACHYFJM5:1:1101:62162:1909	corrected	R1_bc1	exact	R1_bc2	corrected
 17260	VH00821:189:AACHYFJM5:1:1101:62351:1909	exact	R1_bc1	exact	R1_bc2	exact
 17261	VH00821:189:AACHYFJM5:1:1101:62389:1909	exact	R1_bc1	exact	R1_bc2	exact
 17262	VH00821:189:AACHYFJM5:1:1101:62730:1909	exact	R1_bc1	exact	R1_bc2	exact
@@ -17473,7 +17473,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 17472	VH00821:189:AACHYFJM5:1:1101:38511:1928	exact	R1_bc1	exact	R1_bc2	exact
 17473	VH00821:189:AACHYFJM5:1:1101:38625:1928	exact	R1_bc1	exact	R1_bc2	exact
 17474	VH00821:189:AACHYFJM5:1:1101:38663:1928	exact	R1_bc1	exact	R1_bc2	exact
-17475	VH00821:189:AACHYFJM5:1:1101:38738:1928	no_match	R1_bc1	no_match	R1_bc2	corrected
+17475	VH00821:189:AACHYFJM5:1:1101:38738:1928	corrected	R1_bc1	corrected	R1_bc2	corrected
 17476	VH00821:189:AACHYFJM5:1:1101:38814:1928	exact	R1_bc1	exact	R1_bc2	exact
 17477	VH00821:189:AACHYFJM5:1:1101:38966:1928	exact	R1_bc1	exact	R1_bc2	exact
 17478	VH00821:189:AACHYFJM5:1:1101:39041:1928	exact	R1_bc1	exact	R1_bc2	exact
@@ -17892,7 +17892,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 17891	VH00821:189:AACHYFJM5:1:1101:40348:1947	exact	R1_bc1	exact	R1_bc2	exact
 17892	VH00821:189:AACHYFJM5:1:1101:40727:1947	exact	R1_bc1	exact	R1_bc2	exact
 17893	VH00821:189:AACHYFJM5:1:1101:40765:1947	exact	R1_bc1	exact	R1_bc2	exact
-17894	VH00821:189:AACHYFJM5:1:1101:40878:1947	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+17894	VH00821:189:AACHYFJM5:1:1101:40878:1947	corrected	R1_bc1	exact	R1_bc2	corrected
 17895	VH00821:189:AACHYFJM5:1:1101:40916:1947	exact	R1_bc1	exact	R1_bc2	exact
 17896	VH00821:189:AACHYFJM5:1:1101:40992:1947	exact	R1_bc1	exact	R1_bc2	exact
 17897	VH00821:189:AACHYFJM5:1:1101:41181:1947	exact	R1_bc1	exact	R1_bc2	exact
@@ -17983,7 +17983,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 17982	VH00821:189:AACHYFJM5:1:1101:51596:1947	exact	R1_bc1	exact	R1_bc2	exact
 17983	VH00821:189:AACHYFJM5:1:1101:51671:1947	exact	R1_bc1	exact	R1_bc2	exact
 17984	VH00821:189:AACHYFJM5:1:1101:51709:1947	exact	R1_bc1	exact	R1_bc2	exact
-17985	VH00821:189:AACHYFJM5:1:1101:51823:1947	no_match	R1_bc1	no_match	R1_bc2	exact
+17985	VH00821:189:AACHYFJM5:1:1101:51823:1947	corrected	R1_bc1	corrected	R1_bc2	exact
 17986	VH00821:189:AACHYFJM5:1:1101:51861:1947	exact	R1_bc1	exact	R1_bc2	exact
 17987	VH00821:189:AACHYFJM5:1:1101:51974:1947	exact	R1_bc1	exact	R1_bc2	exact
 17988	VH00821:189:AACHYFJM5:1:1101:52050:1947	exact	R1_bc1	exact	R1_bc2	exact
@@ -18081,7 +18081,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 18080	VH00821:189:AACHYFJM5:1:1101:65116:1947	exact	R1_bc1	exact	R1_bc2	exact
 18081	VH00821:189:AACHYFJM5:1:1101:65267:1947	exact	R1_bc1	exact	R1_bc2	exact
 18082	VH00821:189:AACHYFJM5:1:1101:65305:1947	exact	R1_bc1	exact	R1_bc2	exact
-18083	VH00821:189:AACHYFJM5:1:1101:65381:1947	no_match	R1_bc1	no_match	R1_bc2	exact
+18083	VH00821:189:AACHYFJM5:1:1101:65381:1947	corrected	R1_bc1	corrected	R1_bc2	exact
 18084	VH00821:189:AACHYFJM5:1:1101:65419:1947	exact	R1_bc1	exact	R1_bc2	exact
 18085	VH00821:189:AACHYFJM5:1:1101:65456:1947	exact	R1_bc1	exact	R1_bc2	exact
 18086	VH00821:189:AACHYFJM5:1:1101:65608:1947	exact	R1_bc1	exact	R1_bc2	exact
@@ -18377,7 +18377,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 18376	VH00821:189:AACHYFJM5:1:1101:49721:1966	exact	R1_bc1	exact	R1_bc2	exact
 18377	VH00821:189:AACHYFJM5:1:1101:49872:1966	exact	R1_bc1	exact	R1_bc2	exact
 18378	VH00821:189:AACHYFJM5:1:1101:49948:1966	exact	R1_bc1	exact	R1_bc2	exact
-18379	VH00821:189:AACHYFJM5:1:1101:49986:1966	no_match	R1_bc1	no_match	R1_bc2	exact
+18379	VH00821:189:AACHYFJM5:1:1101:49986:1966	corrected	R1_bc1	corrected	R1_bc2	exact
 18380	VH00821:189:AACHYFJM5:1:1101:50062:1966	exact	R1_bc1	exact	R1_bc2	exact
 18381	VH00821:189:AACHYFJM5:1:1101:50138:1966	exact	R1_bc1	exact	R1_bc2	exact
 18382	VH00821:189:AACHYFJM5:1:1101:50175:1966	exact	R1_bc1	exact	R1_bc2	exact
@@ -18413,7 +18413,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 18412	VH00821:189:AACHYFJM5:1:1101:54228:1966	exact	R1_bc1	exact	R1_bc2	exact
 18413	VH00821:189:AACHYFJM5:1:1101:54379:1966	exact	R1_bc1	exact	R1_bc2	exact
 18414	VH00821:189:AACHYFJM5:1:1101:54644:1966	exact	R1_bc1	exact	R1_bc2	exact
-18415	VH00821:189:AACHYFJM5:1:1101:54796:1966	no_match	R1_bc1	exact	R1_bc2	no_match
+18415	VH00821:189:AACHYFJM5:1:1101:54796:1966	corrected	R1_bc1	exact	R1_bc2	corrected
 18416	VH00821:189:AACHYFJM5:1:1101:54947:1966	exact	R1_bc1	exact	R1_bc2	exact
 18417	VH00821:189:AACHYFJM5:1:1101:54985:1966	exact	R1_bc1	exact	R1_bc2	exact
 18418	VH00821:189:AACHYFJM5:1:1101:55137:1966	exact	R1_bc1	exact	R1_bc2	exact
@@ -18560,7 +18560,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 18559	VH00821:189:AACHYFJM5:1:1101:24329:1984	exact	R1_bc1	exact	R1_bc2	exact
 18560	VH00821:189:AACHYFJM5:1:1101:24366:1984	exact	R1_bc1	exact	R1_bc2	exact
 18561	VH00821:189:AACHYFJM5:1:1101:24480:1984	exact	R1_bc1	exact	R1_bc2	exact
-18562	VH00821:189:AACHYFJM5:1:1101:24631:1984	no_match	R1_bc1	exact	R1_bc2	no_match
+18562	VH00821:189:AACHYFJM5:1:1101:24631:1984	corrected	R1_bc1	exact	R1_bc2	corrected
 18563	VH00821:189:AACHYFJM5:1:1101:24707:1984	exact	R1_bc1	exact	R1_bc2	exact
 18564	VH00821:189:AACHYFJM5:1:1101:24821:1984	exact	R1_bc1	exact	R1_bc2	exact
 18565	VH00821:189:AACHYFJM5:1:1101:24897:1984	exact	R1_bc1	exact	R1_bc2	exact
@@ -18840,7 +18840,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 18839	VH00821:189:AACHYFJM5:1:1101:55875:1984	exact	R1_bc1	exact	R1_bc2	exact
 18840	VH00821:189:AACHYFJM5:1:1101:55989:1984	exact	R1_bc1	exact	R1_bc2	exact
 18841	VH00821:189:AACHYFJM5:1:1101:56140:1984	exact	R1_bc1	exact	R1_bc2	exact
-18842	VH00821:189:AACHYFJM5:1:1101:56254:1984	no_match	R1_bc1	no_match	R1_bc2	corrected
+18842	VH00821:189:AACHYFJM5:1:1101:56254:1984	corrected	R1_bc1	corrected	R1_bc2	corrected
 18843	VH00821:189:AACHYFJM5:1:1101:56292:1984	exact	R1_bc1	exact	R1_bc2	exact
 18844	VH00821:189:AACHYFJM5:1:1101:56367:1984	exact	R1_bc1	exact	R1_bc2	exact
 18845	VH00821:189:AACHYFJM5:1:1101:56405:1984	exact	R1_bc1	exact	R1_bc2	exact
@@ -19078,7 +19078,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 19077	VH00821:189:AACHYFJM5:1:1101:36883:2003	exact	R1_bc1	exact	R1_bc2	exact
 19078	VH00821:189:AACHYFJM5:1:1101:36958:2003	exact	R1_bc1	exact	R1_bc2	exact
 19079	VH00821:189:AACHYFJM5:1:1101:36996:2003	exact	R1_bc1	exact	R1_bc2	exact
-19080	VH00821:189:AACHYFJM5:1:1101:37148:2003	no_match	R1_bc1	exact	R1_bc2	no_match
+19080	VH00821:189:AACHYFJM5:1:1101:37148:2003	corrected	R1_bc1	exact	R1_bc2	corrected
 19081	VH00821:189:AACHYFJM5:1:1101:37186:2003	exact	R1_bc1	exact	R1_bc2	exact
 19082	VH00821:189:AACHYFJM5:1:1101:37299:2003	exact	R1_bc1	exact	R1_bc2	exact
 19083	VH00821:189:AACHYFJM5:1:1101:37375:2003	exact	R1_bc1	exact	R1_bc2	exact
@@ -19484,7 +19484,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 19483	VH00821:189:AACHYFJM5:1:1101:40537:2022	corrected	R1_bc1	corrected	R1_bc2	exact
 19484	VH00821:189:AACHYFJM5:1:1101:40575:2022	corrected	R1_bc1	corrected	R1_bc2	exact
 19485	VH00821:189:AACHYFJM5:1:1101:40992:2022	exact	R1_bc1	exact	R1_bc2	exact
-19486	VH00821:189:AACHYFJM5:1:1101:41030:2022	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+19486	VH00821:189:AACHYFJM5:1:1101:41030:2022	corrected	R1_bc1	exact	R1_bc2	corrected
 19487	VH00821:189:AACHYFJM5:1:1101:41067:2022	exact	R1_bc1	exact	R1_bc2	exact
 19488	VH00821:189:AACHYFJM5:1:1101:41219:2022	corrected	R1_bc1	exact	R1_bc2	corrected
 19489	VH00821:189:AACHYFJM5:1:1101:41257:2022	exact	R1_bc1	exact	R1_bc2	exact
@@ -19521,7 +19521,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 19520	VH00821:189:AACHYFJM5:1:1101:45385:2022	exact	R1_bc1	exact	R1_bc2	exact
 19521	VH00821:189:AACHYFJM5:1:1101:45423:2022	exact	R1_bc1	exact	R1_bc2	exact
 19522	VH00821:189:AACHYFJM5:1:1101:45688:2022	exact	R1_bc1	exact	R1_bc2	exact
-19523	VH00821:189:AACHYFJM5:1:1101:45953:2022	no_match	R1_bc1	corrected	R1_bc2	no_match
+19523	VH00821:189:AACHYFJM5:1:1101:45953:2022	corrected	R1_bc1	corrected	R1_bc2	corrected
 19524	VH00821:189:AACHYFJM5:1:1101:46029:2022	exact	R1_bc1	exact	R1_bc2	exact
 19525	VH00821:189:AACHYFJM5:1:1101:46142:2022	exact	R1_bc1	exact	R1_bc2	exact
 19526	VH00821:189:AACHYFJM5:1:1101:46218:2022	exact	R1_bc1	exact	R1_bc2	exact
@@ -19871,7 +19871,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 19870	VH00821:189:AACHYFJM5:1:1101:34800:2041	exact	R1_bc1	exact	R1_bc2	exact
 19871	VH00821:189:AACHYFJM5:1:1101:34989:2041	exact	R1_bc1	exact	R1_bc2	exact
 19872	VH00821:189:AACHYFJM5:1:1101:35141:2041	exact	R1_bc1	exact	R1_bc2	exact
-19873	VH00821:189:AACHYFJM5:1:1101:35179:2041	no_match	R1_bc1	exact	R1_bc2	no_match
+19873	VH00821:189:AACHYFJM5:1:1101:35179:2041	corrected	R1_bc1	exact	R1_bc2	corrected
 19874	VH00821:189:AACHYFJM5:1:1101:35330:2041	exact	R1_bc1	exact	R1_bc2	exact
 19875	VH00821:189:AACHYFJM5:1:1101:35557:2041	exact	R1_bc1	exact	R1_bc2	exact
 19876	VH00821:189:AACHYFJM5:1:1101:35671:2041	exact	R1_bc1	exact	R1_bc2	exact
@@ -19980,7 +19980,7 @@ read_index	read_name	read_status	block_name_1	block_status_1	block_name_2	block_
 19979	VH00821:189:AACHYFJM5:1:1101:47222:2041	exact	R1_bc1	exact	R1_bc2	exact
 19980	VH00821:189:AACHYFJM5:1:1101:47259:2041	exact	R1_bc1	exact	R1_bc2	exact
 19981	VH00821:189:AACHYFJM5:1:1101:47335:2041	exact	R1_bc1	exact	R1_bc2	exact
-19982	VH00821:189:AACHYFJM5:1:1101:47865:2041	ambiguous	R1_bc1	exact	R1_bc2	ambiguous
+19982	VH00821:189:AACHYFJM5:1:1101:47865:2041	corrected	R1_bc1	exact	R1_bc2	corrected
 19983	VH00821:189:AACHYFJM5:1:1101:47903:2041	exact	R1_bc1	exact	R1_bc2	exact
 19984	VH00821:189:AACHYFJM5:1:1101:47941:2041	exact	R1_bc1	exact	R1_bc2	exact
 19985	VH00821:189:AACHYFJM5:1:1101:48055:2041	exact	R1_bc1	exact	R1_bc2	exact

@@ -11,6 +11,7 @@ import scipy
 import warnings
 from . import misc
 from . import qc_metrics
+from . import bc_parser
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -554,129 +555,6 @@ def run_STAR_single_end(arguments, R1_fpath):
 
     return star_out_dir, star_out_fpath
 
-def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders):
-    """
-    Find barcodes etc in bc_rec 
-    """
-    
-    scores_pieces_end_bounds = [al.find_norm_score_pieces_and_boundaries(bc_rec.seq, return_seq=True) for al in aligners]
-    scores_pieces_end_pos = [(s, p, bounds[-1], sq) for s, p, bounds, sq in scores_pieces_end_bounds]       
-
-    raw_score, raw_pieces, raw_end_pos, raw_seq = max(scores_pieces_end_pos)
-    raw_bounds = next(
-        bounds for s, p, bounds, sq in scores_pieces_end_bounds
-        if s == raw_score and p == raw_pieces
-    )
-
-    raw_bcs = [raw_piece.upper().replace('N', 'A') for raw_piece, block in zip(raw_pieces, blocks) if block["blocktype"] == "barcodeList"]
-    decode_results = [decoder.decode_with_status(raw_bc) for raw_bc, decoder in zip(raw_bcs, decoders)]
-    bcs, statuses, overlapping_bcs = map(list, zip(*decode_results))
-
-    best_aligner = next(al for al, (s, p, e, sq) in zip(aligners, scores_pieces_end_pos) if s == raw_score)
-
-    commonseqs = [best_aligner.prefixes[i] for i, block in enumerate(blocks) if block["blocktype"] == "constantRegion"]
-
-    # QC Metrics
-    bc_qc = {
-        "read_name": str(bc_rec.id),
-        "raw_bcs": raw_bcs,
-        "decoded_bcs": bcs,
-        "statuses": statuses,
-        "conflict_bcs": overlapping_bcs,
-    }
-
-    bc_idx = commonseq_idx = 0
-    corrected_pieces = []
-
-    for i, block in enumerate(blocks):
-        if block["blocktype"] == "barcodeList":
-            if bcs[bc_idx] is None:
-                return raw_score, None, None, bc_qc
-            corrected_pieces.append(bcs[bc_idx])
-            bc_idx += 1
-
-        elif block["blocktype"] == "constantRegion":
-            if commonseqs[commonseq_idx] is None:
-                return raw_score, None, None, bc_qc
-
-            observed_const = raw_pieces[i].upper().replace("N", "A")
-            expected_const = commonseqs[commonseq_idx]
-
-            distfun = misc.DistanceThresh("levenshtein", block["maxerrors"])
-            dist = distfun(observed_const, expected_const)
-            if dist is False:
-                return raw_score, None, None, bc_qc
-
-            corrected_pieces.append(expected_const)
-            commonseq_idx += 1
-
-        else:
-            corrected_pieces.append('N' * block["length"])
-
-    new_aligner = CustomBCAligner(*corrected_pieces)
-    new_score, new_pieces = new_aligner.find_norm_score_and_pieces(raw_seq)
-
-    bam_bcs = []
-    bam_raw_bcs = []
-    bam_umis = []
-    bam_commonseqs = []
-
-    bc_idx = commonseq_idx = 0
-    for i, block in enumerate(blocks):
-        if block["blockfunction"] != "discard":
-            if block["blocktype"] == "barcodeList":
-                bam_bcs.append(bcs[bc_idx])
-                bam_raw_bcs.append(raw_pieces[i])
-                bc_idx += 1
-            elif block["blocktype"] == "constantRegion":
-                bam_commonseqs.append(commonseqs[commonseq_idx])
-                commonseq_idx += 1
-            else:
-                if block["blockfunction"] == "UMI":
-                    bam_umis.append(new_pieces[i])
-                else:
-                    bam_bcs.append(new_pieces[i])
-                    bam_raw_bcs.append(new_pieces[i])
-
-
-    tags = []
-    # Cell barcode
-    tags.append(('CB', '.'.join(bam_bcs)))
-    tags.append(('CR', '.'.join(bam_raw_bcs)))
-    # Filler sequences
-    tags.append(('FL', sum(len(seq) for seq in bam_commonseqs)))
-    # And raw UMI
-    tags.append(("UR", ".".join(bam_umis)))
-
-    starts = [0] + list(raw_bounds[:-1])
-    quals = bc_rec.letter_annotations["phred_quality"]
-
-    keep_seq_parts = []
-    keep_qual_parts = []
-
-    # Keep selected defined blocks
-    for block, piece, start, end in zip(blocks, raw_pieces, starts, raw_bounds):
-        if block.get("keepblock", False):
-            keep_seq_parts.append(piece)
-            keep_qual_parts.extend(quals[start:end])
-
-    # Keep undefined / trailing sequence if requested
-    if keep_nonbarcode:
-        trailing_rec = bc_rec[raw_end_pos:]
-        keep_seq_parts.append(str(trailing_rec.seq))
-        keep_qual_parts.extend(trailing_rec.letter_annotations["phred_quality"])
-
-    new_seq = "".join(keep_seq_parts)
-
-    new_rec = SeqRecord(
-        Seq(new_seq),
-        id=bc_rec.id,
-        description=bc_rec.description,
-    )
-    new_rec.letter_annotations["phred_quality"] = keep_qual_parts
-
-    return raw_score, new_rec, tags, bc_qc
-
 def umi_parallel_wrapper(ref_and_input_bam_fpath):
     ref, input_bam_fpath = ref_and_input_bam_fpath
     return ref, get_umi_maps_from_bam_file(input_bam_fpath, chrm=ref)
@@ -937,7 +815,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
     for i, (fq_fpath, bblocks, bkeep_nonbarcodes, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, keep_nonbarcodes, aligners, decoders, strict=False)):
         first_scores_recs_tags = []
         for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq_fpath), 'fastq')):
-            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)[:-1]) # Append the tags (excluding QC in the last tupel)
+            first_scores_recs_tags.append(bc_parser.process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)[:-1]) # Append the tags (excluding QC in the last tupel)
             if j >= n_first_seqs:
                 break
 
@@ -982,7 +860,7 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
             for j, (bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) in enumerate(
                 zip(blocks, keep_nonbarcodes, (bc_rec1, bc_rec2), aligners, decoders, strict=False)
             ):
-                read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)
+                read_first_scores_recs_tags_plus_qc = bc_parser.process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)
                 read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
                 read_qcs[j] = read_qc
                 scores[j], sans_bc_rec[j], tags[j] = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
@@ -1061,7 +939,7 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
 
     first_scores_recs_tags = []
     for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq')):
-        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders)[:-1]) # get the first three tuple entries 
+        first_scores_recs_tags.append(bc_parser.process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders)[:-1]) # get the first three tuple entries 
         if j >= n_first_seqs:
             break
 
@@ -1089,7 +967,7 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
             if i % 100000 == 0 and i > 0:
                 log.info(f'  {i:,d} processed,  {total_out:,d} output')
 
-            read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders) # get our tags for each read and trim the read
+            read_first_scores_recs_tags_plus_qc = bc_parser.process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders) # get our tags for each read and trim the read
             read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
             all_reads_qcs.append(read_qc)
             score, sans_bc_rec, tags = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
@@ -1158,7 +1036,7 @@ def worker_process_read(bc_recs):
     for i, (bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) in enumerate(
         zip(blocks, keep_nonbarcodes, (bc_rec1, bc_rec2), aligners, decoders, strict=False)
     ):
-        read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) # get our tags for each read and trim the read
+        read_first_scores_recs_tags_plus_qc = bc_parser.process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders) # get our tags for each read and trim the read
         read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
         read_qcs[i] = read_qc
         scores[i], sans_bc_rec[i], tags[i] = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
@@ -1199,7 +1077,7 @@ def worker_process_read(bc_recs):
     return output_recs, output_tags, read_qcs, qc_failure_recs
 
 def worker_process_read_single_end(bc_rec):
-    read_first_scores_recs_tags_plus_qc = process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders) # get our tags for each read and trim the read
+    read_first_scores_recs_tags_plus_qc = bc_parser.process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders) # get our tags for each read and trim the read
     read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
     score, sans_bc_rec, tags = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
 
@@ -1252,7 +1130,7 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
     for i, (fq_fpath, bblocks, bkeep_nonbarcodes, baligners, bdecoders) in enumerate(zip((fq1_fpath, fq2_fpath), blocks, keep_nonbarcodes, aligners, decoders, strict=False)):
         first_scores_recs_tags = []
         for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq_fpath), 'fastq')):
-            first_scores_recs_tags.append(process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)[:-1]) # get the first three tuple entries
+            first_scores_recs_tags.append(bc_parser.process_bc_rec(arguments, bblocks, bkeep_nonbarcodes, bc_rec, baligners, bdecoders)[:-1]) # get the first three tuple entries
             if j >= n_first_seqs:
                 break
 
@@ -1331,7 +1209,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
 
     first_scores_recs_tags = []
     for j, bc_rec in enumerate(SeqIO.parse(misc.gzip_friendly_open(fq1_fpath), 'fastq')):
-        first_scores_recs_tags.append(process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders)[:-1])# get the first three tuple entries
+        first_scores_recs_tags.append(bc_parser.process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders)[:-1])# get the first three tuple entries
         if j >= n_first_seqs:
             break
 

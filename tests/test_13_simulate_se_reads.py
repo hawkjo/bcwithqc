@@ -17,7 +17,7 @@ se_test_config = os.path.join(SCRIPT_DIR, "../examples/simulate_se_mini_config.j
 star_index = os.path.join(SCRIPT_DIR, "../examples/se_mini_genome_index")
 star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
-USE_TEMP_OUTPUT = True
+USE_TEMP_OUTPUT = False
 ERROR_SEGMENT_PATTERN = re.compile(r"S(\d+)D(\d+)I(\d+)")
 
 
@@ -88,9 +88,16 @@ def open_maybe_gzip(path, mode="rt"):
 def write_error_combo_table(fastq_path, out_tsv):
     combo_counter = Counter()
 
-    any_block_ge_2_errors = 0
+    should_reject_2_plus_errors_in_any_block = 0
     first_block_1del_second_block_1ins = 0
     first_block_1ins_second_block_1del = 0
+    should_accept_1_minus_errors_in_each_block = 0  # New counter for the 1-or-less errors condition
+    
+    # New counters for the extended indel checks
+    first_block_1del_second_block_1error = 0
+    first_block_1ins_second_block_1error = 0
+    second_block_1del_first_block_1error = 0
+    second_block_1ins_first_block_1error = 0
 
     with open_maybe_gzip(fastq_path, "rt") as fh:
         for i, line in enumerate(fh):
@@ -108,24 +115,56 @@ def write_error_combo_table(fastq_path, out_tsv):
 
             parsed = [(int(s), int(d), int(ins)) for s, d, ins in matches]
 
+            # Update for reject condition (block has >= 2 errors)
             if any((s + d + ins) >= 2 for s, d, ins in parsed):
-                any_block_ge_2_errors += 1
+                should_reject_2_plus_errors_in_any_block += 1
 
+            # Update for accept condition (each block has <= 1 error of any type)
+            if all(s + d + ins <= 1 for s, d, ins in parsed):
+                should_accept_1_minus_errors_in_each_block += 1
+
+            # Check the conditions for 1 delete in the first block, 1 insert in the second block
             if len(parsed) >= 2:
                 s1, d1, i1 = parsed[0]
                 s2, d2, i2 = parsed[1]
 
+                # First block: 1 delete, Second block: 1 insert
                 if (d1 == 1 and s1 == 0 and i1 == 0) and (i2 == 1 and s2 == 0 and d2 == 0):
                     first_block_1del_second_block_1ins += 1
 
+                # First block: 1 insert, Second block: 1 delete
                 if (i1 == 1 and s1 == 0 and d1 == 0) and (d2 == 1 and s2 == 0 and i2 == 0):
                     first_block_1ins_second_block_1del += 1
 
+                # First block: 1 delete, Second block: 1 or fewer errors of any type
+                if (d1 == 1 and s1 == 0 and i1 == 0) and (s2 + d2 + i2 <= 1):
+                    first_block_1del_second_block_1error += 1
+
+                # First block: 1 insert, Second block: 1 or fewer errors of any type
+                if (i1 == 1 and s1 == 0 and d1 == 0) and (s2 + d2 + i2 <= 1):
+                    first_block_1ins_second_block_1error += 1
+
+                # Second block: 1 delete, First block: 1 or fewer errors of any type
+                if (d2 == 1 and s2 == 0 and i2 == 0) and (s1 + d1 + i1 <= 1):
+                    second_block_1del_first_block_1error += 1
+
+                # Second block: 1 insert, First block: 1 or fewer errors of any type
+                if (i2 == 1 and s2 == 0 and d2 == 0) and (s1 + d1 + i1 <= 1):
+                    second_block_1ins_first_block_1error += 1
+
+    # Write the results to the output file
     with open(out_tsv, "w") as out:
         out.write("summary\tcount\n")
-        out.write(f"any_block_ge_2_total_errors\t{any_block_ge_2_errors}\n")
-        out.write(f"first_block_exactly_1D_second_block_exactly_1I\t{first_block_1del_second_block_1ins}\n")
-        out.write(f"first_block_exactly_1I_second_block_exactly_1D\t{first_block_1ins_second_block_1del}\n")
+        out.write(f"Should Reject: 2+ errors in any block\t{should_reject_2_plus_errors_in_any_block}\n")
+        out.write(f"Should Accept: 1- errors in each block\t{should_accept_1_minus_errors_in_each_block}\n")
+        out.write("\n")
+        out.write(f"Indel Issues\n")
+        out.write(f"First block: 1D; Second block: 1I\t{first_block_1del_second_block_1ins}\n")
+        out.write(f"first block: 1I; Second block: 1D\t{first_block_1ins_second_block_1del}\n")
+        out.write(f"First block: 1D; Second block: 1 or fewer errors\t{first_block_1del_second_block_1error}\n")
+        out.write(f"First block: 1I; Second block: 1 or fewer errors\t{first_block_1ins_second_block_1error}\n")
+        out.write(f"Second block: 1D; First block: 1 or fewer errors\t{second_block_1del_first_block_1error}\n")
+        out.write(f"Second block: 1I; First block: 1 or fewer errors\t{second_block_1ins_first_block_1error}\n")
         out.write("\n")
         out.write("count\tcombination\n")
         for combo, count in combo_counter.most_common():
@@ -258,13 +297,27 @@ def test_error_combo_tables_are_nonempty(simulate_se_mini_output):
         with open(path, "r") as fh:
             lines = [line.rstrip("\n") for line in fh]
 
-        assert len(lines) >= 6, f"{path} should contain summary lines, a blank line, and at least one data row"
+        assert len(lines) >= 9, f"{path} should contain summary lines, a blank line, and at least one data row"
 
+        # Check summary section
         assert lines[0] == "summary\tcount"
-        assert lines[1].startswith("any_block_ge_2_total_errors\t")
-        assert lines[2].startswith("first_block_exactly_1D_second_block_exactly_1I\t")
-        assert lines[3].startswith("first_block_exactly_1I_second_block_exactly_1D\t")
-        assert lines[4] == ""
-        assert lines[5] == "count\tcombination"
+        assert lines[1].startswith("Should Reject: 2+ errors in any block\t")
+        assert lines[2].startswith("Should Accept: 1- errors in each block\t")
+        assert lines[3] == ""
+        
+        # Check indel issue section
+        assert lines[4] == "Indel Issues"
+        assert lines[5].startswith("First block: 1D; Second block: 1I\t")
+        assert lines[6].startswith("first block: 1I; Second block: 1D\t")
+        assert lines[7].startswith("First block: 1D; Second block: 1 or fewer errors\t")
+        assert lines[8].startswith("First block: 1I; Second block: 1 or fewer errors\t")
+        assert lines[9].startswith("Second block: 1D; First block: 1 or fewer errors\t")
+        assert lines[10].startswith("Second block: 1I; First block: 1 or fewer errors\t")
 
-        assert len(lines) >= 7, f"{path} should contain at least one combination row after the header"
+        # Ensure there's a blank line after the indel issues section
+        assert lines[11] == ""
+
+        # Check combination section
+        assert lines[12] == "count\tcombination"
+        
+        assert len(lines) >= 13, f"{path} should contain at least one combination row after the header"

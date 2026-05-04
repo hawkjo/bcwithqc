@@ -4,7 +4,7 @@ read_index	read_name	read_status	block_name_1	block_status_1
 3	read_3:bc1:2Sub:const:NoErrors:umi:Three:1:forward	no_match	cb1	no_match
 4	read_4:bc1:NoErrors:const:1Ins:umi:Four:1:forward	exact	cb1	exact
 5	read_5:bc1:1Del:const:NoErrors:umi:Five:1:forward	corrected	cb1	corrected
-6	read_6:bc1:1Del:const:1Ins:umi:Six:1:forward	no_match	cb1	no_match
+6	read_6:bc1:1Del:const:1Ins:umi:Six:1:forward	corrected	cb1	corrected
 7	read_7:bc2:NoErrors:const:NoErrors:umi:One:1:forward	exact	cb1	exact
 8	read_8:bc2:NoErrors:const:NoErrors:umi:One:1:forward	exact	cb1	exact
 9	read_9:bc2:NoErrors:const:NoErrors:umi:Two:1:forward	exact	cb1	exact

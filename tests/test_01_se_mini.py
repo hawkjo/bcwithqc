@@ -235,13 +235,13 @@ def test_matrix_contents(outsourced_star_output):
 
     expected_reads = sorted([
         ("toy_gene", "AGCGTAGAA", 3),
-        ("toy_gene", "CCTTAACAT", 4),  # change to 5 if read_6 should pass
+        ("toy_gene", "CCTTAACAT", 5),  # change to 5 if read_6 should pass
         ("toy_gene", "TATAGGTGT", 1),
     ])
 
     expected_umis = sorted([
         ("toy_gene", "AGCGTAGAA", 2),
-        ("toy_gene", "CCTTAACAT", 4),  # change to 5 if read_6 should pass
+        ("toy_gene", "CCTTAACAT", 5),  # change to 5 if read_6 should pass
         ("toy_gene", "TATAGGTGT", 1),
     ])
 

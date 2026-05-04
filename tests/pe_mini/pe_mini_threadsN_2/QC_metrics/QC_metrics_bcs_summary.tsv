@@ -1,3 +1,3 @@
 read	blockname	exact	corrected	below_threshold	ambiguous	no_match	total
-R1	bc_r1	12	2	2	0	4	20
-R2	bc_r2	12	2	2	0	4	20
+R1	bc_r1	12	4	2	0	2	20
+R2	bc_r2	12	4	2	0	2	20

@@ -1,13 +1,13 @@
 read	blockname	barcode	exact	corrected	below_threshold	ambiguous	no_match	total	conflict_bcs
-R1	bc_r1	CCTTAACAT	4	2	2	0	0	8	
+R1	bc_r1	CCTTAACAT	4	4	2	0	0	10	
 R1	bc_r1	AGCGTAGAA	6	0	0	0	0	6	
 R1	bc_r1	TATAGGTGT	2	0	0	0	0	2	
 R1	bc_r1	GGCGACTCA	0	0	0	0	0	0	
-R1	bc_r1	__NO_MATCH__	0	0	0	0	4	4	
+R1	bc_r1	__NO_MATCH__	0	0	0	0	2	2	
 R1	bc_r1	__AMBIGUOUS_UNIDENTIFIED__	0	0	0	0	0	0	
-R2	bc_r2	CCTTAACAT	4	2	2	0	0	8	
+R2	bc_r2	CCTTAACAT	4	4	2	0	0	10	
 R2	bc_r2	AGCGTAGAA	6	0	0	0	0	6	
 R2	bc_r2	TATAGGTGT	2	0	0	0	0	2	
 R2	bc_r2	GGCGACTCA	0	0	0	0	0	0	
-R2	bc_r2	__NO_MATCH__	0	0	0	0	4	4	
+R2	bc_r2	__NO_MATCH__	0	0	0	0	2	2	
 R2	bc_r2	__AMBIGUOUS_UNIDENTIFIED__	0	0	0	0	0	0	

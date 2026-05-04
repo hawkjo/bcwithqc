@@ -1,14 +1,14 @@
 summary	count
-Should Reject: 2+ errors in any block	115
-Should Accept: 1- errors in each block	2625
+Should Reject: 2+ errors in any block	161
+Should Accept: 1- errors in each block	2814
 
 Indel Issues
-First block: 1D; Second block: 1I	23
-first block: 1I; Second block: 1D	0
-First block: 1D; Second block: 1 or fewer errors	239
-First block: 1I; Second block: 1 or fewer errors	9
-Second block: 1D; First block: 1 or fewer errors	319
-Second block: 1I; First block: 1 or fewer errors	254
+First block: 1D; Second block: 1I	27
+first block: 1I; Second block: 1D	23
+First block: 1D; Second block: 1 or fewer errors	248
+First block: 1I; Second block: 1 or fewer errors	189
+Second block: 1D; First block: 1 or fewer errors	342
+Second block: 1I; First block: 1 or fewer errors	271
 
 count	combination
 681	S0D0I0;S1D0I0
@@ -18,38 +18,52 @@ count	combination
 167	S0D0I0;S0D1I0
 130	S0D0I0;S0D0I1
 115	S1D0I0;S0D1I0
-105	S0D1I0;S1D0I0
+110	S0D1I0;S1D0I0
 101	S1D0I0;S0D0I1
+86	S0D0I1;S1D0I0
 74	S0D1I0;S0D0I0
+67	S0D0I1;S0D0I0
+41	S0D0I0;S1D0I1
 37	S0D1I0;S0D1I0
-23	S0D1I0;S0D0I1
-16	S0D0I0;S1D0I1
-14	S1D0I0;S1D0I1
+27	S0D1I0;S0D0I1
+23	S0D0I1;S0D1I0
+16	S0D0I0;S0D1I1
+15	S1D0I0;S1D0I1
+13	S0D0I1;S0D0I1
 13	S1D0I0;S1D1I0
 12	S0D0I0;S1D1I0
-12	S0D0I0;S0D1I1
-9	S0D0I1;S0D0I0
 8	S1D0I0;S0D1I1
-4	S1D0I1;S0D0I0
+5	S1D0I1;S0D0I0
+3	S0D0I0;S2D0I1
+3	S2D0I0;S0D0I0
 3	S0D1I1;S0D0I0
 3	S0D1I1;S1D0I0
 3	S0D1I0;S1D0I1
 2	S0D0I0;S0D2I0
-2	S0D0I0;S2D0I1
 2	S0D0I0;S0D1I2
 2	S0D1I0;S1D1I0
+2	S0D0I0;S2D0I0
 2	S0D1I0;S2D0I1
 2	S1D0I0;S0D2I0
+1	S2D0I1;S0D0I1
 1	S1D1I0;S0D0I1
+1	S1D1I1;S0D0I0
 1	S0D1I0;S0D0I2
 1	S1D1I1;S1D0I0
 1	S1D0I0;S2D0I1
+1	S1D0I1;S0D1I0
 1	S2D1I0;S0D0I0
+1	S0D0I1;S1D1I0
+1	S1D0I1;S0D0I1
+1	S1D0I1;S1D0I0
+1	S0D0I1;S1D0I1
 1	S1D0I0;S1D1I1
 1	S1D1I0;S0D0I0
 1	S1D0I0;S2D0I0
+1	S0D2I1;S1D0I0
 1	S1D1I0;S1D0I0
 1	S0D1I0;S0D1I1
+1	S0D0I1;S1D1I1
 1	S1D0I0;S1D2I0
 1	S1D0I0;S0D0I2
 1	S0D1I1;S1D1I0

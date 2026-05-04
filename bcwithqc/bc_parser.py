@@ -11,6 +11,64 @@ from .bc_aligner import CustomBCAligner
 
 log = logging.getLogger(__name__)
 
+def _candidate_boundary_shifts_for_failed_block(blocks, raw_bounds, seq_len, failed_block_index):
+    """
+    Generate local boundary-rescue candidates around one failed block only.
+
+    This avoids the expensive Cartesian product over all block boundaries.
+    For a failed block i, only boundaries i-1 and i can affect that block:
+      bounds[i-1] = start of block i
+      bounds[i]   = end of block i
+    """
+    raw_bounds = [int(b) for b in raw_bounds]
+
+    if not raw_bounds:
+        return
+
+    seen = {tuple(raw_bounds)}
+    yield raw_bounds
+
+    boundary_idxs = []
+
+    # Boundary before failed block.
+    if failed_block_index > 0:
+        boundary_idxs.append(failed_block_index - 1)
+
+    # Boundary after failed block.
+    if failed_block_index < len(raw_bounds):
+        boundary_idxs.append(failed_block_index)
+
+    windows = []
+    for boundary_idx in boundary_idxs:
+        left_err = blocks[boundary_idx].get("maxerrors", 0) if boundary_idx < len(blocks) else 0
+        right_err = blocks[boundary_idx + 1].get("maxerrors", 0) if boundary_idx + 1 < len(blocks) else 0
+
+        window = max(1, left_err, right_err)
+        window = min(window, 2)
+        windows.append(range(-window, window + 1))
+
+    candidates = []
+    for shifts in itertools.product(*windows):
+        bounds = list(raw_bounds)
+
+        for boundary_idx, shift in zip(boundary_idxs, shifts):
+            bounds[boundary_idx] += shift
+
+        bounds_tup = tuple(bounds)
+        if bounds_tup in seen:
+            continue
+        seen.add(bounds_tup)
+
+        if bounds[0] < 0 or bounds[-1] > seq_len:
+            continue
+        if any(left > right for left, right in zip(bounds, bounds[1:])):
+            continue
+
+        candidates.append((sum(abs(s) for s in shifts), shifts, bounds))
+
+    for _, _, bounds in sorted(candidates):
+        yield bounds
+
 def _candidate_boundary_shifts(blocks, raw_bounds, seq_len):
     """
     Generate nearby boundary candidates for barcode rescue.
@@ -82,10 +140,21 @@ def _parse_pieces_against_config(blocks, raw_pieces, decoders, commonseqs):
         for raw_piece, block in zip(raw_pieces, blocks)
         if block["blocktype"] == "barcodeList"
     ]
-    decode_results = [
-        decoder.decode_with_status(raw_bc)
-        for raw_bc, decoder in zip(raw_bcs, decoders)
-    ]
+    decode_results = []
+
+    for bc_i, (raw_bc, decoder) in enumerate(zip(raw_bcs, decoders)):
+        try:
+            decode_results.append(decoder.decode_with_status(raw_bc))
+        except IndexError:
+            log.debug( # This debug logger should be removed in the final version
+                "Barcode decoder IndexError treated as no_match: "
+                "bc_index=%s raw_bc_len=%s decoder=%s decoder_expected_len=%s",
+                bc_i,
+                len(raw_bc),
+                type(decoder).__name__,
+                getattr(decoder, "bc_len", getattr(decoder, "sbc_len", None)),
+            )
+            decode_results.append((None, "no_match", None))
 
     if decode_results:
         bcs, statuses, overlapping_bcs = map(list, zip(*decode_results))
@@ -107,6 +176,8 @@ def _parse_pieces_against_config(blocks, raw_pieces, decoders, commonseqs):
             if bcs[bc_idx] is None:
                 failure_debug = {
                     "reason": "barcode",
+                    "block_index": i,
+                    "bc_index": bc_idx,
                     "raw_pieces": raw_pieces,
                     "raw_bcs": raw_bcs,
                     "statuses": statuses,
@@ -182,33 +253,56 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
     best_aligner = next(al for al, (s, p, e, sq) in zip(aligners, scores_pieces_end_pos) if s == raw_score)
     commonseqs = [best_aligner.prefixes[i] for i, block in enumerate(blocks) if block["blocktype"] == "constantRegion"]
 
+    # Initialize parsed to None
     parsed = None
-    failure_qc_fields = None
-    failure_debug = None
+
+    # 1. First try only the aligner's original segmentation.
+    candidate_parsed, candidate_qc_fields, candidate_failure_debug = _parse_pieces_against_config(
+        blocks,
+        raw_pieces,
+        decoders,
+        commonseqs,
+    )
+
+    failure_qc_fields = candidate_qc_fields
+    failure_debug = candidate_failure_debug
     failure_bounds = raw_bounds
-    selected_bounds = raw_bounds
-    selected_pieces = raw_pieces
 
-    # First try the aligner's original segmentation, then nearby rescue shifts.
-    for candidate_bounds in _candidate_boundary_shifts(blocks, raw_bounds, len(raw_seq)):
-        candidate_pieces = raw_pieces if candidate_bounds == raw_bounds else _pieces_from_bounds(raw_seq, candidate_bounds)
-        candidate_parsed, candidate_qc_fields, candidate_failure_debug = _parse_pieces_against_config(
-            blocks,
-            candidate_pieces,
-            decoders,
-            commonseqs,
-        )
+    if candidate_parsed is not None:
+        parsed = candidate_parsed
+        selected_bounds = raw_bounds
+        selected_pieces = raw_pieces
 
-        if failure_qc_fields is None:
-            failure_qc_fields = candidate_qc_fields
-            failure_debug = candidate_failure_debug
-            failure_bounds = candidate_bounds
+    else:
+        failed_block_index = None
+        if candidate_failure_debug is not None:
+            failed_block_index = candidate_failure_debug.get("block_index")
 
-        if candidate_parsed is not None:
-            parsed = candidate_parsed
-            selected_bounds = candidate_bounds
-            selected_pieces = candidate_pieces
-            break
+        # 2. Only if the original segmentation failed, try local rescue around
+        #    the failing block.
+        if failed_block_index is not None:
+            for candidate_bounds in _candidate_boundary_shifts_for_failed_block(
+                blocks,
+                raw_bounds,
+                len(raw_seq),
+                failed_block_index,
+            ):
+                if candidate_bounds == raw_bounds:
+                    continue
+
+                candidate_pieces = _pieces_from_bounds(raw_seq, candidate_bounds)
+                candidate_parsed, candidate_qc_fields, candidate_failure_debug = _parse_pieces_against_config(
+                    blocks,
+                    candidate_pieces,
+                    decoders,
+                    commonseqs,
+                )
+
+                if candidate_parsed is not None:
+                    parsed = candidate_parsed
+                    selected_bounds = candidate_bounds
+                    selected_pieces = candidate_pieces
+                    break
 
     if parsed is None:
         bc_qc = {
@@ -220,7 +314,7 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
         # all boundary-rescue candidates have failed.  This prevents rescued
         # reads from being logged as dropped reads.
         if failure_debug and failure_debug.get("reason") == "constant":
-            log.warning(
+            log.warning( # This warning logger could be removed in final version but might be good to keep too
                 "Dropped read %s: constant failed block=%s observed=%s expected=%s raw_bounds=%s raw_pieces=%s",
                 bc_rec.id,
                 failure_debug["block_index"],
@@ -230,7 +324,7 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
                 failure_debug["raw_pieces"],
             )
         else:
-            log.warning(
+            log.warning( # This warning logger could be removed in final version but might be good to keep too
                 "Dropped read %s: score=%s raw_bounds=%s raw_pieces=%s raw_bcs=%s statuses=%s decoded=%s",
                 bc_rec.id,
                 raw_score,
