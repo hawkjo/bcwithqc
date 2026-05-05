@@ -136,13 +136,13 @@ def simulate_reads(arguments):
         paired_end_mode = True
         log.info(
             "Simulation mode: paired-end. "
-            "Reason: barcode_struct_r2 is present and --single-end-reads was not set."
+            "Reason: barcode_struct_r2 is present and single_end_reads was not set in config."
         )
     elif has_r2 and force_single_end:
         paired_end_mode = False
         warnings.warn(
             "Simulation mode: single-end. "
-            "barcode_struct_r2 is present in the config, but --single-end-reads was set, "
+            "barcode_struct_r2 is present in the config, but single_end_reads was set in config, "
             "so barcode_struct_r2 will be ignored.",
             category=UserWarning,
         )
@@ -156,7 +156,7 @@ def simulate_reads(arguments):
         paired_end_mode = False
         log.info(
             "Simulation mode: single-end. "
-            "Reason: --single-end-reads was set and no barcode_struct_r2 is present."
+            "Reason: single_end_reads was set in config and no barcode_struct_r2 is present."
         )
 
     if paired_end_mode:
