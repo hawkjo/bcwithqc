@@ -78,9 +78,9 @@ The cell barcode tag contains all pieces of the cell barcode, including the samp
 
 ## Example Workflow
 
-The `examples` folder contains several small example gDNA and RNA datasets for both paired-end and single-end reads and corresponding example scripts (in the `example scripts` subdirectory) and configuration files. The example script .sh files demonstrate proper syntax for their respective datasets and are runnable directly from within the examples folder. 
+The `examples` folder contains several small example gDNA and RNA datasets for both paired-end and single-end reads and corresponding example scripts (in the `example scripts` subdirectory) and configuration `.json` files. The example script `.sh` files demonstrate proper syntax for their respective datasets and are runnable directly from within the examples folder. 
 
-Basic principle:
+### Basic Workflow:
 1. Run `bcwithqc preprocess` on your fastq files while providing a `config.json` file and specifying an output directory.
     (Important: The config file specifies which parts of the reads will be kept for aligment with STAR)
 2. Run `STAR` (BAM unsorted) on the `sans_bc_*.fq` files in the preprocess output directory while providing a `STAR genome index`.
