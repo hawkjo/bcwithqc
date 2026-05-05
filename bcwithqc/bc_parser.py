@@ -267,19 +267,20 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
     failure_qc_fields = candidate_qc_fields
     failure_debug = candidate_failure_debug
     failure_bounds = raw_bounds
-
+    
+    # If we found results with the original aligner, we are good
     if candidate_parsed is not None:
         parsed = candidate_parsed
         selected_bounds = raw_bounds
         selected_pieces = raw_pieces
-
+    # If we did not then the rescue begins here: 
     else:
         failed_block_index = None
         if candidate_failure_debug is not None:
             failed_block_index = candidate_failure_debug.get("block_index")
 
         # 2. Only if the original segmentation failed, try local rescue around
-        #    the failing block.
+        #    ONLY the failing block.
         if failed_block_index is not None:
             for candidate_bounds in _candidate_boundary_shifts_for_failed_block(
                 blocks,
