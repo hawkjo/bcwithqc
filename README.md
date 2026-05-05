@@ -23,16 +23,13 @@ This typically takes a few minutes.
 The basic usage for bcwithqc can be displayed at any time via `bcwithqc --help`:
 ```
 Usage:
-  bcwithqc count            <fastq_dir> (--STAR-ref-dir=<> | --STAR-output=<>...) --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [--single-end-reads] [--block-type-for-STAR-alignment=<>] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> --STAR-output-dir=<> --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
-  bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--single-end-reads] [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
+  bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
 
 Options:
-  --STAR-ref-dir=<>:                  Path to directory with STAR index.
-  --STAR-output=<>:                   Path to STAR output file (BAM/SAM). Can be repeated multiple times,
-                                        in which case the order must correspond to the lexicographic ordering
-                                        of paired FASTQ files in <fastq_dir>.
+  --STAR-output-dir=<>:               Path to STAR output directory. All BAM/SAM files with the suffix "*Aligned.out.bam" will be processed in lexicographic order.
   --config=<>:                        Path to JSON configuration.
   --output-dir=<>:                    Path to output directory [default: .].
   --threads=<>:                       Number of threads [default: 1].
@@ -47,17 +44,12 @@ Options:
   --random-tail-length=<>:            Mean (poisson) length of the random nucleotide tail [default: 20]. Set to a negative number to
                                         generate reads without tails.
   --keep-intermediary                 Keep intermediary files instead of deleting them [default: False].
-  --single-end-reads:                 Option for using single end instead of paired end reads [default: False]. 
-  --block-type-for-STAR-alignment=<>: What part of the read is retained for STAR alignment [default: undefined_only] 
-                                        'undefined_only' concatenates all parts that are not specified in the config.json
-                                        'constant'  concatenates all 'constantRegion' blocktypes and unspecified parts
-                                        'constant_mask' retains 'constantRegion' blocktypes and unspecified parts and replaces the rest with Ns
   -h --help                           Show this screen.
   --version                           Show version.
 
 Commands:
   preprocess       Preprocess files such that STAR can be run on the output.
-  count            Process and count input files.
+  count            Process and count input files using an existing STAR output directory.
   count_matrix     Build a count matrix (or matrices) from an existing bam file.
   simulate_reads   Generate synthetic sequencing reads given a barcode configuration.
 ```
@@ -84,6 +76,12 @@ The BAM file is annotated with custom tags that have been created in the style o
 
 The cell barcode tag contains all pieces of the cell barcode, including the sample barcode, concatenated with periods.
 
-## Examples
+## Example Workflow
 
-The `examples` folder contains small example gDNA and RNA datasets and corresponding example scripts and configuration files. The `cmd_gDNA_json.sh` and `cmd_cDNA_json.sh` files demonstrate proper syntax for their respective datasets and are runnable directly from within the examples folder. They each take about 20 seconds to run.
+The `examples` folder contains several small example gDNA and RNA datasets for both paired-end and single-end reads and corresponding example scripts (in the `example scripts` subdirectory) and configuration files. The example script .sh files demonstrate proper syntax for their respective datasets and are runnable directly from within the examples folder. 
+
+Basic principle:
+1. Run `bcwithqc preprocess` on your fastq files while providing a `config.json` file and specifying an output directory.
+    (Important: The config file specifies which parts of the reads will be kept for aligment with STAR)
+2. Run `STAR` (BAM unsorted) on the `sans_bc_*.fq` files in the preprocess output directory while providing a `STAR genome index`.
+3. Run `bcwithqc count` on the `sans_bc_*.fq` files while providing the STAR output directory containing the `*Aligned.out.bam` files. 
