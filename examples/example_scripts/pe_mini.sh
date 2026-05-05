@@ -12,43 +12,43 @@ COUNT_OUTPUT_DIR="./test_run/pe_mini/count_output"
 
 N_THREADS=2
 
-mkdir -p $PREPROCESS_OUTPUT_DIR $STAR_OUTPUT_DIR $COUNT_OUTPUT_DIR
+mkdir -p "$PREPROCESS_OUTPUT_DIR" "$STAR_OUTPUT_DIR" "$COUNT_OUTPUT_DIR"
 
 # Preprocess the SE mini data
 bcwithqc preprocess \
-$INPUT_DIR \
---config=$CONFIG \
---output-dir=$PREPROCESS_OUTPUT_DIR \
---threads=$N_THREADS \
+"$INPUT_DIR" \
+--config="$CONFIG" \
+--output-dir="$PREPROCESS_OUTPUT_DIR" \
+--threads="$N_THREADS" \
 -vvv
 
 # Align first pair with STAR
 STAR \
---runThreadN $N_THREADS \
---genomeDir $STAR_INDEX \
---readFilesIn $PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_1_r1.fq $PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_1_r2.fq \
---outFileNamePrefix $STAR_OUTPUT_DIR/pe_mini_pair1_ \
+--runThreadN "$N_THREADS" \
+--genomeDir "$STAR_INDEX" \
+--readFilesIn "$PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_1_r1.fq" "$PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_1_r2.fq" \
+--outFileNamePrefix "$STAR_OUTPUT_DIR/pe_mini_pair1_" \
 --outFilterMultimapNmax 1 \
 --outSAMtype BAM Unsorted \
 --outSAMattributes NH HI AS nM GX GN
 
 # Align second pair with STAR
 STAR \
---runThreadN $N_THREADS \
---genomeDir $STAR_INDEX \
---readFilesIn $PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_2_r1.fq $PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_2_r2.fq \
---outFileNamePrefix $STAR_OUTPUT_DIR/pe_mini_pair2_ \
+--runThreadN "$N_THREADS" \
+--genomeDir "$STAR_INDEX" \
+--readFilesIn "$PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_2_r1.fq" "$PREPROCESS_OUTPUT_DIR/sans_bc_pe_mini_2_r2.fq" \
+--outFileNamePrefix "$STAR_OUTPUT_DIR/pe_mini_pair2_" \
 --outFilterMultimapNmax 1 \
 --outSAMtype BAM Unsorted \
 --outSAMattributes NH HI AS nM GX GN
 
 # Count the results
 bcwithqc count \
-$PREPROCESS_OUTPUT_DIR \
---STAR-output-dir=$STAR_OUTPUT_DIR \
---config=$CONFIG \
---output-dir=$COUNT_OUTPUT_DIR \
---threads=$N_THREADS \
+"$PREPROCESS_OUTPUT_DIR" \
+--STAR-output-dir="$STAR_OUTPUT_DIR" \
+--config="$CONFIG" \
+--output-dir="$COUNT_OUTPUT_DIR" \
+--threads="$N_THREADS" \
 --keep-intermediary \
 -vvv
 

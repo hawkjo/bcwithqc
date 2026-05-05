@@ -12,33 +12,33 @@ COUNT_OUTPUT_DIR="./test_run/gDNA_single_end/count_output"
 
 N_THREADS=1
 
-mkdir -p $PREPROCESS_OUTPUT_DIR $STAR_OUTPUT_DIR $COUNT_OUTPUT_DIR
+mkdir -p "$PREPROCESS_OUTPUT_DIR" "$STAR_OUTPUT_DIR" "$COUNT_OUTPUT_DIR"
 
 # Preprocess gDNA
 bcwithqc preprocess \
-$CDNA_INPUT \
---config=$CDNA_CONFIG \
---output-dir=$PREPROCESS_OUTPUT_DIR \
---threads=$N_THREADS \
+"$CDNA_INPUT" \
+--config="$CDNA_CONFIG" \
+--output-dir="$PREPROCESS_OUTPUT_DIR" \
+--threads="$N_THREADS" \
 -vvv
 
 # Align gDNA with STAR
 STAR \
---runThreadN $N_THREADS \
---genomeDir $STAR_INDEX \
---readFilesIn $PREPROCESS_OUTPUT_DIR/sans_bc_gDNA_1_sequence.fq \
---outFileNamePrefix $STAR_OUTPUT_DIR \
+--runThreadN "$N_THREADS" \
+--genomeDir "$STAR_INDEX" \
+--readFilesIn "$PREPROCESS_OUTPUT_DIR/sans_bc_gDNA_1_sequence.fq" \
+--outFileNamePrefix "$STAR_OUTPUT_DIR" \
 --outFilterMultimapNmax 1 \
 --outSAMtype BAM Unsorted \
 --outSAMattributes NH HI AS nM GX GN
 
 # Count the results for gDNA
 bcwithqc count \
-$PREPROCESS_OUTPUT_DIR \
---STAR-output-dir=$STAR_OUTPUT_DIR \
---config=$CDNA_CONFIG \
---output-dir=$COUNT_OUTPUT_DIR \
---threads=$N_THREADS \
+"$PREPROCESS_OUTPUT_DIR" \
+--STAR-output-dir="$STAR_OUTPUT_DIR" \
+--config="$CDNA_CONFIG" \
+--output-dir="$COUNT_OUTPUT_DIR" \
+--threads="$N_THREADS" \
 --keep-intermediary \
 -vvv
 
