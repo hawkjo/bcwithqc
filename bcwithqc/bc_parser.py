@@ -37,16 +37,23 @@ def _candidate_boundary_shifts_for_failed_block(blocks, raw_bounds, seq_len, fai
     # Boundary after failed block.
     if failed_block_index < len(raw_bounds):
         boundary_idxs.append(failed_block_index)
-
+    
+    # Each boundary between blocks: [left block] | [right block]
+    # Can shift either left or right if there are indels in either block. 
     windows = []
     for boundary_idx in boundary_idxs:
         left_err = blocks[boundary_idx].get("maxerrors", 0) if boundary_idx < len(blocks) else 0
         right_err = blocks[boundary_idx + 1].get("maxerrors", 0) if boundary_idx + 1 < len(blocks) else 0
 
-        window = max(1, left_err, right_err)
+        window = max(1, left_err, right_err) #It might be sensible to remove the minimum shift of 1 here, if both blocks have maxerrors of 0.
         window = min(window, 2)
-        windows.append(range(-window, window + 1))
+        windows.append(range(-window, window + 1)) # +1 because range is exclusive on the right. So this creates a window of [-window, ..., 0, ..., +window]
 
+    # Example: 
+    # raw_bounds = [9, 30, 38]
+    # boundary_idxs = [0, 1]
+    # windows = [range(-1, 2), range(-1, 2)]
+    # Will create candidates with shifted boundaries.
     candidates = []
     for shifts in itertools.product(*windows):
         bounds = list(raw_bounds)
@@ -64,57 +71,6 @@ def _candidate_boundary_shifts_for_failed_block(blocks, raw_bounds, seq_len, fai
         if any(left > right for left, right in zip(bounds, bounds[1:])):
             continue
 
-        candidates.append((sum(abs(s) for s in shifts), shifts, bounds))
-
-    for _, _, bounds in sorted(candidates):
-        yield bounds
-
-def _candidate_boundary_shifts(blocks, raw_bounds, seq_len):
-    """
-    Generate nearby boundary candidates for barcode rescue.
-
-    The initial aligner can place block boundaries one base too early/late when an
-    indel occurs in a wildcard block.  We therefore try small shifts around each
-    inferred boundary, using the maxerrors of the adjacent blocks to limit the
-    search space.  The unshifted boundaries are yielded first.
-    """
-    raw_bounds = [int(b) for b in raw_bounds]
-
-    if not raw_bounds:
-        return
-
-    # Always try the original segmentation first.
-    seen = {tuple(raw_bounds)}
-    yield raw_bounds
-
-    windows = []
-    for i in range(len(raw_bounds)):
-        left_err = blocks[i].get("maxerrors", 0) if i < len(blocks) else 0
-        right_err = blocks[i + 1].get("maxerrors", 0) if i + 1 < len(blocks) else 0
-        # One-base shifts catch the common case even for random/UMI blocks where
-        # maxerrors can be 0.  The cap prevents combinatorial explosions for more
-        # complex barcode structures.
-        window = max(1, left_err, right_err)
-        window = min(window, 2)
-        windows.append(range(-window, window + 1))
-
-    candidates = []
-    for shifts in itertools.product(*windows):
-        if all(shift == 0 for shift in shifts):
-            continue
-
-        bounds = [bound + shift for bound, shift in zip(raw_bounds, shifts)]
-        bounds_tup = tuple(bounds)
-        if bounds_tup in seen:
-            continue
-        seen.add(bounds_tup)
-
-        if bounds[0] < 0 or bounds[-1] > seq_len:
-            continue
-        if any(left > right for left, right in zip(bounds, bounds[1:])):
-            continue
-
-        # Prefer minimal rescue shifts, then deterministic left-to-right order.
         candidates.append((sum(abs(s) for s in shifts), shifts, bounds))
 
     for _, _, bounds in sorted(candidates):
@@ -142,19 +98,27 @@ def _parse_pieces_against_config(blocks, raw_pieces, decoders, commonseqs):
     ]
     decode_results = []
 
-    for bc_i, (raw_bc, decoder) in enumerate(zip(raw_bcs, decoders)):
-        try:
-            decode_results.append(decoder.decode_with_status(raw_bc))
-        except IndexError:
-            log.debug( # This debug logger should be removed in the final version
+logged_index_error = False
+
+for bc_i, (raw_bc, decoder) in enumerate(zip(raw_bcs, decoders)):
+    try:
+        decode_results.append(decoder.decode_with_status(raw_bc))
+
+    except IndexError:
+        if not logged_index_error:
+            log.debug( # This debug logger could be removed in final version but might be good to keep too.
                 "Barcode decoder IndexError treated as no_match: "
-                "bc_index=%s raw_bc_len=%s decoder=%s decoder_expected_len=%s",
+                "bc_index=%s raw_bc_len=%s decoder=%s decoder_expected_len=%s raw_bcs=%s raw_pieces=%s",
                 bc_i,
                 len(raw_bc),
                 type(decoder).__name__,
                 getattr(decoder, "bc_len", getattr(decoder, "sbc_len", None)),
+                raw_bcs,
+                raw_pieces,
             )
-            decode_results.append((None, "no_match", None))
+            logged_index_error = True
+
+        decode_results.append((None, "no_match", None))
 
     if decode_results:
         bcs, statuses, overlapping_bcs = map(list, zip(*decode_results))
@@ -298,7 +262,7 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
                     decoders,
                     commonseqs,
                 )
-
+                # We take whichever candidate is first to pass. 
                 if candidate_parsed is not None:
                     parsed = candidate_parsed
                     selected_bounds = candidate_bounds
