@@ -75,13 +75,21 @@ class CustomBCAligner:
                 if obs_ends[obs_idx] is None:
                     # Biopython’s aligned intervals are zero-based and half-open intervals: tstart <= position < tend
                     if tstart <= prefix_end < tend:
+<<<<<<< HEAD
                         # log.debug("We are in the 'if tstart <= prefix_end < tend' section")
+=======
+                        log.debug("We are in the 'if tstart <= prefix_end < tend' section")
+>>>>>>> a9833914c040a0d8a0a05606980c603fb480fd11
                         obs_ends[obs_idx] = qstart + prefix_end - tstart
 
                     elif tstart >= prefix_end:
                         if i == 0 and obs_idx == 0:  # bizarre alignment. discard
                             return None
+<<<<<<< HEAD
                         # log.debug("We are in the 'elif tstart >= prefix_end' section")
+=======
+                        log.debug("We are in the 'elif tstart >= prefix_end' section")
+>>>>>>> a9833914c040a0d8a0a05606980c603fb480fd11
                         # We have passed or reached the target boundary.
                         # If there was a query insertion between the previous aligned block
                         # and this aligned block, assign that insertion to the block on the left.

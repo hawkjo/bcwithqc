@@ -215,7 +215,11 @@ def simulate_se_output(request):
                 "--nreads=10000",
                 "--error-probability=0.1", # default
                 "--substitution-probability=0.7", #default
+<<<<<<< HEAD
                 verbosity,
+=======
+                "-vvv",
+>>>>>>> a9833914c040a0d8a0a05606980c603fb480fd11
             ]
         elif output_subdir == "simulate_se_10k_reads_default_error":
             simulate_command = [
@@ -225,7 +229,11 @@ def simulate_se_output(request):
             "--nreads=100000",
             "--error-probability=0.1", # default
             "--substitution-probability=0.7", #default
+<<<<<<< HEAD
             verbosity,
+=======
+            "-vvv",
+>>>>>>> a9833914c040a0d8a0a05606980c603fb480fd11
         ]
         else:
             raise ValueError(output_subdir, " is not a valid subdirectory")
