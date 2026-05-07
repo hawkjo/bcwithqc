@@ -20,7 +20,7 @@ bcwithqc preprocess \
 --config="$CDNA_CONFIG" \
 --output-dir="$PREPROCESS_OUTPUT_DIR" \
 --threads="$N_THREADS" \
--vvv
+-v
 
 # Align gDNA with STAR
 STAR \
@@ -40,7 +40,7 @@ bcwithqc count \
 --output-dir="$COUNT_OUTPUT_DIR" \
 --threads="$N_THREADS" \
 --keep-intermediary \
--vvv
+-v
 
 # remove keep-intermediary for automatic cleanup. 
 # Will remove STAR alignment results if they are in a subdirectory of COUNT_OUTPUT_DIR

@@ -21,7 +21,7 @@ bcwithqc simulate_reads \
 --nreads=10000 \
 --error-probability=0.1 \
 --substitution-probability=0.7 \
--vvv
+-v
 
 # Preprocess the simulated reads
 bcwithqc preprocess \
@@ -29,7 +29,7 @@ bcwithqc preprocess \
 --config="$CONFIG" \
 --output-dir="$PREPROCESS_OUTPUT_DIR" \
 --threads="$N_THREADS" \
--vvv
+-v
 
 # Align with STAR
 STAR \
@@ -49,7 +49,7 @@ bcwithqc count \
 --output-dir="$COUNT_OUTPUT_DIR" \
 --threads="$N_THREADS" \
 --keep-intermediary \
--vvv
+-v
 
 # remove keep-intermediary for automatic cleanup. 
 # Will remove STAR alignment results if they are in a subdirectory of COUNT_OUTPUT_DIR

@@ -17,7 +17,7 @@ bcwithqc preprocess \
 "$INPUT_DIR" \
 --config="$CONFIG" \
 --output-dir="$PREPROCESS_OUTPUT_DIR" \
--vvv
+-v
 
 # Align with STAR
 STAR \
@@ -36,7 +36,7 @@ bcwithqc count \
 --config="$CONFIG" \
 --output-dir="$COUNT_OUTPUT_DIR" \
 --keep-intermediary \
--vvv
+-v
 
 # remove keep-intermediary for automatic cleanup. 
 # Will remove STAR alignment results if they are in a subdirectory of COUNT_OUTPUT_DIR
