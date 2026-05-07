@@ -27,7 +27,7 @@ star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 # Set to True to use a temp directory that is deleted automatically.
 # Set to False to write into SCRIPT_DIR/<sample_type>_single_end_STAR_out and keep the output.
 USE_TEMP_OUTPUT = True
-
+verbosity = "-vv"
 
 def get_star_env():
     env = os.environ.copy()
@@ -104,7 +104,7 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
             f"--config={config}",
             f"--output-dir={output_dir}",
             "--threads=1",
-            "-vvv",
+            verbosity,
         ]
         preprocess_result = run_command(preprocess_cmd, env)
 
@@ -143,7 +143,7 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
             f"--output-dir={output_dir}",
             "--threads=1",
             "--keep-intermediary",
-            "-vvv",
+            verbosity,
         ]
         count_result = run_command(count_cmd, env)
 

@@ -1,6 +1,6 @@
-                                 Started job on |	May 04 14:30:49
-                             Started mapping on |	May 04 14:30:49
-                                    Finished on |	May 04 14:30:49
+                                 Started job on |	May 07 13:59:11
+                             Started mapping on |	May 07 13:59:11
+                                    Finished on |	May 07 13:59:11
        Mapping speed, Million of reads per hour |	inf
 
                           Number of input reads |	9
@@ -18,7 +18,7 @@
                       Mismatch rate per base, % |	0.00%
                          Deletion rate per base |	0.00%
                         Deletion average length |	0.00
-                        Insertion rate per base |	0.53%
+                        Insertion rate per base |	1.06%
                        Insertion average length |	1.00
                              MULTI-MAPPING READS:
         Number of reads mapped to multiple loci |	0

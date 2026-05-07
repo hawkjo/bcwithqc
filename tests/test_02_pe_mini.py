@@ -19,7 +19,7 @@ star_index = os.path.join(SCRIPT_DIR, "../examples/pe_mini_genome_index")
 star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
 USE_TEMP_OUTPUT = False
-
+verbosity = "-vvv"
 
 def read_tsv_gz_first_col(path):
     values = []
@@ -148,7 +148,7 @@ def outsourced_star_output(request):
             f"--config={pe_mini_config}",
             f"--output-dir={output_dir}",
             f"--threads={threads}",
-            "-vvv",
+            verbosity,
         ]
         preprocess_result = run_command(preprocess_cmd, env)
 
@@ -200,7 +200,7 @@ def outsourced_star_output(request):
             f"--output-dir={output_dir}",
             f"--threads={threads}",
             "--keep-intermediary",
-            "-vvv",
+            verbosity,
         ]
         count_result = run_command(count_cmd, env)
 

@@ -27,6 +27,8 @@ cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA_paired_end_config.json"
 # Absolut Path to where STAR is installed -> THIS NEEDS TO BE ADJUSTED FOR LOCAL MACHINES!
 star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
+verbosity = "-v"
+
 def snapshot_tree(path):
     snapshot = []
     for root, dirs, files in os.walk(path):
@@ -161,7 +163,7 @@ def sample_dirs(request):
             f"--config={config}",
             f"--output-dir={output_dir}",
             f"--threads={threads}",
-            "-vvv",
+            verbosity,
         ]
         preprocess_result = run_command(preprocess_cmd, env)
 
@@ -207,7 +209,7 @@ def sample_dirs(request):
             f"--output-dir={output_dir}",
             f"--threads={threads}",
             "--keep-intermediary",
-            "-vvv",
+            verbosity,
         ]
         count_result = run_command(count_cmd, env)
 

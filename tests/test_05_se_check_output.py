@@ -26,6 +26,7 @@ star_index = os.path.join(SCRIPT_DIR, "../examples/SDR001_REF_index")
 gDNA_config = os.path.join(SCRIPT_DIR, "../examples/gDNA_single_end_config.json")
 cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA_single_end_config.json")
 
+verbosity = "-v"
 
 def snapshot_tree(path):
     snapshot = []
@@ -163,7 +164,7 @@ def sample_dirs(request):
             f"--config={config}",
             f"--output-dir={tmp_dir}",
             f"--threads={threads}",
-            "-vvv",
+            verbosity,
         ]
         preprocess_result = run_command(preprocess_cmd, env)
 
@@ -202,7 +203,7 @@ def sample_dirs(request):
             f"--output-dir={tmp_dir}",
             f"--threads={threads}",
             "--keep-intermediary",
-            "-vvv",
+            verbosity,
         ]
         count_result = run_command(count_cmd, env)
 

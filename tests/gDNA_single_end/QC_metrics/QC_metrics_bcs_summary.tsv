@@ -1,3 +1,3 @@
 read	blockname	exact	corrected	below_threshold	ambiguous	no_match	total
-R1	bc1	19036	710	11	0	243	20000
-R1	bc2	19068	786	28	7	111	20000
+R1	bc1	19025	659	11	1	304	20000
+R1	bc2	19053	736	26	45	140	20000

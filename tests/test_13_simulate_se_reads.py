@@ -19,7 +19,7 @@ star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
 USE_TEMP_OUTPUT = False
 ERROR_SEGMENT_PATTERN = re.compile(r"S(\d+)D(\d+)I(\d+)")
-
+verbosity = "-vv"
 
 def get_star_env():
     env = os.environ.copy()
@@ -171,18 +171,26 @@ def write_error_combo_table(fastq_path, out_tsv):
             out.write(f"{count}\t{';'.join(combo)}\n")
 
 
-@pytest.fixture(scope="module")
-def simulate_se_mini_output():
-    config = se_test_config
-    config_dir = os.path.dirname(os.path.abspath(config))
-    config_stem = os.path.splitext(os.path.basename(config))[0]
-
+@pytest.fixture(
+    scope="module",
+    params=[
+        "simulate_se_1k_reads_default_error",
+        "simulate_se_10k_reads_default_error",
+    ],
+    ids=[
+        "simulate_se_1k_reads_default_error",
+        "simulate_se_10k_reads_default_error",
+    ],
+)
+def simulate_se_output(request):
+    output_subdir = request.param
     env = get_star_env()
 
+    # Define directories based on scenario
     if USE_TEMP_OUTPUT:
-        context = tempfile.TemporaryDirectory(prefix="simulate_se_mini_pipeline_")
+        context = tempfile.TemporaryDirectory(prefix=f"{output_subdir}_temp")
     else:
-        root_dir = os.path.join(SCRIPT_DIR, "simulate_se_mini")
+        root_dir = os.path.join(SCRIPT_DIR, "simulate_se", output_subdir)
         if os.path.exists(root_dir):
             shutil.rmtree(root_dir)
         os.makedirs(root_dir, exist_ok=True)
@@ -196,38 +204,51 @@ def simulate_se_mini_output():
         os.makedirs(count_dir, exist_ok=True)
         os.makedirs(star_dir, exist_ok=True)
 
-        simulated_fastq = os.path.join(sim_dir, f"{config_stem}.txt.gz")
+        simulated_fastq = os.path.join(sim_dir, f"{os.path.splitext(os.path.basename(se_test_config))[0]}.txt.gz")
 
-        simulate_command = [
+    # 1. Run the simulation command
+        if output_subdir == "simulate_se_1k_reads_default_error":
+            simulate_command = [
+                "python", "-m", "bcwithqc", "simulate_reads",
+                f"--config={se_test_config}",
+                f"--output-dir={sim_dir}",
+                "--nreads=10000",
+                "--error-probability=0.1", # default
+                "--substitution-probability=0.7", #default
+                verbosity,
+            ]
+        elif output_subdir == "simulate_se_10k_reads_default_error":
+            simulate_command = [
             "python", "-m", "bcwithqc", "simulate_reads",
-            f"--config={config}",
+            f"--config={se_test_config}",
             f"--output-dir={sim_dir}",
-            "--nreads=10000",
-            "--error-probability=0.1",
-            "--substitution-probability=0.7",
-            "-vvv",
+            "--nreads=100000",
+            "--error-probability=0.1", # default
+            "--substitution-probability=0.7", #default
+            verbosity,
         ]
-
+        else:
+            raise ValueError(output_subdir, " is not a valid subdirectory")
         run_command(simulate_command, label="Simulation subprocess")
 
         assert os.path.isfile(simulated_fastq), f"Expected simulated FASTQ not found: {simulated_fastq}"
 
-        # 1. bcwithqc preprocess
+        # 2. bcwithqc preprocess
         # This avoids relying on the internal STAR execution path in `bcwithqc count`.
         preprocess_command = [
             "python", "-m", "bcwithqc", "preprocess",
             sim_dir,
-            f"--config={config}",
+            f"--config={se_test_config}",
             f"--output-dir={count_dir}",
             "--threads=1",
-            "-vvv",
+            verbosity,
         ]
         run_command(preprocess_command, env=env, label="Preprocess subprocess")
 
         sans_bc_fastq = find_single_preprocessed_fastq(count_dir)
 
-        # 2. external STAR alignment
-        star_prefix = os.path.join(star_dir, "simulate_se_mini_")
+        # 3. STAR alignment
+        star_prefix = os.path.join(star_dir, f"{output_subdir}_")
         star_command = [
             "STAR",
             "--runThreadN", "1",
@@ -243,21 +264,21 @@ def simulate_se_mini_output():
         aligned_bam = f"{star_prefix}Aligned.out.bam"
         assert os.path.isfile(aligned_bam), f"Expected STAR BAM not found: {aligned_bam}"
 
-        # 3. bcwithqc count from existing STAR result
+        # #4. bcwithqc count from existing STAR result
         count_command = [
             "python", "-m", "bcwithqc", "count",
             count_dir,
             f"--STAR-output-dir={star_dir}",
-            f"--config={config}",
+            f"--config={se_test_config}",
             f"--output-dir={count_dir}",
             "--threads=1",
             "--keep-intermediary",
-            "-vvv",
+            verbosity,
         ]
         run_command(count_command, env=env, label="Count subprocess")
 
-        before_tsv = os.path.join(count_dir, "simulate_se_mini_before.tsv")
-        after_tsv = os.path.join(count_dir, "simulate_se_mini_after.tsv")
+        before_tsv = os.path.join(count_dir, f"{output_subdir}_before.tsv")
+        after_tsv = os.path.join(count_dir, f"{output_subdir}_after.tsv")
         sans_bc_fastq = find_single_preprocessed_fastq(os.path.join(count_dir, "intermediary_files"))
 
         write_error_combo_table(simulated_fastq, before_tsv)
@@ -275,8 +296,8 @@ def simulate_se_mini_output():
         }
 
 
-def test_simulation_and_count_outputs_exist(simulate_se_mini_output):
-    count_dir = simulate_se_mini_output["count_dir"]
+def test_simulation_and_count_outputs_exist(simulate_se_output):
+    count_dir = simulate_se_output["count_dir"]
 
     assert os.path.isfile(os.path.join(count_dir, "raw_reads_bc_matrix", "matrix.mtx.gz"))
     assert os.path.isfile(os.path.join(count_dir, "raw_reads_bc_matrix", "barcodes.tsv.gz"))
@@ -286,14 +307,14 @@ def test_simulation_and_count_outputs_exist(simulate_se_mini_output):
     assert os.path.isfile(os.path.join(count_dir, "raw_umis_bc_matrix", "barcodes.tsv.gz"))
     assert os.path.isfile(os.path.join(count_dir, "raw_umis_bc_matrix", "features.tsv.gz"))
 
-    assert os.path.isfile(simulate_se_mini_output["simulated_fastq"])
-    assert os.path.isfile(simulate_se_mini_output["sans_bc_fastq"])
-    assert os.path.isfile(simulate_se_mini_output["before_tsv"])
-    assert os.path.isfile(simulate_se_mini_output["after_tsv"])
+    assert os.path.isfile(simulate_se_output["simulated_fastq"])
+    assert os.path.isfile(simulate_se_output["sans_bc_fastq"])
+    assert os.path.isfile(simulate_se_output["before_tsv"])
+    assert os.path.isfile(simulate_se_output["after_tsv"])
 
 
-def test_error_combo_tables_are_nonempty(simulate_se_mini_output):
-    for path in [simulate_se_mini_output["before_tsv"], simulate_se_mini_output["after_tsv"]]:
+def test_error_combo_tables_are_nonempty(simulate_se_output):
+    for path in [simulate_se_output["before_tsv"], simulate_se_output["after_tsv"]]:
         with open(path, "r") as fh:
             lines = [line.rstrip("\n") for line in fh]
 
