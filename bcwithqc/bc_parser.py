@@ -11,6 +11,10 @@ from .bc_aligner import CustomBCAligner
 
 log = logging.getLogger(__name__)
 
+# Quick kill switch for the boundary-shift rescue band-aid.
+# Set to True to re-enable the local rescue candidates.
+ENABLE_BOUNDARY_RESCUE = False
+
 def _candidate_boundary_shifts_for_failed_block(blocks, raw_bounds, seq_len, failed_block_index):
     """
     Generate local boundary-rescue candidates around one failed block only.
@@ -98,27 +102,27 @@ def _parse_pieces_against_config(blocks, raw_pieces, decoders, commonseqs):
     ]
     decode_results = []
 
-logged_index_error = False
+    logged_index_error = False
 
-for bc_i, (raw_bc, decoder) in enumerate(zip(raw_bcs, decoders)):
-    try:
-        decode_results.append(decoder.decode_with_status(raw_bc))
+    for bc_i, (raw_bc, decoder) in enumerate(zip(raw_bcs, decoders)):
+        try:
+            decode_results.append(decoder.decode_with_status(raw_bc))
 
-    except IndexError:
-        if not logged_index_error:
-            log.debug( # This debug logger could be removed in final version but might be good to keep too.
-                "Barcode decoder IndexError treated as no_match: "
-                "bc_index=%s raw_bc_len=%s decoder=%s decoder_expected_len=%s raw_bcs=%s raw_pieces=%s",
-                bc_i,
-                len(raw_bc),
-                type(decoder).__name__,
-                getattr(decoder, "bc_len", getattr(decoder, "sbc_len", None)),
-                raw_bcs,
-                raw_pieces,
-            )
-            logged_index_error = True
+        except IndexError:
+            if not logged_index_error:
+                log.debug( # This debug logger could be removed in final version but might be good to keep too.
+                    "Barcode decoder IndexError treated as no_match: "
+                    "bc_index=%s raw_bc_len=%s decoder=%s decoder_expected_len=%s raw_bcs=%s raw_pieces=%s",
+                    bc_i,
+                    len(raw_bc),
+                    type(decoder).__name__,
+                    getattr(decoder, "bc_len", getattr(decoder, "sbc_len", None)),
+                    raw_bcs,
+                    raw_pieces,
+                )
+                logged_index_error = True
 
-        decode_results.append((None, "no_match", None))
+            decode_results.append((None, "no_match", None))
 
     if decode_results:
         bcs, statuses, overlapping_bcs = map(list, zip(*decode_results))
@@ -192,16 +196,16 @@ for bc_i, (raw_bc, decoder) in enumerate(zip(raw_bcs, decoders)):
     }
     return parsed, qc_fields, None
 
-
 def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders):
     """
     Find barcodes etc in bc_rec.
 
     The fast path uses the boundaries from CustomBCAligner.  If that segmentation
-    fails barcode decoding or constant-region validation, try nearby boundary
-    shifts before dropping the read.  This rescues valid reads where an indel in a
-    wildcard block shifted the true barcode/constant boundary.
+    fails barcode decoding or constant-region validation, optionally try nearby
+    boundary shifts before dropping the read. This rescue is controlled by
+    ENABLE_BOUNDARY_RESCUE and is disabled by default while debugging the aligner.
     """
+    log.debug("Now processing read %s", bc_rec.id)
 
     scores_pieces_end_bounds = [al.find_norm_score_pieces_and_boundaries(bc_rec.seq, return_seq=True) for al in aligners]
     scores_pieces_end_pos = [(s, p, bounds[-1], sq) for s, p, bounds, sq in scores_pieces_end_bounds]
@@ -245,7 +249,13 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
 
         # 2. Only if the original segmentation failed, try local rescue around
         #    ONLY the failing block.
-        if failed_block_index is not None:
+        if ENABLE_BOUNDARY_RESCUE and failed_block_index is not None:
+            log.debug(
+                "Boundary rescue enabled for read %s: failed_block_index=%s raw_bounds=%s",
+                bc_rec.id,
+                failed_block_index,
+                raw_bounds,
+            )
             for candidate_bounds in _candidate_boundary_shifts_for_failed_block(
                 blocks,
                 raw_bounds,
@@ -279,7 +289,7 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
         # all boundary-rescue candidates have failed.  This prevents rescued
         # reads from being logged as dropped reads.
         if failure_debug and failure_debug.get("reason") == "constant":
-            log.warning( # This warning logger could be removed in final version but might be good to keep too
+            log.debug( # This warning logger could be removed in final version but might be good to keep too
                 "Dropped read %s: constant failed block=%s observed=%s expected=%s raw_bounds=%s raw_pieces=%s",
                 bc_rec.id,
                 failure_debug["block_index"],
@@ -289,7 +299,7 @@ def process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoder
                 failure_debug["raw_pieces"],
             )
         else:
-            log.warning( # This warning logger could be removed in final version but might be good to keep too
+            log.debug( # This warning logger could be removed in final version but might be good to keep too
                 "Dropped read %s: score=%s raw_bounds=%s raw_pieces=%s raw_bcs=%s statuses=%s decoded=%s",
                 bc_rec.id,
                 raw_score,
