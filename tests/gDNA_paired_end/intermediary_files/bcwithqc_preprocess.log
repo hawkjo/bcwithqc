@@ -1,22 +1,22 @@
-2026-05-07 14:06:19   Writing log to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/bcwithqc_preprocess.log
-2026-05-07 14:06:19   Files to process:
-2026-05-07 14:06:19     /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_1_sequence.txt.gz
-2026-05-07 14:06:19     /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_2_sequence.txt.gz
-2026-05-07 14:06:20   Detected barcodes in read1 files
-2026-05-07 14:06:20   Processing files:
-2026-05-07 14:06:20     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_1_sequence.txt.gz
-2026-05-07 14:06:20     paired fastq:  /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_2_sequence.txt.gz
-2026-05-07 14:06:20     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/sans_bc_gDNA_1_sequence.fq
-2026-05-07 14:06:20     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/sans_bc_gDNA_2_sequence.fq
-2026-05-07 14:06:20     tags file:     /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/rec_names_and_tags1_gDNA_1_sequence.txt
-2026-05-07 14:06:20   Building aligners and barcode decoders
-2026-05-07 14:06:20   Processing first 10,000 for score threshold...
-2026-05-07 14:06:30   Score threshold: 0.57
-2026-05-07 14:06:30   Continuing...
-2026-05-07 14:06:50   20,000 barcode records processed
-2026-05-07 14:06:50   19,473 pairs of records output
-2026-05-07 14:06:50   Collected 20,000 read QC entries
-2026-05-07 14:06:50   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_bcs.tsv
-2026-05-07 14:06:50   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_bcs_summary.tsv
-2026-05-07 14:06:50   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_reads.tsv
-2026-05-07 14:06:50   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_reads_summary.tsv
+2026-05-08 11:33:48   Writing log to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/bcwithqc_preprocess.log
+2026-05-08 11:33:48   Files to process:
+2026-05-08 11:33:48     /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_1_sequence.txt.gz
+2026-05-08 11:33:48     /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_2_sequence.txt.gz
+2026-05-08 11:33:49   Detected barcodes in read1 files
+2026-05-08 11:33:49   Processing files:
+2026-05-08 11:33:49     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_1_sequence.txt.gz
+2026-05-08 11:33:49     paired fastq:  /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_paired_end/gDNA_2_sequence.txt.gz
+2026-05-08 11:33:49     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/sans_bc_gDNA_1_sequence.fq
+2026-05-08 11:33:49     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/sans_bc_gDNA_2_sequence.fq
+2026-05-08 11:33:49     tags file:     /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/rec_names_and_tags1_gDNA_1_sequence.txt
+2026-05-08 11:33:49   Building aligners and barcode decoders
+2026-05-08 11:33:49   Processing first 10,000 for score threshold...
+2026-05-08 11:33:59   Score threshold: 0.57
+2026-05-08 11:33:59   Continuing...
+2026-05-08 11:34:19   20,000 barcode records processed
+2026-05-08 11:34:19   19,473 pairs of records output
+2026-05-08 11:34:19   Collected 20,000 read QC entries
+2026-05-08 11:34:19   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_bcs.tsv
+2026-05-08 11:34:19   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_bcs_summary.tsv
+2026-05-08 11:34:19   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_reads.tsv
+2026-05-08 11:34:19   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/gDNA_paired_end/QC_metrics/QC_metrics_reads_summary.tsv

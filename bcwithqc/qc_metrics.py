@@ -551,6 +551,9 @@ def make_stacked_barplots_bcs(arguments):
     """
     Create one stacked barplot per barcode block, with one bar per whitelist barcode.
 
+    In addition to absolute read counts, also creates a normalized 100% stacked
+    barplot for each barcode block.
+
     Each bar corresponds to one barcode from the 'barcode' column in QC_metrics_bcs.tsv.
     Bars are sorted by descending exact count.
 
@@ -559,6 +562,7 @@ def make_stacked_barplots_bcs(arguments):
     - light green: corrected
     - orange: ambiguous
     - grey: no_match
+    - light grey: below_threshold
 
     The x-axis always shows barcode rank (1..n).
     Barcode names are only shown when there are few enough to remain readable.
@@ -594,33 +598,72 @@ def make_stacked_barplots_bcs(arguments):
                 "no_match": int(row["no_match"]),
             })
 
-    for (read_label, blockname), rows in grouped_rows.items():
-        if not rows:
-            continue
-
+    def _plot_stacked_barcodes(
+        rows,
+        read_label,
+        blockname,
+        qc_dir,
+        normalize=False,
+    ):
         # Sort by highest exact count to lowest
         rows = sorted(rows, key=lambda x: x["exact"], reverse=True)
 
         labels = [r["barcode"] for r in rows]
-        exact_vals = [r["exact"] for r in rows]
-        corrected_vals = [r["corrected"] for r in rows]
-        below_threshold_vals = [r["below_threshold"] for r in rows]
-        ambiguous_vals = [r["ambiguous"] for r in rows]
-        no_match_vals = [r["no_match"] for r in rows]
+        exact_vals = np.array([r["exact"] for r in rows], dtype=float)
+        corrected_vals = np.array([r["corrected"] for r in rows], dtype=float)
+        below_threshold_vals = np.array([r["below_threshold"] for r in rows], dtype=float)
+        ambiguous_vals = np.array([r["ambiguous"] for r in rows], dtype=float)
+        no_match_vals = np.array([r["no_match"] for r in rows], dtype=float)
 
         n_bcs = len(labels)
+
+        if normalize:
+            totals = (
+                exact_vals
+                + corrected_vals
+                + below_threshold_vals
+                + ambiguous_vals
+                + no_match_vals
+            )
+
+            # Avoid division by zero for completely empty barcode rows
+            totals_safe = np.where(totals == 0, 1, totals)
+
+            exact_vals = exact_vals / totals_safe * 100
+            corrected_vals = corrected_vals / totals_safe * 100
+            below_threshold_vals = below_threshold_vals / totals_safe * 100
+            ambiguous_vals = ambiguous_vals / totals_safe * 100
+            no_match_vals = no_match_vals / totals_safe * 100
 
         fig_width = min(max(8, n_bcs * 0.12), 30)
         fig, ax = plt.subplots(figsize=(fig_width, 5))
 
         x = np.arange(n_bcs)
 
-        ax.bar(x, exact_vals, width=1.0, label="exact", color="darkgreen")
+        bottom_exact = np.zeros(n_bcs)
+        bottom_corrected = exact_vals
+        bottom_below_threshold = exact_vals + corrected_vals
+        bottom_ambiguous = exact_vals + corrected_vals + below_threshold_vals
+        bottom_no_match = (
+            exact_vals
+            + corrected_vals
+            + below_threshold_vals
+            + ambiguous_vals
+        )
+
+        ax.bar(
+            x,
+            exact_vals,
+            width=1.0,
+            bottom=bottom_exact,
+            label="exact",
+            color="darkgreen",
+        )
         ax.bar(
             x,
             corrected_vals,
             width=1.0,
-            bottom=exact_vals,
+            bottom=bottom_corrected,
             label="corrected",
             color="lightgreen",
         )
@@ -628,7 +671,7 @@ def make_stacked_barplots_bcs(arguments):
             x,
             below_threshold_vals,
             width=1.0,
-            bottom=[e + c for e, c in zip(exact_vals, corrected_vals)],
+            bottom=bottom_below_threshold,
             label="below_threshold",
             color="lightgrey",
         )
@@ -636,7 +679,7 @@ def make_stacked_barplots_bcs(arguments):
             x,
             ambiguous_vals,
             width=1.0,
-            bottom=[e + c + b for e, c, b in zip(exact_vals, corrected_vals, below_threshold_vals)],
+            bottom=bottom_ambiguous,
             label="ambiguous",
             color="orange",
         )
@@ -644,15 +687,22 @@ def make_stacked_barplots_bcs(arguments):
             x,
             no_match_vals,
             width=1.0,
-            bottom=[e + c + b + a for e, c, b, a in zip(exact_vals, corrected_vals, below_threshold_vals, ambiguous_vals)],
+            bottom=bottom_no_match,
             label="no_match",
             color="grey",
         )
 
         ax.set_xlim(-0.5, n_bcs - 0.5)
-        ax.set_ylabel("Read count")
+
+        if normalize:
+            ax.set_ylabel("Fraction of reads (%)")
+            ax.set_ylim(0, 100)
+            ax.set_title(f"QC metrics for {read_label}_{blockname} normalized to 100%")
+        else:
+            ax.set_ylabel("Read count")
+            ax.set_title(f"QC metrics for {read_label}_{blockname}")
+
         ax.set_xlabel("Barcode rank (sorted by exact count)")
-        ax.set_title(f"QC metrics for {read_label}_{blockname}")
         ax.legend()
         ax.margins(x=0)
 
@@ -687,14 +737,46 @@ def make_stacked_barplots_bcs(arguments):
 
         plt.tight_layout()
 
-        output_file = os.path.join(
-            qc_dir,
-            f"QC_metrics_barcodes_{read_label}_{blockname}.png"
-        )
+        if normalize:
+            output_file = os.path.join(
+                qc_dir,
+                f"QC_metrics_barcodes_{read_label}_{blockname}_normalized_100percent.png"
+            )
+        else:
+            output_file = os.path.join(
+                qc_dir,
+                f"QC_metrics_barcodes_{read_label}_{blockname}.png"
+            )
+
         plt.savefig(output_file, dpi=300)
         plt.close(fig)
 
-        log.info(f"Wrote barcode-level stacked barplot to: {output_file}")
+        if normalize:
+            log.info(f"Wrote normalized barcode-level stacked barplot to: {output_file}")
+        else:
+            log.info(f"Wrote barcode-level stacked barplot to: {output_file}")
+
+    for (read_label, blockname), rows in grouped_rows.items():
+        if not rows:
+            continue
+
+        # Absolute-count plot
+        _plot_stacked_barcodes(
+            rows=rows,
+            read_label=read_label,
+            blockname=blockname,
+            qc_dir=qc_dir,
+            normalize=False,
+        )
+
+        # Normalized 100% plot
+        _plot_stacked_barcodes(
+            rows=rows,
+            read_label=read_label,
+            blockname=blockname,
+            qc_dir=qc_dir,
+            normalize=True,
+        )
 
 def make_stacked_barplot_reads(arguments):
     paths = get_qc_paths(arguments)
