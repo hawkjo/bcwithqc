@@ -7,6 +7,12 @@
             {
                 "maxerrors": 1,
                 "blockfunction": "barcode",
+                "name": [
+                    "bc_1",
+                    "bc_2",
+                    "bc_3",
+                    "bc_4"
+                ],
                 "sequence": [
                     "CCTTAACAT",
                     "AGCGTAGAA",

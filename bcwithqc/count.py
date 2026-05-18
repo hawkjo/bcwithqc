@@ -569,7 +569,7 @@ def correct_UMIs(input_bam_fpath, out_bam_fpath, threads=1):
         for i, (ref, umi_map_given_bc_then_feature) in enumerate(pool.imap_unordered(
                 umi_parallel_wrapper,
                 reference_names_with_input_bam)):
-            log.info(f'  {ref}')
+            # log.info(f'  {ref}') commented out because it clutters info log file. Uncomment if this is really needed. 
             for read in pysam.AlignmentFile(input_bam_fpath).fetch(ref):
                 for gx_gn_tup in misc.gx_gn_tups_from_read(read):
                     corrected_umi = umi_map_given_bc_then_feature[read.get_tag('CB')][gx_gn_tup][read.get_tag('UR')]
