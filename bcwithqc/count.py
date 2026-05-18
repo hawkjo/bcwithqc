@@ -447,33 +447,103 @@ def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
     - raw_umis_bc_matrix
     - with_bc_umi.sorted.bam
     - with_bc_umi.sorted.bam.bai
-    - QC_metrics/   (contains QC_metrics.tsv and QC_metrics_stacked_barplot.png)
+    - QC_metrics/
+    - logs/
+
+    Any *.log files are moved to logs/.
+    Any *.out files are moved to logs/ and renamed with a STAR_ prefix.
 
     If the final outputs are updated, this function must be updated as well!
     """
 
-    output_dir = arguments.output_dir
+    output_dir = os.path.abspath(arguments.output_dir)
     intermediary_dir = os.path.join(output_dir, "intermediary_files")
-
     qc_dir = os.path.join(output_dir, "QC_metrics")
+    logs_dir = os.path.join(output_dir, "logs")
 
-    # Define paths to keep
+    os.makedirs(logs_dir, exist_ok=True)
+
     paths_to_keep = {
-        star_w_bc_umi_sorted_fpath,
-        star_w_bc_umi_sorted_fpath + ".bai",
-        os.path.join(output_dir, "raw_reads_bc_matrix"),
-        os.path.join(output_dir, "raw_umis_bc_matrix"),
-        qc_dir,
+        os.path.abspath(star_w_bc_umi_sorted_fpath),
+        os.path.abspath(star_w_bc_umi_sorted_fpath + ".bai"),
+        os.path.abspath(os.path.join(output_dir, "raw_reads_bc_matrix")),
+        os.path.abspath(os.path.join(output_dir, "raw_umis_bc_matrix")),
+        os.path.abspath(qc_dir),
+        os.path.abspath(logs_dir),
     }
 
-    # List all top-level items in output_dir
+    def is_inside(path, directory):
+        path = os.path.abspath(path)
+        directory = os.path.abspath(directory)
+        return os.path.commonpath([path, directory]) == directory
+
+    def make_unique_path(path):
+        """
+        Avoid overwriting an existing file in logs/.
+        Example:
+        STAR_Log.final.out -> STAR_Log.final_2.out
+        """
+        if not os.path.exists(path):
+            return path
+
+        root, ext = os.path.splitext(path)
+        counter = 2
+
+        while True:
+            candidate = f"{root}_{counter}{ext}"
+            if not os.path.exists(candidate):
+                return candidate
+            counter += 1
+
+    def move_to_logs(item):
+        basename = os.path.basename(item)
+
+        if basename.endswith(".out") and not basename.startswith("STAR_"):
+            basename = f"STAR_{basename}"
+
+        target = os.path.join(logs_dir, basename)
+        target = make_unique_path(target)
+
+        if os.path.abspath(item) != os.path.abspath(target):
+            shutil.move(item, target)
+
+    # First pass:
+    # Recursively move all .log and .out files into logs/,
+    # including files inside STAR_files/ or intermediary_files/.
+    log_like_files = []
+
+    for root, dirs, files in os.walk(output_dir):
+        root_abs = os.path.abspath(root)
+
+        # Do not recurse into logs/ itself
+        dirs[:] = [
+            d for d in dirs
+            if not is_inside(os.path.join(root_abs, d), logs_dir)
+        ]
+
+        for filename in files:
+            item = os.path.join(root_abs, filename)
+
+            if is_inside(item, logs_dir):
+                continue
+
+            if filename.endswith(".log") or filename.endswith(".out"):
+                log_like_files.append(item)
+
+    for item in log_like_files:
+        if os.path.exists(item):
+            move_to_logs(item)
+
+    # Re-list top-level items after moving logs
     all_items = [os.path.join(output_dir, item) for item in os.listdir(output_dir)]
 
     if not arguments.keep_intermediary_files:
         log.info("Deleting intermediary files...")
+
         for item in all_items:
-            # Skip if item is in the keep list
-            if item in paths_to_keep:
+            item_abs = os.path.abspath(item)
+
+            if item_abs in paths_to_keep:
                 continue
 
             if os.path.isfile(item):
@@ -486,12 +556,12 @@ def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
         os.makedirs(intermediary_dir, exist_ok=True)
 
         for item in all_items:
-            # Skip if item is in the keep list
-            if item in paths_to_keep:
-                continue
-            # Move item to intermediary directory
-            shutil.move(item, os.path.join(intermediary_dir, os.path.basename(item)))
+            item_abs = os.path.abspath(item)
 
+            if item_abs in paths_to_keep or item_abs == os.path.abspath(intermediary_dir):
+                continue
+
+            shutil.move(item, os.path.join(intermediary_dir, os.path.basename(item)))
 
 def run_STAR(arguments, R1_fpath, R2_fpath):
     """
