@@ -63,18 +63,60 @@ The primary outputs from bcwithqc are:
 * A read count matrix
 * A UMI count matrix
 
-#### BAM file tags
-The BAM file is annotated with custom tags that have been created in the style of current community standards. These are:
+<sample_output_folder>/
+├── intermediary_files/          # optional
+├── logs/
+├── QC_metrics/
+├── raw_reads_bc_matrix/
+│   ├── matrix.mtx.gz
+│   ├── barcodes.tsv.gz
+│   └── features.tsv.gz
+├── raw_umis_bc_matrix/
+│   ├── matrix.mtx.gz
+│   ├── barcodes.tsv.gz
+│   └── features.tsv.gz
+├── with_bc_umi_sorted.bam
+└── with_bc_umi_sorted.bam.bai
 
-| Tag | Meaning |
-|--|--|
-| CB | Cell barcode |
-| CR | Raw, uncorrected cell barcode |
-| UB | UMI |
-| UR | Raw, uncorrected UMI |
-| FL | Combined length of the linker sequences |
+#### BAM file tags
+The BAM file `with_bc_umi_sorted.bam` is annotated with custom tags that have been created in the style of current community standards. These are:
+
+| Tag  | Meaning                                 |
+| ---- | --------------------------------------- |
+| `CB` | Cell barcode                            |
+| `CR` | Raw, uncorrected cell barcode           |
+| `UB` | UMI                                     |
+| `UR` | Raw, uncorrected UMI                    |
+| `FL` | Combined length of the linker sequences |
+
 
 The cell barcode tag contains all pieces of the cell barcode, including the sample barcode, concatenated with periods.
+
+#### Read/UMI count Matrices 
+The count matrices `matrix.mtx.gz` are written in sparse Matrix Market format.
+The matrix orientation is:
+rows    = features
+columns = barcodes
+values  = read or UMI counts
+
+matrix[i, j] = count for feature i and barcode j
+
+The accompanying files define the row and column identities:
+`features.tsv.gz` = row identities
+`barcodes.tsv.gz` = column identities
+
+### QC_metrics 
+QC metrics contains:
+1. Filtered FASTQ files containing reads that were excluded from further processing because:
+- A sequence was decoded to multiple possible barcodes                   -> `*_ambiuous_reads.fq`
+- A sequence could not be decoded to any barcode                         -> `*_no_match_reads.fq`
+- A sequence was decoded, but the overall score of the read was too low  -> `*_threshold_fail_reads.fq`
+
+2. QC tables and graphics both as summary and as detailed version
+- `QC_metrics_bcs_summary.tsv` & `reads.png` How many barcodes of each block had exact matches, had to be corrected, were below threshold despite being corrected, were ambigous, or could not be matched. 
+- `QC_metrics_bcs.tsv` The information above, but for each individual expected/provided barcode
+- `QC_metrics_reads_summary.tsv` & `barcode_blocks.png` How many reads in total had exact matches, had to be corrected, were below threshold despite being corrected, were ambigous, or could not be matched. 
+- `QC_metrics_bcs.tsv` & `placeholder.png` The information above, but for each individual read, including the total status of the read and the status of each block. 
 
 ## Example Workflow
 
