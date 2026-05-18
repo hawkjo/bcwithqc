@@ -24,12 +24,11 @@ def get_qc_paths(arguments):
 
     return {
         "qc_dir": qc_dir,
-        "bcs_tsv": os.path.join(qc_dir, "QC_metrics_bcs.tsv"),
-        "bcs_summary_tsv": os.path.join(qc_dir, "QC_metrics_bcs_summary.tsv"),
-        "reads_tsv": os.path.join(qc_dir, "QC_metrics_reads.tsv"),
-        "reads_summary_tsv": os.path.join(qc_dir, "QC_metrics_reads_summary.tsv"),
-        "blocks_plot": os.path.join(qc_dir, "QC_stacked_barplot_blocks.png"),
-        "reads_plot": os.path.join(qc_dir, "QC_metrics_reads_stacked_barplot.png"),
+        "bcs_tsv": os.path.join(qc_dir, "bcs.tsv"),
+        "bcs_summary_tsv": os.path.join(qc_dir, "bcs_summary.tsv"),
+        "reads_tsv": os.path.join(qc_dir, "reads.tsv"),
+        "reads_summary_tsv": os.path.join(qc_dir, "reads_summary.tsv"),
+        "reads_blocks_plot": os.path.join(qc_dir, "reads_and_blocks_summary.png"),
         "no_match_reads_fq": os.path.join(qc_dir, "no_match_reads.fq"),
         "ambiguous_reads_fq": os.path.join(qc_dir, "ambiguous_reads.fq"),
     }
@@ -248,8 +247,8 @@ def generate_qc_metrics(arguments, read_qcs):
     Generate barcode-level and block-level QC TSV files in output_dir/QC_metrics.
 
     Outputs:
-    - QC_metrics_bcs.tsv
-    - QC_metrics_bcs_summary.tsv
+    - bcs.tsv
+    - bcs_summary.tsv
     """
     log.info(f"Collected {len(read_qcs):,d} read QC entries")
 
@@ -349,11 +348,11 @@ def generate_qc_metrics_reads(arguments, read_qcs):
     Generate read-level QC outputs in output_dir/QC_metrics.
 
     Outputs:
-    - QC_metrics_reads.tsv
+    - reads.tsv
       One row per read (single-end) or read pair (paired-end), with:
         read_index, read_label, status, blockname_1, blockstatus_1, blockname_2, blockstatus_2, ...
 
-    - QC_metrics_reads_summary.tsv
+    - reads_summary.tsv
       One row per collapsed read-level status:
         status, count
 
@@ -456,27 +455,65 @@ def generate_qc_metrics_reads(arguments, read_qcs):
     log.info(f"Wrote read-level QC metrics to: {output_reads}")
     log.info(f"Wrote read-level QC summary to: {output_summary}")
 
-def make_stacked_barplot_blocks(arguments):
-    """
-    Read QC_metrics_bcs_summary.tsv and create one stacked barplot with one bar per block.
+STATUS_ORDER = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
+STATUS_COLOR_MAP = {
+    "exact": "darkgreen",
+    "corrected": "lightgreen",
+    "below_threshold": "lightgrey",
+    "ambiguous": "orange",
+    "no_match": "grey",
+}
 
-    Dark green  = exact
-    Light green = corrected
-    Orange      = ambiguous
-    Grey        = no_match
 
-    Y-axis is shown as percentage.
-    """
+def _draw_status_stack(ax, x, values_by_status, width=0.8, show_legend=True):
+    """Draw a stacked barplot on an existing axis."""
+    bottom = np.zeros(len(x), dtype=float)
+
+    for status in STATUS_ORDER:
+        values = np.asarray(values_by_status[status], dtype=float)
+        ax.bar(
+            x,
+            values,
+            width=width,
+            bottom=bottom,
+            color=STATUS_COLOR_MAP[status],
+            label=status,
+        )
+        bottom += values
+
+    if show_legend:
+        ax.legend()
+
+
+def _load_read_status_percentages(arguments):
+    paths = get_qc_paths(arguments)
+    summary_fpath = paths["reads_summary_tsv"]
+
+    counts = {status: 0 for status in STATUS_ORDER}
+
+    with open(summary_fpath, "r", newline="") as fh:
+        reader = csv.DictReader(fh, delimiter="\t")
+        for row in reader:
+            status = row["status"]
+            count = int(row["count"])
+            if status in counts:
+                counts[status] = count
+
+    total = sum(counts.values())
+    if total > 0:
+        percentages = {status: 100 * counts[status] / total for status in STATUS_ORDER}
+    else:
+        percentages = {status: 0 for status in STATUS_ORDER}
+
+    return counts, percentages
+
+
+def _load_block_status_percentages(arguments):
     paths = get_qc_paths(arguments)
     input_file = paths["bcs_summary_tsv"]
-    output_file = paths["blocks_plot"]
 
     labels = []
-    exact_pct = []
-    corrected_pct = []
-    below_threshold_pct = []
-    ambiguous_pct = []
-    no_match_pct = []
+    values_by_status = {status: [] for status in STATUS_ORDER}
 
     with open(input_file, "r", newline="") as fh:
         reader = csv.DictReader(fh, delimiter="\t")
@@ -484,53 +521,47 @@ def make_stacked_barplot_blocks(arguments):
         for row in reader:
             read_label = row["read"]
             blockname = row["blockname"]
-            exact = int(row["exact"])
-            corrected = int(row["corrected"])
-            below_threshold = int(row["below_threshold"])
-            ambiguous = int(row["ambiguous"])
-            no_match = int(row["no_match"])
             total = int(row["total"])
 
             labels.append(f"{read_label}_{blockname}")
 
-            if total > 0:
-                exact_pct.append(100 * exact / total)
-                corrected_pct.append(100 * corrected / total)
-                below_threshold_pct.append(100 * below_threshold / total)
-                ambiguous_pct.append(100 * ambiguous / total)
-                no_match_pct.append(100 * no_match / total)
-            else:
-                exact_pct.append(0)
-                corrected_pct.append(0)
-                below_threshold_pct.append(0)
-                ambiguous_pct.append(0)
-                no_match_pct.append(0)
+            for status in STATUS_ORDER:
+                count = int(row[status])
+                if total > 0:
+                    values_by_status[status].append(100 * count / total)
+                else:
+                    values_by_status[status].append(0)
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    return labels, values_by_status
+
+
+def _plot_reads_stacked_barplot_on_ax(ax, arguments, show_legend=True):
+    _, percentages = _load_read_status_percentages(arguments)
+    values_by_status = {status: [percentages[status]] for status in STATUS_ORDER}
+
+    _draw_status_stack(
+        ax=ax,
+        x=["all_reads"],
+        values_by_status=values_by_status,
+        width=0.8,
+        show_legend=show_legend,
+    )
+
+    ax.set_ylabel("Reads (%)")
+    ax.set_ylim(0, 100)
+    ax.set_title("QC metrics across all reads")
+
+
+def _plot_blocks_stacked_barplot_on_ax(ax, arguments, show_legend=True):
+    labels, values_by_status = _load_block_status_percentages(arguments)
     x = np.arange(len(labels))
 
-    ax.bar(x, exact_pct, label="exact", color="darkgreen")
-    ax.bar(x, corrected_pct, bottom=exact_pct, label="corrected", color="lightgreen")
-    ax.bar(
-        x,
-        below_threshold_pct,
-        bottom=[e + c for e, c in zip(exact_pct, corrected_pct)],
-        label="below_threshold",
-        color="lightgrey",
-    )
-    ax.bar(
-        x,
-        ambiguous_pct,
-        bottom=[e + c + b for e, c, b in zip(exact_pct, corrected_pct, below_threshold_pct)],
-        label="ambiguous",
-        color="orange",
-    )
-    ax.bar(
-        x,
-        no_match_pct,
-        bottom=[e + c + b + a for e, c, b, a in zip(exact_pct, corrected_pct, below_threshold_pct, ambiguous_pct)],
-        label="no_match",
-        color="grey",
+    _draw_status_stack(
+        ax=ax,
+        x=x,
+        values_by_status=values_by_status,
+        width=0.8,
+        show_legend=show_legend,
     )
 
     ax.set_xticks(x)
@@ -538,41 +569,149 @@ def make_stacked_barplot_blocks(arguments):
     ax.set_ylabel("Reads (%)")
     ax.set_ylim(0, 100)
     ax.set_title("QC metrics per barcode block")
-    ax.legend()
+
+
+def _maybe_make_combined_reads_blocks_stacked_barplot(arguments):
+    """
+    Create a combined read/block stacked barplot once both summary files exist.
+
+    The read-level plot is placed above the block-level plot.
+    """
+    paths = get_qc_paths(arguments)
+
+    if not (
+        os.path.exists(paths["reads_summary_tsv"])
+        and os.path.exists(paths["bcs_summary_tsv"])
+    ):
+        return
+
+    labels, _ = _load_block_status_percentages(arguments)
+    fig_width = min(max(8, len(labels) * 1.2), 30)
+
+    fig, (ax_reads, ax_blocks) = plt.subplots(
+        nrows=2,
+        ncols=1,
+        figsize=(fig_width, 10),
+        gridspec_kw={"height_ratios": [1, 1.2]},
+    )
+
+    _plot_reads_stacked_barplot_on_ax(ax_reads, arguments, show_legend=True)
+    _plot_blocks_stacked_barplot_on_ax(ax_blocks, arguments, show_legend=False)
 
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300)
+    plt.savefig(paths["reads_blocks_plot"], dpi=300)
     plt.close(fig)
 
-    log.info(f"Wrote block-level stacked barplot to: {output_file}")
+    log.info(
+        f"Wrote combined read/block stacked barplot to: {paths['reads_blocks_plot']}"
+    )
+
+
+def _barcode_rank_step(n_bcs):
+    if n_bcs <= 20:
+        return 1
+    if n_bcs <= 100:
+        return 5
+    if n_bcs <= 500:
+        return 25
+    return max(1, n_bcs // 20)
+
+
+def _barcode_values_by_status(rows, normalize=False):
+    labels = [row["barcode"] for row in rows]
+
+    values_by_status = {
+        status: np.array([row[status] for row in rows], dtype=float)
+        for status in STATUS_ORDER
+    }
+
+    if normalize:
+        totals = np.zeros(len(labels), dtype=float)
+        for values in values_by_status.values():
+            totals += values
+
+        # Avoid division by zero for completely empty barcode rows.
+        totals_safe = np.where(totals == 0, 1, totals)
+
+        for status in STATUS_ORDER:
+            values_by_status[status] = values_by_status[status] / totals_safe * 100
+
+    return labels, values_by_status
+
+
+def _plot_stacked_barcodes_on_ax(
+    ax,
+    rows,
+    read_label,
+    blockname,
+    normalize=False,
+    show_legend=True,
+    show_xlabel=True,
+    show_rank_labels=True,
+    show_barcode_axis=False,
+):
+    labels, values_by_status = _barcode_values_by_status(rows, normalize=normalize)
+    n_bcs = len(labels)
+    x = np.arange(n_bcs)
+
+    _draw_status_stack(
+        ax=ax,
+        x=x,
+        values_by_status=values_by_status,
+        width=1.0,
+        show_legend=show_legend,
+    )
+
+    ax.set_xlim(-0.5, n_bcs - 0.5)
+
+    if normalize:
+        ax.set_ylabel("Fraction of reads (%)")
+        ax.set_ylim(0, 100)
+        ax.set_title(f"QC metrics for {read_label}_{blockname} normalized to 100%")
+    else:
+        ax.set_ylabel("Read count")
+        ax.set_title(f"QC metrics for {read_label}_{blockname}")
+
+    if show_xlabel:
+        ax.set_xlabel("Barcode rank (sorted by exact count)")
+
+    ax.margins(x=0)
+
+    rank_step = _barcode_rank_step(n_bcs)
+    rank_ticks = np.arange(0, n_bcs, rank_step)
+    rank_ticklabels = [str(i + 1) for i in rank_ticks]
+    ax.set_xticks(rank_ticks)
+
+    if show_rank_labels:
+        ax.set_xticklabels(rank_ticklabels)
+    else:
+        ax.set_xticklabels([])
+
+    # Optional barcode names as a top axis only when readable.
+    # In combined plots this is only shown on the upper, non-normalized panel.
+    if show_barcode_axis and n_bcs <= 50:
+        ax_top = ax.twiny()
+        ax_top.set_xlim(ax.get_xlim())
+        ax_top.set_xticks(x)
+        fontsize = 10 if n_bcs <= 20 else 8
+        ax_top.set_xticklabels(labels, rotation=90, fontsize=fontsize)
+        ax_top.set_xlabel("Barcode")
 
 
 def make_stacked_barplots_bcs(arguments):
     """
-    Create one stacked barplot per barcode block, with one bar per whitelist barcode.
+    Create one combined stacked barplot per barcode block.
 
-    In addition to absolute read counts, also creates a normalized 100% stacked
-    barplot for each barcode block.
+    Each output PNG contains:
+    - the absolute read-count plot on top
+    - the normalized 100% plot below
 
-    Each bar corresponds to one barcode from the 'barcode' column in QC_metrics_bcs.tsv.
+    Each bar corresponds to one barcode from the 'barcode' column in bcs.tsv.
     Bars are sorted by descending exact count.
-
-    Colors:
-    - dark green: exact
-    - light green: corrected
-    - orange: ambiguous
-    - grey: no_match
-    - light grey: below_threshold
-
-    The x-axis always shows barcode rank (1..n).
-    Barcode names are only shown when there are few enough to remain readable.
-
-    Plots are written into the QC_metrics subdirectory.
     """
-    qc_dir = os.path.join(arguments.output_dir, "QC_metrics")
-    os.makedirs(qc_dir, exist_ok=True)
-
-    input_file = os.path.join(qc_dir, "QC_metrics_bcs.tsv")
+    paths = get_qc_paths(arguments)
+    qc_dir = paths["qc_dir"]
+    input_file = paths["bcs_tsv"]
 
     grouped_rows = defaultdict(list)
 
@@ -582,7 +721,7 @@ def make_stacked_barplots_bcs(arguments):
         for row in reader:
             barcode = row["barcode"]
 
-            # Skip special rows
+            # Skip special rows.
             if barcode in {"__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"}:
                 continue
 
@@ -598,238 +737,76 @@ def make_stacked_barplots_bcs(arguments):
                 "no_match": int(row["no_match"]),
             })
 
-    def _plot_stacked_barcodes(
-        rows,
-        read_label,
-        blockname,
-        qc_dir,
-        normalize=False,
-    ):
-        # Sort by highest exact count to lowest
-        rows = sorted(rows, key=lambda x: x["exact"], reverse=True)
-
-        labels = [r["barcode"] for r in rows]
-        exact_vals = np.array([r["exact"] for r in rows], dtype=float)
-        corrected_vals = np.array([r["corrected"] for r in rows], dtype=float)
-        below_threshold_vals = np.array([r["below_threshold"] for r in rows], dtype=float)
-        ambiguous_vals = np.array([r["ambiguous"] for r in rows], dtype=float)
-        no_match_vals = np.array([r["no_match"] for r in rows], dtype=float)
-
-        n_bcs = len(labels)
-
-        if normalize:
-            totals = (
-                exact_vals
-                + corrected_vals
-                + below_threshold_vals
-                + ambiguous_vals
-                + no_match_vals
-            )
-
-            # Avoid division by zero for completely empty barcode rows
-            totals_safe = np.where(totals == 0, 1, totals)
-
-            exact_vals = exact_vals / totals_safe * 100
-            corrected_vals = corrected_vals / totals_safe * 100
-            below_threshold_vals = below_threshold_vals / totals_safe * 100
-            ambiguous_vals = ambiguous_vals / totals_safe * 100
-            no_match_vals = no_match_vals / totals_safe * 100
-
-        fig_width = min(max(8, n_bcs * 0.12), 30)
-        fig, ax = plt.subplots(figsize=(fig_width, 5))
-
-        x = np.arange(n_bcs)
-
-        bottom_exact = np.zeros(n_bcs)
-        bottom_corrected = exact_vals
-        bottom_below_threshold = exact_vals + corrected_vals
-        bottom_ambiguous = exact_vals + corrected_vals + below_threshold_vals
-        bottom_no_match = (
-            exact_vals
-            + corrected_vals
-            + below_threshold_vals
-            + ambiguous_vals
-        )
-
-        ax.bar(
-            x,
-            exact_vals,
-            width=1.0,
-            bottom=bottom_exact,
-            label="exact",
-            color="darkgreen",
-        )
-        ax.bar(
-            x,
-            corrected_vals,
-            width=1.0,
-            bottom=bottom_corrected,
-            label="corrected",
-            color="lightgreen",
-        )
-        ax.bar(
-            x,
-            below_threshold_vals,
-            width=1.0,
-            bottom=bottom_below_threshold,
-            label="below_threshold",
-            color="lightgrey",
-        )
-        ax.bar(
-            x,
-            ambiguous_vals,
-            width=1.0,
-            bottom=bottom_ambiguous,
-            label="ambiguous",
-            color="orange",
-        )
-        ax.bar(
-            x,
-            no_match_vals,
-            width=1.0,
-            bottom=bottom_no_match,
-            label="no_match",
-            color="grey",
-        )
-
-        ax.set_xlim(-0.5, n_bcs - 0.5)
-
-        if normalize:
-            ax.set_ylabel("Fraction of reads (%)")
-            ax.set_ylim(0, 100)
-            ax.set_title(f"QC metrics for {read_label}_{blockname} normalized to 100%")
-        else:
-            ax.set_ylabel("Read count")
-            ax.set_title(f"QC metrics for {read_label}_{blockname}")
-
-        ax.set_xlabel("Barcode rank (sorted by exact count)")
-        ax.legend()
-        ax.margins(x=0)
-
-        # Always show rank values on x-axis
-        if n_bcs <= 20:
-            rank_step = 1
-        elif n_bcs <= 100:
-            rank_step = 5
-        elif n_bcs <= 500:
-            rank_step = 25
-        else:
-            rank_step = max(1, n_bcs // 20)
-
-        rank_ticks = np.arange(0, n_bcs, rank_step)
-        rank_ticklabels = [str(i + 1) for i in rank_ticks]
-        ax.set_xticks(rank_ticks)
-        ax.set_xticklabels(rank_ticklabels)
-
-        # Optional barcode names as a second/top axis only when readable
-        if n_bcs <= 20:
-            ax_top = ax.twiny()
-            ax_top.set_xlim(ax.get_xlim())
-            ax_top.set_xticks(x)
-            ax_top.set_xticklabels(labels, rotation=90, fontsize=10)
-            ax_top.set_xlabel("Barcode")
-        elif n_bcs <= 50:
-            ax_top = ax.twiny()
-            ax_top.set_xlim(ax.get_xlim())
-            ax_top.set_xticks(x)
-            ax_top.set_xticklabels(labels, rotation=90, fontsize=8)
-            ax_top.set_xlabel("Barcode")
-
-        plt.tight_layout()
-
-        if normalize:
-            output_file = os.path.join(
-                qc_dir,
-                f"QC_metrics_barcodes_{read_label}_{blockname}_normalized_100percent.png"
-            )
-        else:
-            output_file = os.path.join(
-                qc_dir,
-                f"QC_metrics_barcodes_{read_label}_{blockname}.png"
-            )
-
-        plt.savefig(output_file, dpi=300)
-        plt.close(fig)
-
-        if normalize:
-            log.info(f"Wrote normalized barcode-level stacked barplot to: {output_file}")
-        else:
-            log.info(f"Wrote barcode-level stacked barplot to: {output_file}")
-
     for (read_label, blockname), rows in grouped_rows.items():
         if not rows:
             continue
 
-        # Absolute-count plot
-        _plot_stacked_barcodes(
-            rows=rows,
-            read_label=read_label,
-            blockname=blockname,
-            qc_dir=qc_dir,
-            normalize=False,
+        rows = sorted(rows, key=lambda row: row["exact"], reverse=True)
+        n_bcs = len(rows)
+        fig_width = min(max(8, n_bcs * 0.12), 30)
+
+        fig, (ax_counts, ax_norm) = plt.subplots(
+            nrows=2,
+            ncols=1,
+            figsize=(fig_width, 10),
+            sharex=True,
+            gridspec_kw={"height_ratios": [1, 1]},
         )
 
-        # Normalized 100% plot
-        _plot_stacked_barcodes(
+        _plot_stacked_barcodes_on_ax(
+            ax=ax_counts,
             rows=rows,
             read_label=read_label,
             blockname=blockname,
-            qc_dir=qc_dir,
-            normalize=True,
+            normalize=False,
+            show_legend=True,
+            show_xlabel=False,
+            show_rank_labels=False,
+            show_barcode_axis=True,
         )
+
+        _plot_stacked_barcodes_on_ax(
+            ax=ax_norm,
+            rows=rows,
+            read_label=read_label,
+            blockname=blockname,
+            normalize=True,
+            show_legend=False,
+            show_xlabel=True,
+            show_rank_labels=True,
+            show_barcode_axis=False,
+        )
+
+        plt.tight_layout()
+
+        output_file = os.path.join(
+            qc_dir,
+            f"barcodes_{read_label}_{blockname}.png",
+        )
+
+        plt.savefig(output_file, dpi=300)
+        plt.close(fig)
+
+        log.info(f"Wrote combined barcode-level stacked barplot to: {output_file}")
+
+
+def make_stacked_barplot_blocks(arguments):
+    """
+    Backward-compatible wrapper.
+
+    The standalone block plot is no longer written.
+    Instead, create the combined reads + blocks summary plot once both
+    reads_summary.tsv and bcs_summary.tsv exist.
+    """
+    _maybe_make_combined_reads_blocks_stacked_barplot(arguments)
+
 
 def make_stacked_barplot_reads(arguments):
-    paths = get_qc_paths(arguments)
-    summary_fpath = paths["reads_summary_tsv"]
-    out_fpath = paths["reads_plot"]
+    """
+    Backward-compatible wrapper.
 
-    status_order = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
-    counts = {status: 0 for status in status_order}
-
-    with open(summary_fpath, "r", newline="") as fh:
-        reader = csv.DictReader(fh, delimiter="\t")
-        for row in reader:
-            status = row["status"]
-            count = int(row["count"])
-            if status in counts:
-                counts[status] = count
-
-    total = sum(counts.values())
-
-    if total > 0:
-        percentages = {status: 100 * counts[status] / total for status in status_order}
-    else:
-        percentages = {status: 0 for status in status_order}
-
-    bottom = 0
-    fig, ax = plt.subplots(figsize=(4, 6))
-
-    color_map = {
-        "exact": "darkgreen",
-        "corrected": "lightgreen",
-        "below_threshold": "lightgrey",
-        "ambiguous": "orange",
-        "no_match": "grey",
-    }
-
-    for status in status_order:
-        value = percentages[status]
-        ax.bar(
-            ["all_reads"],
-            [value],
-            bottom=bottom,
-            color=color_map[status],
-            label=status
-        )
-        bottom += value
-
-    ax.set_ylabel("Reads (%)")
-    ax.set_ylim(0, 100)
-    ax.set_title("QC metrics across all reads")
-    ax.legend()
-
-    plt.tight_layout()
-    plt.savefig(out_fpath, dpi=300)
-    plt.close(fig)
-
-    log.info(f"Wrote read-level stacked barplot to: {out_fpath}")
+    The standalone read plot is no longer written.
+    Instead, create the combined reads + blocks summary plot once both
+    reads_summary.tsv and bcs_summary.tsv exist.
+    """
+    _maybe_make_combined_reads_blocks_stacked_barplot(arguments)
