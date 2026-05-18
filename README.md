@@ -57,6 +57,16 @@ The barcode details are input via a json configuration file, of which standard g
 
 STAR references need to be prebuilt and their top directory input as a parameter.
 
+## Example Workflow
+
+The `examples` folder contains several small example gDNA and RNA datasets for both paired-end and single-end reads and corresponding example scripts (in the `example scripts` subdirectory) and configuration `.json` files. The example script `.sh` files demonstrate proper syntax for their respective datasets and are runnable directly from within the examples folder. 
+
+### Basic Workflow:
+1. Run `bcwithqc preprocess` on your fastq files while providing a `config.json` file and specifying an output directory.
+    (Important: The config file specifies which parts of the reads will be kept for aligment with STAR)
+2. Run `STAR` (BAM unsorted) on the `sans_bc_*.fq` files in the preprocess output directory while providing a `STAR genome index`.
+3. Run `bcwithqc count` on the `sans_bc_*.fq` files while providing the STAR output directory containing the `*Aligned.out.bam` files. 
+
 ### Outputs
 The primary outputs from bcwithqc are:
 * An annotated BAM file
@@ -112,18 +122,24 @@ QC metrics contains:
 - A sequence could not be decoded to any barcode                         -> `*_no_match_reads.fq`
 - A sequence was decoded, but the overall score of the read was too low  -> `*_threshold_fail_reads.fq`
 
-2. QC tables and graphics both as summary and as detailed version
-- `QC_metrics_bcs_summary.tsv` & `reads.png` How many barcodes of each block had exact matches, had to be corrected, were below threshold despite being corrected, were ambigous, or could not be matched. 
-- `QC_metrics_bcs.tsv` The information above, but for each individual expected/provided barcode
-- `QC_metrics_reads_summary.tsv` & `barcode_blocks.png` How many reads in total had exact matches, had to be corrected, were below threshold despite being corrected, were ambigous, or could not be matched. 
-- `QC_metrics_bcs.tsv` & `placeholder.png` The information above, but for each individual read, including the total status of the read and the status of each block. 
+2. QC tables and graphics, both as summary and detailed versions
 
-## Example Workflow
+- `bcs_summary.tsv`  
+  Summary per barcode block: how many barcode observations in each block were exact matches, corrected, below threshold despite being corrected, ambiguous, or not matched.
 
-The `examples` folder contains several small example gDNA and RNA datasets for both paired-end and single-end reads and corresponding example scripts (in the `example scripts` subdirectory) and configuration `.json` files. The example script `.sh` files demonstrate proper syntax for their respective datasets and are runnable directly from within the examples folder. 
+- `reads_summary.tsv`  
+  Summary per read/read pair: how many reads in total were exact matches, corrected, below threshold despite being corrected, ambiguous, or not matched.
 
-### Basic Workflow:
-1. Run `bcwithqc preprocess` on your fastq files while providing a `config.json` file and specifying an output directory.
-    (Important: The config file specifies which parts of the reads will be kept for aligment with STAR)
-2. Run `STAR` (BAM unsorted) on the `sans_bc_*.fq` files in the preprocess output directory while providing a `STAR genome index`.
-3. Run `bcwithqc count` on the `sans_bc_*.fq` files while providing the STAR output directory containing the `*Aligned.out.bam` files. 
+- `reads_and_blocks_summary.png`  
+  Combined summary figure: read-level summary on top and barcode-block-level summary below.
+
+- `bcs.tsv` and `barcodes_<read>_<block>.png`  
+  Detailed barcode-level QC: the same status information as above, but for each individual expected/provided barcode.  
+  The corresponding barcode plots show the non-normalized counts on top and the normalized percentages below.
+
+- `reads.tsv`  
+  Detailed read-level QC: one row per read/read pair, including the total read status and the status of each barcode block.
+
+
+
+
