@@ -67,7 +67,7 @@ The `examples` folder contains several small example gDNA and RNA datasets for b
 2. Run `STAR` (BAM unsorted) on the `sans_bc_*.fq` files in the preprocess output directory while providing a `STAR genome index`.
 3. Run `bcwithqc count` on the `sans_bc_*.fq` files while providing the STAR output directory containing the `*Aligned.out.bam` files. 
 
-### Outputs
+## Outputs
 The primary outputs from bcwithqc are:
 * An annotated BAM file
 * A read count matrix
@@ -88,7 +88,7 @@ The primary outputs from bcwithqc are:
 ├── with_bc_umi_sorted.bam
 └── with_bc_umi_sorted.bam.bai
 
-#### BAM file tags
+### BAM file tags
 The BAM file `with_bc_umi_sorted.bam` is annotated with custom tags that have been created in the style of current community standards. These are:
 
 | Tag  | Meaning                                 |
@@ -102,7 +102,7 @@ The BAM file `with_bc_umi_sorted.bam` is annotated with custom tags that have be
 
 The cell barcode tag contains all pieces of the cell barcode, including the sample barcode, concatenated with periods.
 
-#### Read/UMI count Matrices 
+### Read/UMI count Matrices 
 The count matrices `matrix.mtx.gz` are written in sparse Matrix Market format.
 The matrix orientation is:
 rows    = features
