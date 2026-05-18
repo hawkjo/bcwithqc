@@ -73,6 +73,7 @@ The primary outputs from bcwithqc are:
 * A read count matrix
 * A UMI count matrix
 
+```text
 <sample_output_folder>/
 ├── intermediary_files/          # optional
 ├── logs/
@@ -87,6 +88,7 @@ The primary outputs from bcwithqc are:
 │   └── features.tsv.gz
 ├── with_bc_umi_sorted.bam
 └── with_bc_umi_sorted.bam.bai
+```
 
 ### BAM file tags
 The BAM file `with_bc_umi_sorted.bam` is annotated with custom tags that have been created in the style of current community standards. These are:
