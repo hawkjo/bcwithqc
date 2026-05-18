@@ -104,18 +104,24 @@ The BAM file `with_bc_umi_sorted.bam` is annotated with custom tags that have be
 
 The cell barcode tag contains all pieces of the cell barcode, including the sample barcode, concatenated with periods.
 
-### Read/UMI count Matrices 
-The count matrices `matrix.mtx.gz` are written in sparse Matrix Market format.
-The matrix orientation is:
-rows    = features
-columns = barcodes
-values  = read or UMI counts
+### Read/UMI count matrices
 
-matrix[i, j] = count for feature i and barcode j
+The count matrices `matrix.mtx.gz` are written in sparse Matrix Market format.
+
+| Matrix axis | Meaning |
+|---|---|
+| Rows | Features |
+| Columns | Barcodes |
+| Values | Read or UMI counts |
+
+`matrix[i, j]` is the count for feature `i` and barcode `j`.
 
 The accompanying files define the row and column identities:
-`features.tsv.gz` = row identities
-`barcodes.tsv.gz` = column identities
+
+| File | Meaning |
+|---|---|
+| `features.tsv.gz` | Row identities |
+| `barcodes.tsv.gz` | Column identities |
 
 ### QC_metrics 
 QC metrics contains:
