@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 from collections import Counter, defaultdict
+from itertools import chain
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -263,58 +264,80 @@ def generate_qc_metrics(arguments, read_qcs):
     counts = defaultdict(Counter)
     conflict_counts = defaultdict(Counter)
     block_summary_counts = defaultdict(Counter)
-    row_keys = []
 
-    # Pre-initialize whitelist rows plus special rows.
+    # Only initialize block-level summary rows.
+    # Do not initialize every whitelist barcode as an empty Counter.
     for meta in r1_meta + r2_meta:
-        for whitelist_bc in meta["whitelist"]:
-            key = (meta["read_label"], meta["blockname"], whitelist_bc)
-            row_keys.append(key)
-            counts[key]
-
-        for special in ["__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"]:
-            key = (meta["read_label"], meta["blockname"], special)
-            row_keys.append(key)
-            counts[key]
-
         block_summary_counts[(meta["read_label"], meta["blockname"])]
 
     if arguments.single_end_reads:
         for read_qc in read_qcs:
-            handle_read_qc(read_qc, r1_meta, counts, conflict_counts, block_summary_counts)
+            handle_read_qc(
+                read_qc,
+                r1_meta,
+                counts,
+                conflict_counts,
+                block_summary_counts,
+            )
     else:
         for read_qc_pair in read_qcs:
             for read_idx, read_qc in enumerate(read_qc_pair):
                 if read_qc is None:
                     continue
+
                 meta_list = r1_meta if read_idx == 0 else r2_meta
-                handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_counts)
+                handle_read_qc(
+                    read_qc,
+                    meta_list,
+                    counts,
+                    conflict_counts,
+                    block_summary_counts,
+                )
 
     with open(output_file_bcs, "w", newline="") as out_fh:
         writer = csv.writer(out_fh, delimiter="\t")
         writer.writerow(["read", "blockname", "barcode", *status_columns, "total", "conflict_bcs"])
 
-        for key in row_keys:
-            read_label, blockname, barcode_label = key
-            status_counter = counts[key]
-            total = sum(status_counter.values())
+        for meta in r1_meta + r2_meta:
+            read_label = meta["read_label"]
+            blockname = meta["blockname"]
 
-            conflict_counter = conflict_counts.get(key, Counter())
-            if conflict_counter:
-                conflict_summary = ";".join(
-                    f"{entry}:{count}" for entry, count in sorted(conflict_counter.items())
-                )
-            else:
-                conflict_summary = ""
+            barcode_iter = chain(
+                meta["whitelist"],
+                ["__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"],
+            )
 
-            writer.writerow([
-                read_label,
-                blockname,
-                barcode_label,
-                *[status_counter.get(status, 0) for status in status_columns],
-                total,
-                conflict_summary,
-            ])
+            for barcode_label in barcode_iter:
+                key = (read_label, blockname, barcode_label)
+
+                status_counter = counts.get(key)
+                if status_counter is None:
+                    status_values = [0 for _ in status_columns]
+                    total = 0
+                else:
+                    status_values = [
+                        status_counter.get(status, 0)
+                        for status in status_columns
+                    ]
+                    total = sum(status_values)
+
+                conflict_counter = conflict_counts.get(key)
+                if conflict_counter:
+                    conflict_summary = ";".join(
+                        f"{entry}:{count}"
+                        for entry, count in sorted(conflict_counter.items())
+                    )
+                else:
+                    conflict_summary = ""
+
+                writer.writerow([
+                    read_label,
+                    blockname,
+                    barcode_label,
+                    *status_values,
+                    total,
+                    conflict_summary,
+                ])
 
     with open(output_file_summary, "w", newline="") as out_fh:
         writer = csv.writer(out_fh, delimiter="\t")
@@ -322,21 +345,17 @@ def generate_qc_metrics(arguments, read_qcs):
 
         for read_label, blockname in sorted(block_summary_counts.keys()):
             summary = block_summary_counts[(read_label, blockname)]
-            exact = summary.get("exact", 0)
-            corrected = summary.get("corrected", 0)
-            below_threshold = summary.get("below_threshold", 0)
-            ambiguous = summary.get("ambiguous", 0)
-            no_match = summary.get("no_match", 0)
-            total = exact + corrected + below_threshold + ambiguous + no_match
+
+            status_values = [
+                summary.get(status, 0)
+                for status in status_columns
+            ]
+            total = sum(status_values)
 
             writer.writerow([
                 read_label,
                 blockname,
-                exact,
-                corrected,
-                below_threshold,
-                ambiguous,
-                no_match,
+                *status_values,
                 total,
             ])
 
