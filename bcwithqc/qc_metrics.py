@@ -365,65 +365,12 @@ def generate_qc_metrics_reads(arguments, read_qcs):
     r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
     r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
 
-    read_rows = []
-    summary_statuses = []
+    status_counts = Counter()
 
     if arguments.single_end_reads:
         max_blocks = len(r1_meta)
-
-        for read_idx, read_qc in enumerate(read_qcs, start=1):
-            block_entries = []
-            statuses = []
-
-            for block_idx, status in enumerate(read_qc["statuses"]):
-                blockname = r1_meta[block_idx]["blockname"]
-                block_entries.extend([blockname, status])
-                statuses.append(status)
-
-            collapsed_status = collapse_read_status(statuses)
-            if read_qc.get('status') == '__BELOW_THRESHOLD__' and collapsed_status in ["exact", "corrected"]:
-                collapsed_status = "below_threshold"
-            summary_statuses.append(collapsed_status)
-
-            read_rows.append({
-                "read_index": read_idx,
-                "read_label": read_qc.get("read_name"),
-                "status": collapsed_status,
-                "block_entries": block_entries,
-            })
-
     else:
         max_blocks = len(r1_meta) + len(r2_meta)
-
-        for read_idx, read_qc_pair in enumerate(read_qcs, start=1):
-            block_entries = []
-            statuses = []
-
-            for read_member_idx, read_qc in enumerate(read_qc_pair):
-                if read_qc is None:
-                    continue
-
-                meta_list = r1_meta if read_member_idx == 0 else r2_meta
-
-                for block_idx, status in enumerate(read_qc["statuses"]):
-                    read_label = meta_list[block_idx]["read_label"]
-                    blockname = meta_list[block_idx]["blockname"]
-                    full_blockname = f"{read_label}_{blockname}"
-
-                    block_entries.extend([full_blockname, status])
-                    statuses.append(status)
-
-            collapsed_status = collapse_read_status(statuses)
-            if any(read_qc.get('status') == '__BELOW_THRESHOLD__' for read_qc in read_qc_pair if read_qc is not None) and collapsed_status in ["exact", "corrected"]:
-                collapsed_status = "below_threshold"
-            summary_statuses.append(collapsed_status)
-
-            read_rows.append({
-                "read_index": read_idx,
-                "read_label": common_read_name_from_qc_pair(read_qc_pair),
-                "status": collapsed_status,
-                "block_entries": block_entries,
-            })
 
     header = ["read_index", "read_name", "read_status"]
     for i in range(1, max_blocks + 1):
@@ -433,19 +380,79 @@ def generate_qc_metrics_reads(arguments, read_qcs):
         writer = csv.writer(out_fh, delimiter="\t")
         writer.writerow(header)
 
-        for row in read_rows:
-            padded_entries = list(row["block_entries"])
-            while len(padded_entries) < 2 * max_blocks:
-                padded_entries.extend(["", ""])
+        if arguments.single_end_reads:
+            for read_idx, read_qc in enumerate(read_qcs, start=1):
+                block_entries = []
+                statuses = []
 
-            writer.writerow([
-                row["read_index"],
-                row["read_label"],
-                row["status"],
-                *padded_entries,
-            ])
+                for block_idx, status in enumerate(read_qc["statuses"]):
+                    blockname = r1_meta[block_idx]["blockname"]
+                    block_entries.extend([blockname, status])
+                    statuses.append(status)
 
-    status_counts = Counter(summary_statuses)
+                collapsed_status = collapse_read_status(statuses)
+
+                if (
+                    read_qc.get("status") == "__BELOW_THRESHOLD__"
+                    and collapsed_status in ["exact", "corrected"]
+                ):
+                    collapsed_status = "below_threshold"
+
+                status_counts[collapsed_status] += 1
+
+                while len(block_entries) < 2 * max_blocks:
+                    block_entries.extend(["", ""])
+
+                writer.writerow([
+                    read_idx,
+                    read_qc.get("read_name"),
+                    collapsed_status,
+                    *block_entries,
+                ])
+
+        else:
+            for read_idx, read_qc_pair in enumerate(read_qcs, start=1):
+                block_entries = []
+                statuses = []
+
+                for read_member_idx, read_qc in enumerate(read_qc_pair):
+                    if read_qc is None:
+                        continue
+
+                    meta_list = r1_meta if read_member_idx == 0 else r2_meta
+
+                    for block_idx, status in enumerate(read_qc["statuses"]):
+                        read_label = meta_list[block_idx]["read_label"]
+                        blockname = meta_list[block_idx]["blockname"]
+                        full_blockname = f"{read_label}_{blockname}"
+
+                        block_entries.extend([full_blockname, status])
+                        statuses.append(status)
+
+                collapsed_status = collapse_read_status(statuses)
+
+                if (
+                    any(
+                        read_qc.get("status") == "__BELOW_THRESHOLD__"
+                        for read_qc in read_qc_pair
+                        if read_qc is not None
+                    )
+                    and collapsed_status in ["exact", "corrected"]
+                ):
+                    collapsed_status = "below_threshold"
+
+                status_counts[collapsed_status] += 1
+
+                while len(block_entries) < 2 * max_blocks:
+                    block_entries.extend(["", ""])
+
+                writer.writerow([
+                    read_idx,
+                    common_read_name_from_qc_pair(read_qc_pair),
+                    collapsed_status,
+                    *block_entries,
+                ])
+
     with open(output_summary, "w", newline="") as out_fh:
         writer = csv.writer(out_fh, delimiter="\t")
         writer.writerow(["status", "count"])
