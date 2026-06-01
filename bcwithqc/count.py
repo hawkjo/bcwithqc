@@ -1269,7 +1269,7 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
     chunksize = 100
 
     blocks = arguments.config["barcode_struct_r1"]["blocks"]
-    keep_nonbarcode = [arguments.config["barcode_struct_r1"]["keep_nonbarcode"]]
+    keep_nonbarcode = arguments.config["barcode_struct_r1"]["keep_nonbarcode"]
 
     log.info('Building aligners and barcode decoders')
     aligners = misc.build_bc_aligners(blocks, unknown_read_orientation=False)
