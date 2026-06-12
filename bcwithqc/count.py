@@ -633,6 +633,9 @@ def correct_UMIs(input_bam_fpath, out_bam_fpath, threads=1):
     with pysam.AlignmentFile(input_bam_fpath) as bamfile:
         reference_names = bamfile.references
     reference_names_with_input_bam = [(ref, input_bam_fpath) for ref in reference_names]
+    # report progress every `interval` reads and once at the end
+    interval = 100
+    total_processed = 0
 
     with pysam.AlignmentFile(out_bam_fpath, 'wb', template=pysam.AlignmentFile(input_bam_fpath)) as bam_out, \
             Pool(threads) as pool:
@@ -645,7 +648,17 @@ def correct_UMIs(input_bam_fpath, out_bam_fpath, threads=1):
                     corrected_umi = umi_map_given_bc_then_feature[read.get_tag('CB')][gx_gn_tup][read.get_tag('UR')]
                     read.set_tag('UB', corrected_umi)
                     bam_out.write(read)
+                    total_processed += 1
+                    if total_processed % interval == 0:
+                        processed_str = f"{total_processed:,}"
+                        interval_str = f"{interval:,}".replace(",", " ")
+                        log.info(f"{processed_str} processed once every {interval_str} reads.")
                     break # use the first one. Ideally same across all
+
+    # final summary
+    processed_str = f"{total_processed:,}"
+    interval_str = f"{interval:,}".replace(",", " ")
+    log.info(f"{processed_str} processed once every {interval_str} reads.")
 
 
 def build_tags_iter(tags_fpath):
