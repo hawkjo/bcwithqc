@@ -90,6 +90,8 @@ def preprocess_fastqs(arguments):
             )
             all_reads_qcs.extend(file_read_qcs)
             single_align_fq_and_tags_fpaths.append((sans_bc_fq1_fpath, tags1_fpath))
+            if arguments.output_format_bam:
+                create_bam_from_fastqs(arguments, sans_bc_fq1_fpath)
 
         qc_metrics.generate_qc_metrics(arguments, all_reads_qcs)
         qc_metrics.generate_qc_metrics_reads(arguments, all_reads_qcs)
@@ -187,8 +189,12 @@ def preprocess_fastqs(arguments):
 
             if bc_fq_idx == 0:
                 paired_align_fqs_and_tags_fpaths.append((sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath))
+                if arguments.output_format_bam:
+                    create_bam_from_fastqs(arguments, sans_bc_fq1_fpath, sans_bc_fq2_fpath)
             else:
                 paired_align_fqs_and_tags_fpaths.append((sans_bc_fq2_fpath, sans_bc_fq1_fpath, tags2_fpath, tags1_fpath))
+                if arguments.output_format_bam:
+                    create_bam_from_fastqs(arguments, sans_bc_fq2_fpath, sans_bc_fq1_fpath)
 
         qc_metrics.generate_qc_metrics(arguments, all_reads_qcs)
         qc_metrics.generate_qc_metrics_reads(arguments, all_reads_qcs)
@@ -304,7 +310,12 @@ def process_fastqs(arguments):
                 log.info(f'  {R2_fpath}')
                 if R1_fpath != paired_align_fqs_and_tags_fpaths[-1][0]:
                     log.info('  -')
-                star_out_dir, star_out_fpath = run_STAR(arguments, R1_fpath, R2_fpath)
+
+                if arguments.output_format_bam:
+                    # Convert already-preprocessed FASTQ(s) to BAM without running STAR
+                    star_out_dir, star_out_fpath = create_bam_from_fastqs(arguments, R1_fpath, R2_fpath)
+                    star_out_dir, star_out_fpath = run_STAR(arguments, R1_fpath, R2_fpath)
+                    star_out_dir, star_out_fpath = run_STAR(arguments, R1_fpath, R2_fpath)
                 star_out_dirs.add(star_out_dir)
                 star_bam_and_tags_fpaths.append((star_out_fpath, tags1_fpath, tags2_fpath))
         else:
@@ -622,6 +633,132 @@ def run_STAR_single_end(arguments, R1_fpath):
         log.info("STAR results found. Skipping alignment")
     else:
         subprocess.run(cmd_star, check=True)
+
+    return star_out_dir, star_out_fpath
+
+
+def create_bam_from_fastqs(arguments, R1_fpath, R2_fpath=None, feature_name="toy_gene"):
+    """
+    Create an unsorted STAR-like BAM from preprocessed FASTQ reads.
+
+    This is intended for --output-format-bam tests where all reads are assigned
+    to one toy feature. It must mimic the parts of STAR output that count()
+    expects:
+      - mapped records
+      - GX/GN feature tags
+      - paired-end records with STAR-like paired flags
+      - paired mates sharing a tag1-compatible query name
+    """
+    star_out_dir = arguments.output_dir
+    os.makedirs(star_out_dir, exist_ok=True)
+
+    bname = misc.file_prefix_from_fpath(R2_fpath if R2_fpath else R1_fpath)
+    out_prefix = os.path.join(star_out_dir, f"{bname}_")
+    star_out_fpath = f"{out_prefix}Aligned.out.bam"
+
+    if os.path.exists(star_out_fpath):
+        log.info("BAM from FASTQ already exists. Skipping conversion: %s", star_out_fpath)
+        return star_out_dir, star_out_fpath
+
+    header = {
+        "HD": {"VN": "1.6", "SO": "unsorted"},
+        "SQ": [{"SN": feature_name, "LN": 10000}],
+    }
+
+    def add_star_like_tags(seg, seq):
+        seg.mapping_quality = 255
+        seg.cigar = [(0, len(seq))]  # M
+
+        # STAR-like alignment tags
+        seg.set_tag("NH", 1)
+        seg.set_tag("HI", 1)
+        seg.set_tag("AS", len(seq))
+        seg.set_tag("nM", 0)
+
+        # Required by misc.gx_gn_tups_from_read()
+        seg.set_tag("GX", feature_name)
+        seg.set_tag("GN", feature_name)
+
+    def make_segment(
+        rec,
+        query_name,
+        flag,
+        reference_start,
+        mate_start=0,
+        template_length=0,
+    ):
+        seq = str(rec.seq)
+
+        seg = pysam.AlignedSegment()
+        seg.query_name = query_name
+        seg.query_sequence = seq
+
+        if "phred_quality" in rec.letter_annotations:
+            seg.query_qualities = rec.letter_annotations["phred_quality"]
+
+        seg.flag = flag
+        seg.reference_id = 0
+        seg.reference_start = reference_start
+
+        add_star_like_tags(seg, seq)
+
+        if flag & 0x1:  # paired
+            seg.next_reference_id = 0
+            seg.next_reference_start = mate_start
+            seg.template_length = template_length
+
+        return seg
+
+    with pysam.AlignmentFile(star_out_fpath, "wb", header=header) as bam_out:
+
+        if R2_fpath is None:
+            for rec1 in SeqIO.parse(misc.gzip_friendly_open(R1_fpath), "fastq"):
+                seg1 = make_segment(
+                    rec=rec1,
+                    query_name=str(rec1.id),
+                    flag=0,
+                    reference_start=0,
+                )
+                bam_out.write(seg1)
+
+        else:
+            for rec1, rec2 in zip(
+                SeqIO.parse(misc.gzip_friendly_open(R1_fpath), "fastq"),
+                SeqIO.parse(misc.gzip_friendly_open(R2_fpath), "fastq"),
+            ):
+                # Important:
+                # Use the R1/tag1-compatible name for both mates.
+                # This makes serial_add_tags_to_reads() and parallel_add_tags_to_reads()
+                # agree.
+                qname = str(rec1.id)
+
+                len1 = len(rec1.seq)
+                len2 = len(rec2.seq)
+
+                r1_start = 0
+                r2_start = max(1, len1 + 1)
+                template_length = r2_start + len2 - r1_start
+
+                seg1 = make_segment(
+                    rec=rec1,
+                    query_name=qname,
+                    flag=99,  # paired, proper pair, mate reverse, read1
+                    reference_start=r1_start,
+                    mate_start=r2_start,
+                    template_length=template_length,
+                )
+
+                seg2 = make_segment(
+                    rec=rec2,
+                    query_name=qname,
+                    flag=147,  # paired, proper pair, read reverse, read2
+                    reference_start=r2_start,
+                    mate_start=r1_start,
+                    template_length=-template_length,
+                )
+
+                bam_out.write(seg1)
+                bam_out.write(seg2)
 
     return star_out_dir, star_out_fpath
 

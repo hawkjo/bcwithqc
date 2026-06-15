@@ -2,7 +2,7 @@
 bcwithqc: Process sequencing barcodes and UMIs
 
 Usage:
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv] [--output-format-bam]
   bcwithqc count            <fastq_dir> --STAR-output-dir=<> --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
@@ -12,7 +12,8 @@ Options:
   --config=<>:                        Path to JSON configuration.
   --output-dir=<>:                    Path to output directory [default: .].
   --threads=<>:                       Number of threads [default: 1].
-  -v:                                 Verbose output.
+  --output-format-bam:                Produces a BAM file with pre-processed reads instead of a fastq file that requires STAR alignment [default: False].
+  -v:                                 Verbosity of output. Can be -v, -vv, or -vvv, with more v's leading to more verbose output.
   --nreads=<>:                        Number of reads to simulate.
   --unique-umis=<>:                   Fraction of all reads that have unique UMIs [default: 0.5].
   --seed=<>:                          Random seed [default: 42].

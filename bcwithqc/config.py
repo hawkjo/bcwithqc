@@ -81,6 +81,10 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
     @property
     def keep_intermediary_files(self):
         return self._arguments['--keep-intermediary']
+        
+    @property
+    def output_format_bam(self):
+        return self._arguments['--output-format-bam']
     
     @property
     def single_end_reads(self):
