@@ -2,6 +2,7 @@ import freebarcodes.decode
 import logging
 
 from .misc import DistanceThresh
+from .bc_lookup import bc_lookup
 
 log = logging.getLogger(__name__)
 
@@ -14,33 +15,79 @@ class BCDecoder:
         self._distfun = DistanceThresh("levenshtein", bc_maxdist)
         assert all(len(bc) == self.bc_len for bc in self.bcs)
 
+        self.k = min(map(len, self.bcs)) // (self.bc_maxdist + 1)
+        if self.k > 2:
+            self.bc_lookup = bc_lookup(
+                reference_barcodes=self.bcs,
+                allowed_errors=self.bc_maxdist,
+            )
+
+    def _candidate_bcs(self, raw_bc):
+        """
+        Return candidate whitelist barcodes for a raw barcode.
+
+        The lookup only prefilters candidates. Final validity is still decided
+        by DistanceThresh.
+        """
+        return self.bc_lookup.get_candidate_barcodes(raw_bc)
+
     def decode(self, raw_bc):
         if raw_bc in self.bcs_set:
             return raw_bc
-        dists_and_scores = [(dist, bc) for bc in self.bcs if (dist := self._distfun(raw_bc, bc)) is not False]
-        if not len(dists_and_scores):
-            return None
-        min_dist, bc = min(dists_and_scores)
-        if sum(dist == min_dist for dist, _ in dists_and_scores) > 1:
-            return None
-        return bc
+        if self.k > 2:
+            candidates = self._candidate_bcs(raw_bc)
+            if candidates is not None:
+                dists_and_scores = [(dist, bc) for bc in candidates if (dist := self._distfun(raw_bc, bc)) is not False]
+                if dists_and_scores:
+                    min_dist, bc = min(dists_and_scores)
+                    if sum(dist == min_dist for dist, _ in dists_and_scores) == 1:
+                        return bc
+        else:
+            dists_and_scores = [(dist, bc) for bc in self.bcs if (dist := self._distfun(raw_bc, bc)) is not False]
+            if not len(dists_and_scores):
+                return None
+
+            min_dist, bc = min(dists_and_scores)
+
+            if sum(dist == min_dist for dist, _ in dists_and_scores) > 1:
+                return None
+
+            return bc
 
     def decode_with_status(self, raw_bc):
         if raw_bc in self.bcs_set:
             return raw_bc, "exact", None
 
-        dists_and_scores = [(dist, bc) for bc in self.bcs if (dist := self._distfun(raw_bc, bc)) is not False]
+        if self.k > 2:
+            candidates = self._candidate_bcs(raw_bc)
+            if candidates is None:
+                return None, "no_match", None
+            else:
+                dists_and_scores = [(dist, bc) for bc in candidates if (dist := self._distfun(raw_bc, bc)) is not False]
 
-        if not dists_and_scores:
-            return None, "no_match", None
+                if not dists_and_scores:
+                    return None, "no_match", None
 
-        min_dist = min(dist for dist, _ in dists_and_scores)
-        min_dist_bcs = [bc for dist, bc in dists_and_scores if dist == min_dist]
+                min_dist = min(dist for dist, _ in dists_and_scores)
+                min_dist_bcs = [bc for dist, bc in dists_and_scores if dist == min_dist]
 
-        if len(min_dist_bcs) > 1:
-            return None, "ambiguous", min_dist_bcs
+                if len(min_dist_bcs) > 1:
+                    return None, "ambiguous", min_dist_bcs
 
-        return min_dist_bcs[0], "corrected", None
+                return min_dist_bcs[0], "corrected", None
+        else:
+            dists_and_scores = [(dist, bc) for bc in self.bcs if (dist := self._distfun(raw_bc, bc)) is not False]
+
+            if not dists_and_scores:
+                return None, "no_match", None
+
+            min_dist = min(dist for dist, _ in dists_and_scores)
+            min_dist_bcs = [bc for dist, bc in dists_and_scores if dist == min_dist]
+
+            if len(min_dist_bcs) > 1:
+                return None, "ambiguous", min_dist_bcs
+
+            return min_dist_bcs[0], "corrected", None
 
 class SBCDecoder:
     def __init__(self, sbc_whitelist, sbc_maxdist, sbc_reject_delta):
