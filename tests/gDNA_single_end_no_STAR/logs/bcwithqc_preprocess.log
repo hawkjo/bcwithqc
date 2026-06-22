@@ -1,0 +1,18 @@
+2026-06-16 14:16:03   Writing log to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end_no_STAR/bcwithqc_preprocess.log
+2026-06-16 14:16:03   Files to process:
+2026-06-16 14:16:03     /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_single_end/gDNA_1_sequence.txt
+2026-06-16 14:16:03   Processing file:
+2026-06-16 14:16:03     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/../examples/gDNA_fastqs_single_end/gDNA_1_sequence.txt
+2026-06-16 14:16:03     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end_no_STAR/sans_bc_gDNA_1_sequence.fq
+2026-06-16 14:16:03     tags file:     /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end_no_STAR/rec_names_and_tags1_gDNA_1_sequence.txt
+2026-06-16 14:16:03   Building aligners and barcode decoders
+2026-06-16 14:16:03   Processing first 10,000 for score threshold...
+2026-06-16 14:16:13   Score threshold: 0.57
+2026-06-16 14:16:13   Continuing...
+2026-06-16 14:16:32   20,000 barcode records processed
+2026-06-16 14:16:32   19,473 records output
+2026-06-16 14:16:32   Collected 20,000 read QC entries
+2026-06-16 14:16:32   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end_no_STAR/QC_metrics/bcs.tsv
+2026-06-16 14:16:32   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end_no_STAR/QC_metrics/bcs_summary.tsv
+2026-06-16 14:16:32   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end_no_STAR/QC_metrics/reads.tsv
+2026-06-16 14:16:32   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/gDNA_single_end_no_STAR/QC_metrics/reads_summary.tsv
