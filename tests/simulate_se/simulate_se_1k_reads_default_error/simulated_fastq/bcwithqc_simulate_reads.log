@@ -1,2 +1,2 @@
-2026-05-18 13:45:02   Writing log to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/simulated_fastq/bcwithqc_simulate_reads.log
-2026-05-18 13:45:02   Simulation mode: single-end. Reason: single_end_reads was set in config and no barcode_struct_r2 is present.
+2026-06-23 09:42:41   Writing log to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/simulated_fastq/bcwithqc_simulate_reads.log
+2026-06-23 09:42:41   Simulation mode: single-end. Reason: single_end_reads was set in config and no barcode_struct_r2 is present.

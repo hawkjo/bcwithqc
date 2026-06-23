@@ -1,18 +1,18 @@
-2026-05-18 13:45:05   Writing log to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/bcwithqc_preprocess.log
-2026-05-18 13:45:05   Files to process:
-2026-05-18 13:45:05     /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/simulated_fastq/simulate_se_mini_config.txt.gz
-2026-05-18 13:45:05   Processing file:
-2026-05-18 13:45:05     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/simulated_fastq/simulate_se_mini_config.txt.gz
-2026-05-18 13:45:05     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/sans_bc_simulate_se_mini_config.fq
-2026-05-18 13:45:05     tags file:     /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/rec_names_and_tags1_simulate_se_mini_config.txt
-2026-05-18 13:45:05   Building aligners and barcode decoders
-2026-05-18 13:45:05   Processing first 10,000 for score threshold...
-2026-05-18 13:45:07   Score threshold: 0.33
-2026-05-18 13:45:07   Continuing...
-2026-05-18 13:45:09   10,000 barcode records processed
-2026-05-18 13:45:09   2,919 records output
-2026-05-18 13:45:09   Collected 10,000 read QC entries
-2026-05-18 13:45:10   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/bcs.tsv
-2026-05-18 13:45:10   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/bcs_summary.tsv
-2026-05-18 13:45:10   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/reads.tsv
-2026-05-18 13:45:10   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/reads_summary.tsv
+2026-06-23 09:42:44   Writing log to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/bcwithqc_preprocess.log
+2026-06-23 09:42:44   Files to process:
+2026-06-23 09:42:44     /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/simulated_fastq/simulate_se_mini_config.txt.gz
+2026-06-23 09:42:44   Processing file:
+2026-06-23 09:42:44     barcode fastq: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/simulated_fastq/simulate_se_mini_config.txt.gz
+2026-06-23 09:42:44     sans-bc fastq: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/sans_bc_simulate_se_mini_config.fq
+2026-06-23 09:42:44     tags file:     /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/rec_names_and_tags1_simulate_se_mini_config.txt
+2026-06-23 09:42:44   Building aligners and barcode decoders
+2026-06-23 09:42:44   Processing first 10,000 for score threshold...
+2026-06-23 09:42:46   Score threshold: 0.33
+2026-06-23 09:42:46   Continuing...
+2026-06-23 09:42:49   10,000 barcode records processed
+2026-06-23 09:42:49   2,919 records output
+2026-06-23 09:42:49   Collected 10,000 read QC entries
+2026-06-23 09:42:49   Wrote barcode-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/bcs.tsv
+2026-06-23 09:42:49   Wrote block summary QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/bcs_summary.tsv
+2026-06-23 09:42:49   Wrote read-level QC metrics to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/reads.tsv
+2026-06-23 09:42:49   Wrote read-level QC summary to: /home/link/John_UMIs/bcwithqc/tests/simulate_se/simulate_se_1k_reads_default_error/count_output/QC_metrics/reads_summary.tsv
