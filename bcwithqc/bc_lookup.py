@@ -11,6 +11,13 @@ class bc_lookup:
     """
 
     def __init__(self, reference_barcodes, allowed_errors):
+
+        if not reference_barcodes:
+            raise ValueError("reference_barcodes must not be empty.")
+
+        if not isinstance(allowed_errors, int) or allowed_errors < 0:
+            raise ValueError("allowed_errors must be a non-negative integer.")
+
         self.reference_barcodes = set(reference_barcodes)
         self.allowed_errors = allowed_errors
 
@@ -29,6 +36,8 @@ class bc_lookup:
         self.list_of_lookup_dicts = self._build_list_of_lookup_dicts(reference_barcodes, )
 
 
+
+
     def _build_dict_of_ref_break_functions(self):
         """
         Build a dictionary of functions that break a barcode of the given length into chunks.
@@ -41,19 +50,20 @@ class bc_lookup:
 
         for barcode_length in self.possible_barcode_lengths:
 
-            def ref_break(barcode, barcode_length=barcode_length):
-                kmer = barcode_length // (self.allowed_errors + 1)
-                leftover_bases = barcode_length % (self.allowed_errors + 1)
+            kmer = barcode_length // (self.allowed_errors + 1) 
+            leftover_bases = barcode_length % (self.allowed_errors + 1)
+            n_pieces = self.allowed_errors + 1
+
+            def ref_break(barcode, kmer=kmer, leftover_bases=leftover_bases, n_pieces=n_pieces):
 
                 chunks = []
                 start = 0
 
-                for _ in range(self.allowed_errors + 1):
+                for piece_i in range(n_pieces):
                     chunk_length = kmer
 
-                    if leftover_bases > 0:
+                    if piece_i < leftover_bases:
                         chunk_length += 1
-                        leftover_bases -= 1
 
                     end = start + chunk_length
                     chunks.append(barcode[start:end])
@@ -65,60 +75,128 @@ class bc_lookup:
 
         return dict_of_ref_break_functions
 
+
+    def _make_query_boundaries(self, query_len, ref_len, allowed_errors):
+        """
+        Precompute all query slices that could correspond to a query length
+        and reference barcode length.
+
+        Returns
+        -------
+        tuple of:
+            (piece_i, ((start1, end1), (start2, end2), ...))
+        """
+        n_pieces = allowed_errors + 1
+
+        kmer, leftover_bases = divmod(ref_len, n_pieces)
+
+        boundaries_by_piece = {}
+
+        ref_start = 0
+
+        # Get reference pieces and add leftover bases to the first pieces as needed.
+        for piece_i in range(n_pieces):
+            if piece_i < leftover_bases:
+                piece_len = kmer + 1
+            else:
+                piece_len = kmer
+
+            ref_end = ref_start + piece_len
+
+            breakpoints = set()
+
+            # Shift the query slice left and right by allowed_errors to account for possible insertions/deletions.
+            for shift in range(-allowed_errors, allowed_errors + 1):
+                query_start = ref_start + shift
+                query_end = query_start + piece_len
+
+                # Discard slices that fall outside the observed query barcode.
+                if query_start < 0:
+                    continue
+                # Discard slices that no longer match reference piece length.
+                if query_end > query_len:
+                    continue
+
+                breakpoints.add((query_start, query_end))
+
+            if breakpoints:
+                boundaries_by_piece[piece_i] = tuple(sorted(breakpoints))
+
+            ref_start = ref_end
+
+        # Turn mutable dict into a sorted tuple of tuples for better itteration. 
+        # before:
+        # boundaries_by_piece = {
+        #     0: {(0, 7), (1, 8)},
+        #     1: {(7, 14), (8, 15)},
+        #     2: {(14, 20)}
+        # }
+        # After:
+        #  (
+        #     (0, ((0, 7), (1, 8))),
+        #     (1, ((7, 14), (8, 15))),
+        #     (2, ((14, 20),)),
+        # )
+        return tuple(
+            (piece_i, boundaries_by_piece[piece_i])
+            for piece_i in sorted(boundaries_by_piece)
+        )
+
     def _build_query_break_function(self):
-        """
-        Build a function that breaks a query barcode into possible shifted chunks.
+        allowed_errors = self.allowed_errors
+        possible_lengths = tuple(sorted(self.possible_barcode_lengths))
 
-        The returned function takes one query barcode and returns a tuple of sets:
-            index 0 = possible chunks for kmer position 0
-            index 1 = possible chunks for kmer position 1
-            etc.
-        """
+        min_query_len = max(min(possible_lengths) - allowed_errors, 1)
+        max_query_len = max(possible_lengths) + allowed_errors
 
-        def query_break(barcode):
+        breaks_by_query_len = {}
 
-            # Create list of lists:
-            # index 0 = chunks for kmer 0
-            # index 1 = chunks for kmer 1
-            # etc.
-            kmer_chunks = [set() for _ in range(self.allowed_errors + 1)]
+        for query_len in range(min_query_len, max_query_len + 1):
+            # Temporary build-time structure:
+            # piece_i -> set of unique (start, end) breakpoints
+            breakpoints_by_piece = {}
 
-            for barcode_length in self.possible_barcode_lengths:
-                kmer = barcode_length // (self.allowed_errors + 1)
-                leftover_bases = barcode_length % (self.allowed_errors + 1)
+            for ref_len in possible_lengths:
+                if abs(query_len - ref_len) > allowed_errors:
+                    continue
 
-                start = 0
+                boundaries_by_piece = self._make_query_boundaries(
+                    query_len=query_len,
+                    ref_len=ref_len,
+                    allowed_errors=allowed_errors,
+                )
 
-                for kmer_number in range(self.allowed_errors + 1):
-                    chunk_length = kmer
+                for piece_i, breakpoints in boundaries_by_piece:
+                    # Initialize the set for this piece if it doesn't exist yet
+                    if piece_i not in breakpoints_by_piece:
+                        breakpoints_by_piece[piece_i] = set()
+                    # Update the set of breakpoints for this piece with the new breakpoints
+                    breakpoints_by_piece[piece_i].update(breakpoints)
 
-                    if leftover_bases > 0:
-                        chunk_length += 1
-                        leftover_bases -= 1
+            if breakpoints_by_piece:
+                # Freeze into a simple runtime structure:
+                # query_len -> ((piece_i, ((start, end), ...)), ...)
+                breaks_by_query_len[query_len] = tuple(
+                    (piece_i, tuple(sorted(breakpoints)))
+                    for piece_i, breakpoints in sorted(breakpoints_by_piece.items())
+                )
 
-                    end = start + chunk_length
+        def query_break(barcode, breaks_by_query_len=breaks_by_query_len):
+            piece_plans = breaks_by_query_len.get(len(barcode))
+            if piece_plans is None:
+                return ()
 
-                    # Shift window left and right
-                    for shift in range(-self.allowed_errors, self.allowed_errors + 1):
-                        shifted_start = start + shift
-                        shifted_end = end + shift
+            out = []
 
-                        # Only keep full-length chunks inside barcode boundaries
-                        if shifted_start < 0:
-                            continue
+            for piece_i, breakpoints in piece_plans:
+                kmers = set()
 
-                        if shifted_end > len(barcode):
-                            continue
+                for start, end in breakpoints:
+                    kmers.add(barcode[start:end])
 
-                        shifted_chunk = barcode[shifted_start:shifted_end]
+                out.append((piece_i, kmers))
 
-                        # Extra safety check
-                        if len(shifted_chunk) == chunk_length:
-                            kmer_chunks[kmer_number].add(shifted_chunk)
-
-                    start = end
-
-            return tuple(kmer_chunks)
+            return tuple(out)
 
         return query_break
 
@@ -151,19 +229,22 @@ class bc_lookup:
 
         query_kmer_chunk_sets = self.query_break_function(query_barcode)
 
-        for kmer_number, query_chunks in enumerate(query_kmer_chunk_sets):
-            if kmer_number < len(self.list_of_lookup_dicts):
+        lookup_dicts = self.list_of_lookup_dicts
+        n_lookup_dicts = len(lookup_dicts)
 
-                for query_chunk in query_chunks:
-                    candidate_barcodes.update(
-                        self.list_of_lookup_dicts[kmer_number].get(query_chunk, set())
-                    )
-
-            else:
-                # This should never happen.
+        for piece_i, query_chunks in query_kmer_chunk_sets:
+            if piece_i >= n_lookup_dicts:
+                # This should never happen if query_break_function was built correctly.
                 raise ValueError(
-                    f"Query barcode {query_barcode} produced a higher kmer_number "
-                    f"than should be possible."
+                    f"Query barcode {query_barcode} produced piece_i={piece_i}, "
+                    f"but only {n_lookup_dicts} lookup dictionaries exist."
+                )
+
+            lookup_dict = lookup_dicts[piece_i]
+
+            for query_chunk in query_chunks:
+                candidate_barcodes.update(
+                    lookup_dict.get(query_chunk, ())
                 )
 
         return candidate_barcodes

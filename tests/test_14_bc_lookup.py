@@ -88,23 +88,13 @@ def test_lookup_dicts_are_built_correctly(small_lookup):
 
 
 def test_query_break_function_returns_expected_shifted_chunks(small_lookup):
-    """
-    For query AAACCC and allowed_errors = 2:
-
-    Reference chunk positions are:
-        0:2, 2:4, 4:6
-
-    The query function checks shifted windows around those positions.
-    """
-
     query_chunks = small_lookup.query_break_function("AAACCC")
 
-    assert query_chunks == (
-        {"AA", "AC"},
-        {"AA", "AC", "CC"},
-        {"AC", "CC"},
-    )
-
+    assert dict(query_chunks) == {
+        0: {"AA", "AC"},
+        1: {"AA", "AC", "CC"},
+        2: {"AC", "CC"},
+    }
 
 def test_get_candidate_barcodes_returns_exact_expected_candidates(small_lookup):
     """

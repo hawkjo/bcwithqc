@@ -36,12 +36,18 @@ class BCDecoder:
             return raw_bc
         if self.k > 2:
             candidates = self._candidate_bcs(raw_bc)
-            if candidates is not None:
-                dists_and_scores = [(dist, bc) for bc in candidates if (dist := self._distfun(raw_bc, bc)) is not False]
-                if dists_and_scores:
-                    min_dist, bc = min(dists_and_scores)
-                    if sum(dist == min_dist for dist, _ in dists_and_scores) == 1:
-                        return bc
+            if not candidates:
+                return None
+            dists_and_scores = [(dist, bc) for bc in candidates if (dist := self._distfun(raw_bc, bc)) is not False]
+
+            if not dists_and_scores:
+                return None
+
+            min_dist, bc = min(dists_and_scores)
+            if sum(dist == min_dist for dist, _ in dists_and_scores) == 1:
+                return bc
+
+            return None
         else:
             dists_and_scores = [(dist, bc) for bc in self.bcs if (dist := self._distfun(raw_bc, bc)) is not False]
             if not len(dists_and_scores):
@@ -60,21 +66,21 @@ class BCDecoder:
 
         if self.k > 2:
             candidates = self._candidate_bcs(raw_bc)
-            if candidates is None:
+            if not candidates:
                 return None, "no_match", None
-            else:
-                dists_and_scores = [(dist, bc) for bc in candidates if (dist := self._distfun(raw_bc, bc)) is not False]
+            
+            dists_and_scores = [(dist, bc) for bc in candidates if (dist := self._distfun(raw_bc, bc)) is not False]
 
-                if not dists_and_scores:
-                    return None, "no_match", None
+            if not dists_and_scores:
+                return None, "no_match", None
 
-                min_dist = min(dist for dist, _ in dists_and_scores)
-                min_dist_bcs = [bc for dist, bc in dists_and_scores if dist == min_dist]
+            min_dist = min(dist for dist, _ in dists_and_scores)
+            min_dist_bcs = [bc for dist, bc in dists_and_scores if dist == min_dist]
 
-                if len(min_dist_bcs) > 1:
-                    return None, "ambiguous", min_dist_bcs
+            if len(min_dist_bcs) > 1:
+                return None, "ambiguous", min_dist_bcs
 
-                return min_dist_bcs[0], "corrected", None
+            return min_dist_bcs[0], "corrected", None
         else:
             dists_and_scores = [(dist, bc) for bc in self.bcs if (dist := self._distfun(raw_bc, bc)) is not False]
 
