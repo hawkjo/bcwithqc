@@ -33,22 +33,75 @@ def get_cpu_flags():
     return set()
 
 
+def running_on_github_actions():
+    return os.environ.get("GITHUB_ACTIONS") == "true"
+
+
+def env_var_is_true(name):
+    return os.environ.get(name, "").lower() in {"1", "true", "yes", "y"}
+
+
+def env_var_is_false(name):
+    return os.environ.get(name, "").lower() in {"0", "false", "no", "n"}
+
+
+def require_avx512():
+    """
+    Decide whether this environment should strictly require AVX-512.
+
+    Default behavior:
+    - GitHub Actions: do not require AVX-512
+    - local/HPC: require AVX-512
+
+    Overrides:
+    - BCWITHQC_REQUIRE_AVX512=1 forces requirement
+    - BCWITHQC_REQUIRE_AVX512=0 disables requirement
+    """
+    if env_var_is_true("BCWITHQC_REQUIRE_AVX512"):
+        return True
+
+    if env_var_is_false("BCWITHQC_REQUIRE_AVX512"):
+        return False
+
+    if running_on_github_actions():
+        return False
+
+    return True
+
+
 def test_00_cpu_avx512_compatibility():
     """
-    Check whether the current node supports AVX-512.
+    Check CPU compatibility.
 
-    This is useful because pywfa may crash with SIGILL if it was compiled
-    with AVX-512 instructions but runs on a node without AVX-512.
+    In local/HPC environments we require AVX-512 by default because pywfa may
+    crash with SIGILL if it was compiled with AVX-512 instructions but runs on
+    a node without AVX-512.
+
+    In GitHub Actions, AVX-512 is not guaranteed, so we only require AVX2 and
+    let the subprocess import/runtime tests catch real crashes.
     """
     flags = get_cpu_flags()
 
+    if not flags:
+        pytest.skip("Could not read CPU flags from /proc/cpuinfo")
+
     assert "avx2" in flags, (
         "This node does not report AVX2 support. "
-        "This may be too old for some compiled dependencies."
+        "This may be too old for some compiled dependencies. "
+        f"Node: {subprocess.getoutput('hostname')}"
     )
 
+    if not require_avx512():
+        if "avx512f" not in flags:
+            pytest.skip(
+                "AVX-512 not available, but this environment does not require it. "
+                "This is expected on GitHub Actions. "
+                f"Node: {subprocess.getoutput('hostname')}"
+            )
+        return
+
     assert "avx512f" in flags, (
-        "This node does not support AVX-512. "
+        "This node does not support AVX-512, but this environment requires it. "
         "If pywfa was compiled with AVX-512 instructions, it may crash with SIGILL. "
         f"Node: {subprocess.getoutput('hostname')}"
     )
