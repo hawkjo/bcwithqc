@@ -99,6 +99,7 @@ class SBCDecoder:
     def __init__(self, sbc_whitelist, sbc_maxdist, sbc_reject_delta):
         self.sbcs = sbc_whitelist
         self.sbc_len = len(self.sbcs[0])
+        # This will fail for whitelist barcodes of different lengths, might need to fix that. 
         assert all(len(sbc) == self.sbc_len for sbc in self.sbcs)
         self.sbc_maxdist = sbc_maxdist
         self.sbc_reject_delta = sbc_reject_delta
