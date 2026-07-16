@@ -1544,3 +1544,68 @@ def count_matrix(arguments, input_bam_fpath):
     log.info('Writing raw read count matrix...')
     for out_dir, M in [(raw_reads_output_dir, M_reads), (raw_umis_output_dir, M_umis)]:
         misc.write_matrix(M, sorted_complete_bcs, sorted_features, out_dir)
+
+def gDNA_count_matrix(arguments, input_bam_fpath):
+    """
+    Counts reads from a BAM file without UMIs and outputs a sparse read-count matrix.
+
+    This is for BAMs that contain barcode tags, usually CB, but no UMI tags, UB.
+    It streams through the BAM with fetch(until_eof=True), so the BAM does not
+    need to be indexed.
+    """
+    raw_reads_output_dir = os.path.join(arguments.output_dir, "raw_reads_bc_matrix")
+
+    if os.path.exists(raw_reads_output_dir):
+        log.info("Read-count matrix output folder exists. Skipping count matrix build")
+        return
+
+    os.makedirs(raw_reads_output_dir)
+
+    log.info("Counting reads from BAM without UMIs...")
+
+    read_count_given_bc_then_feature = defaultdict(Counter)
+    complete_bcs = set()
+    features = set()
+
+    with pysam.AlignmentFile(input_bam_fpath) as bamfile:
+        for read in bamfile.fetch(until_eof=True):
+
+            # Same read-pair logic as the UMI-aware count_matrix:
+            # count unpaired reads, read1 of paired reads, or read2 only if mate is unmapped.
+            if not read.is_paired or read.is_read1 or (read.is_read2 and read.mate_is_unmapped):
+
+                if not read.has_tag("CB"):
+                    continue
+
+                complete_bc = read.get_tag("CB")
+                complete_bcs.add(complete_bc)
+
+                for gx_gn_tup in misc.gx_gn_tups_from_read(read):
+                    features.add(gx_gn_tup)
+                    read_count_given_bc_then_feature[complete_bc][gx_gn_tup] += 1
+
+    sorted_complete_bcs = sorted(complete_bcs)
+    sorted_features = sorted(features)
+
+    i_given_feature = {feat: i for i, feat in enumerate(sorted_features)}
+    j_given_complete_bc = {comp_bc: j for j, comp_bc in enumerate(sorted_complete_bcs)}
+
+    M_reads = lil_matrix(
+        (len(sorted_features), len(sorted_complete_bcs)),
+        dtype=int
+    )
+
+    for complete_bc, read_count_given_feature in read_count_given_bc_then_feature.items():
+        j = j_given_complete_bc[complete_bc]
+
+        for gx_gn_tup, count in read_count_given_feature.items():
+            i = i_given_feature[gx_gn_tup]
+            M_reads[i, j] += count
+
+    log.info("Writing raw read count matrix...")
+    misc.write_matrix(
+        M_reads,
+        sorted_complete_bcs,
+        sorted_features,
+        raw_reads_output_dir
+    )
