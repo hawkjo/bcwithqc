@@ -19,4 +19,5 @@ def build_count_matrices_from_bam(arguments):
         count_matrix(arguments, arguments.bcwithqc_bam_file)
     else:
         log.info("Detected bam file without UMIs...")
+        log.warning("THE NO-UMI build_count_matrix_from_bam BRANCH IS CURRENTLY UNTESTED!")
         gDNA_count_matrix(arguments, arguments.bcwithqc_bam_file)
