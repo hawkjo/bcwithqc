@@ -1,8 +1,10 @@
 import freebarcodes.decode
 import logging
+import sys
 
 from .misc import DistanceThresh
 from .bc_lookup import bc_lookup
+from collections import Counter
 
 log = logging.getLogger(__name__)
 
@@ -13,7 +15,7 @@ class BCDecoder:
         self.bc_maxdist = bc_maxdist
         self.bc_len = len(self.bcs[0])
         self._distfun = DistanceThresh("levenshtein", bc_maxdist)
-        
+
         # I removed this assertion because it should no longer be required, as we can now handle barcodes of different lengths.
         # assert all(len(bc) == self.bc_len for bc in self.bcs)
 
@@ -100,9 +102,10 @@ class BCDecoder:
 class SBCDecoder:
     def __init__(self, sbc_whitelist, sbc_maxdist, sbc_reject_delta):
         self.sbcs = sbc_whitelist
-        self.sbc_len = len(self.sbcs[0])
         # This will fail for whitelist barcodes of different lengths, might need to fix that. 
-        assert all(len(sbc) == self.sbc_len for sbc in self.sbcs)
+        # This branch does currently not support barcodes of different lengths!
+        self.sbc_len = self._validate_sbc_lengths()
+        
         self.sbc_maxdist = sbc_maxdist
         self.sbc_reject_delta = sbc_reject_delta
         self.sbcd = freebarcodes.decode.FreeDivBarcodeDecoder()
@@ -162,4 +165,85 @@ class SBCDecoder:
         # Here we throw away the "distance" and keep only the conflicting barcodes
         # Might be interesting to keep the distance too. 
         return [sbc for dist, sbc in conflicting]
+
+    def _validate_sbc_lengths(self):
+        """
+        Validate that all whitelist SBCs have the same length.
+
+        SBCDecoder currently requires fixed-length whitelist barcodes. If
+        different lengths are present, log the length distribution and every
+        barcode that does not have the primary length before raising an error.
+
+        Returns
+        -------
+        int
+            The common SBC length when validation succeeds.
+        """
+        if not self.sbcs:
+            raise ValueError(
+                "SBCDecoder received an empty whitelist. "
+                "At least one barcode sequence is required."
+            )
+
+        length_counts = Counter(len(sbc) for sbc in self.sbcs)
+
+        # The primary length is the most frequently occurring barcode length.
+        # Counter.most_common() resolves ties using first occurrence order.
+        primary_length, primary_count = length_counts.most_common(1)[0]
+
+        # If all bcs are the same length, we return the length and move on. 
+        if len(length_counts) == 1:
+            return primary_length
+
+        # Now we are in the failstate, with bcs of different lengths. 
+        total_count = len(self.sbcs)
+
+        log.error(
+            "SBCDecoder (Free Divergence) received whitelist barcodes of different lengths. ",
+            "Barcodes of different lengths are currently only supported by BCDecoder (levensthein), not SBCDecoder."
+        )
+        log.error(
+            "Barcode length distribution (%d barcodes total):",
+            total_count,
+        )
+
+        for length, count in sorted(length_counts.items()):
+            log.error(
+                "  length %d: %d barcode(s)",
+                length,
+                count,
+            )
+
+        log.error(
+            "Primary barcode length is %d (%d of %d barcodes).",
+            primary_length,
+            primary_count,
+            total_count,
+        )
+        log.error(
+            "Barcodes that do not have the primary length:"
+        )
+
+        incompatible_count = 0
+
+        for index, sbc in enumerate(self.sbcs):
+            sbc_length = len(sbc)
+
+            if sbc_length != primary_length:
+                incompatible_count += 1
+                log.error(
+                    "  index=%d, length=%d, sequence=%r",
+                    index,
+                    sbc_length,
+                    sbc,
+                )
+
+        raise ValueError(
+            "SBCDecoder (Free Divergence) requires all whitelist barcodes to have the same "
+            f"length. The primary length is {primary_length}, but "
+            f"{incompatible_count} of {total_count} barcodes have a different "
+            "length. See the preceding log messages for the length distribution "
+            "and incompatible barcode sequences. Variable-length whitelist "
+            "barcodes are currently supported by BCDecoder (levensthein), but not SBCDecoder."
+        )
 
