@@ -13,7 +13,9 @@ class BCDecoder:
         self.bc_maxdist = bc_maxdist
         self.bc_len = len(self.bcs[0])
         self._distfun = DistanceThresh("levenshtein", bc_maxdist)
-        assert all(len(bc) == self.bc_len for bc in self.bcs)
+        
+        # I removed this assertion because it should no longer be required, as we can now handle barcodes of different lengths.
+        # assert all(len(bc) == self.bc_len for bc in self.bcs)
 
         self.k = min(map(len, self.bcs)) // (self.bc_maxdist + 1)
         if self.k > 2:
