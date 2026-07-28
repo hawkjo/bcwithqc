@@ -1,5 +1,6 @@
 import logging
 import os
+import csv
 import pysam
 import itertools
 import numpy as np
@@ -59,42 +60,64 @@ def preprocess_fastqs(arguments):
             else parallel_process_fastqs_single_end
         )
 
-        all_reads_qcs = []
-        for fpath in single_fpaths:
-            bc_fq1_fpath = fpath
-            bc_fq2_fpath = None
+        r1_meta = qc_metrics.get_config_metadata(arguments, "barcode_struct_r1")
+        paths = qc_metrics.get_qc_paths(arguments)
+        counts = defaultdict(Counter)
+        conflict_counts = defaultdict(Counter)
+        block_summary_counts = defaultdict(Counter)
+        status_counts = Counter()
+        read_idx = 1
 
-            sans_bc_fq1_fpath = os.path.join(
-                arguments.output_dir,
-                f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq'
-            )
+        with open(paths["reads_tsv"], "w", newline="") as reads_fh:
+            reads_writer = csv.writer(reads_fh, delimiter="\t")
+            reads_writer.writerow(qc_metrics.get_reads_header(arguments))
 
-            tags1_fpath = os.path.join(
-                arguments.output_dir,
-                f'rec_names_and_tags1_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.txt'
-            )
+            for fpath in single_fpaths:
+                bc_fq1_fpath = fpath
+                bc_fq2_fpath = None
 
-            log.info('Processing file:')
-            log.info(f'  barcode fastq: {bc_fq1_fpath}')
-            log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
-            log.info(f'  tags file:     {tags1_fpath}')
+                sans_bc_fq1_fpath = os.path.join(
+                    arguments.output_dir,
+                    f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq'
+                )
 
-            if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, tags1_fpath]):
-                raise FileExistsError('Partial results found: Remove partial results and restart.')
+                tags1_fpath = os.path.join(
+                    arguments.output_dir,
+                    f'rec_names_and_tags1_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.txt'
+                )
 
-            file_read_qcs = process_fastqs_func(
-                arguments,
-                bc_fq1_fpath,
-                sans_bc_fq1_fpath,
-                tags1_fpath,
-            )
-            all_reads_qcs.extend(file_read_qcs)
-            single_align_fq_and_tags_fpaths.append((sans_bc_fq1_fpath, tags1_fpath))
-            if arguments.output_format_bam:
-                create_bam_from_fastqs(arguments, sans_bc_fq1_fpath)
+                log.info('Processing file:')
+                log.info(f'  barcode fastq: {bc_fq1_fpath}')
+                log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
+                log.info(f'  tags file:     {tags1_fpath}')
 
-        qc_metrics.generate_qc_metrics(arguments, all_reads_qcs)
-        qc_metrics.generate_qc_metrics_reads(arguments, all_reads_qcs)
+                if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, tags1_fpath]):
+                    raise FileExistsError('Partial results found: Remove partial results and restart.')
+
+                for read_qc in process_fastqs_func(
+                    arguments,
+                    bc_fq1_fpath,
+                    sans_bc_fq1_fpath,
+                    tags1_fpath,
+                ):
+                    qc_metrics.handle_read_qc(
+                        read_qc,
+                        r1_meta,
+                        counts,
+                        conflict_counts,
+                        block_summary_counts,
+                    )
+                    row, status = qc_metrics.get_read_row_single(arguments, read_idx, read_qc)
+                    reads_writer.writerow(row)
+                    status_counts[status] += 1
+                    read_idx += 1
+
+                single_align_fq_and_tags_fpaths.append((sans_bc_fq1_fpath, tags1_fpath))
+                if arguments.output_format_bam:
+                    create_bam_from_fastqs(arguments, sans_bc_fq1_fpath)
+
+        qc_metrics.write_qc_metrics_from_counts(arguments, counts, conflict_counts, block_summary_counts)
+        qc_metrics.write_read_summary(arguments, status_counts)
         return single_align_fq_and_tags_fpaths
 
     # For paired reads
@@ -123,81 +146,107 @@ def preprocess_fastqs(arguments):
         else:
             bc_fq_idx, paired_fq_idx = 0, 1
 
-        all_reads_qcs = []
-        for fpath_tup in paired_fpaths:
-            bc_fq1_fpath = fpath_tup[bc_fq_idx]
-            bc_fq2_fpath = fpath_tup[paired_fq_idx]
+        r1_meta = qc_metrics.get_config_metadata(arguments, "barcode_struct_r1")
+        r2_meta = qc_metrics.get_config_metadata(arguments, "barcode_struct_r2") if bcs_on_both_reads else []
+        paths = qc_metrics.get_qc_paths(arguments)
+        counts = defaultdict(Counter)
+        conflict_counts = defaultdict(Counter)
+        block_summary_counts = defaultdict(Counter)
+        status_counts = Counter()
+        read_idx = 1
 
-            sans_bc_fq1_fpath = os.path.join(
-                arguments.output_dir,
-                f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq'
-            )
-            sans_bc_fq2_fpath = os.path.join(
-                arguments.output_dir,
-                f'sans_bc_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.fq'
-            )
+        with open(paths["reads_tsv"], "w", newline="") as reads_fh:
+            reads_writer = csv.writer(reads_fh, delimiter="\t")
+            reads_writer.writerow(qc_metrics.get_reads_header(arguments))
 
-            tags1_fpath = os.path.join(
-                arguments.output_dir,
-                f'rec_names_and_tags1_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.txt'
-            )
-            tags2_fpath = os.path.join(
-                arguments.output_dir,
-                f'rec_names_and_tags2_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.txt'
-            )
+            for fpath_tup in paired_fpaths:
+                bc_fq1_fpath = fpath_tup[bc_fq_idx]
+                bc_fq2_fpath = fpath_tup[paired_fq_idx]
 
-            namepairidx_fpath = os.path.join(
-                arguments.output_dir,
-                f'namepairidx_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.pkl'
-            )
+                sans_bc_fq1_fpath = os.path.join(
+                    arguments.output_dir,
+                    f'sans_bc_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.fq'
+                )
+                sans_bc_fq2_fpath = os.path.join(
+                    arguments.output_dir,
+                    f'sans_bc_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.fq'
+                )
 
-            namepairidx = misc.get_namepair_index(bc_fq1_fpath, bc_fq2_fpath)
-            namepairidxs.append(namepairidx)
-            with open(namepairidx_fpath, "wb") as pkl:
-                pickle.dump(namepairidx, pkl)
+                tags1_fpath = os.path.join(
+                    arguments.output_dir,
+                    f'rec_names_and_tags1_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.txt'
+                )
+                tags2_fpath = os.path.join(
+                    arguments.output_dir,
+                    f'rec_names_and_tags2_{misc.file_prefix_from_fpath(bc_fq2_fpath)}.txt'
+                )
 
-            log.info('Processing files:')
-            if bcs_on_both_reads:
-                log.info(f'  barcode fastq 1: {bc_fq1_fpath}')
-                log.info(f'  barcode fastq 2: {bc_fq2_fpath}')
-                log.info(f'  sans-bc fastq 1: {sans_bc_fq1_fpath}')
-                log.info(f'  sans-bc fastq 2: {sans_bc_fq2_fpath}')
-                log.info(f'  tags file 1:     {tags1_fpath}')
-                log.info(f'  tags file 2:     {tags2_fpath}')
-            else:
-                log.info(f'  barcode fastq: {bc_fq1_fpath}')
-                log.info(f'  paired fastq:  {bc_fq2_fpath}')
-                log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
-                log.info(f'  sans-bc fastq: {sans_bc_fq2_fpath}')
-                log.info(f'  tags file:     {tags1_fpath}')
+                namepairidx_fpath = os.path.join(
+                    arguments.output_dir,
+                    f'namepairidx_{misc.file_prefix_from_fpath(bc_fq1_fpath)}.pkl'
+                )
 
-            if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath]):
-                raise FileExistsError('Partial results found: Remove partial results and restart.')
+                namepairidx = misc.get_namepair_index(bc_fq1_fpath, bc_fq2_fpath)
+                namepairidxs.append(namepairidx)
+                with open(namepairidx_fpath, "wb") as pkl:
+                    pickle.dump(namepairidx, pkl)
 
-            file_read_qcs = process_fastqs_func(
-                arguments,
-                bc_fq1_fpath,
-                bc_fq2_fpath,
-                sans_bc_fq1_fpath,
-                sans_bc_fq2_fpath,
-                tags1_fpath,
-                tags2_fpath,
-                bcs_on_both_reads
-            )
+                log.info('Processing files:')
+                if bcs_on_both_reads:
+                    log.info(f'  barcode fastq 1: {bc_fq1_fpath}')
+                    log.info(f'  barcode fastq 2: {bc_fq2_fpath}')
+                    log.info(f'  sans-bc fastq 1: {sans_bc_fq1_fpath}')
+                    log.info(f'  sans-bc fastq 2: {sans_bc_fq2_fpath}')
+                    log.info(f'  tags file 1:     {tags1_fpath}')
+                    log.info(f'  tags file 2:     {tags2_fpath}')
+                else:
+                    log.info(f'  barcode fastq: {bc_fq1_fpath}')
+                    log.info(f'  paired fastq:  {bc_fq2_fpath}')
+                    log.info(f'  sans-bc fastq: {sans_bc_fq1_fpath}')
+                    log.info(f'  sans-bc fastq: {sans_bc_fq2_fpath}')
+                    log.info(f'  tags file:     {tags1_fpath}')
 
-            all_reads_qcs.extend(file_read_qcs)
+                if any(os.path.exists(fpath) for fpath in [sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath]):
+                    raise FileExistsError('Partial results found: Remove partial results and restart.')
 
-            if bc_fq_idx == 0:
-                paired_align_fqs_and_tags_fpaths.append((sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath))
-                if arguments.output_format_bam:
-                    create_bam_from_fastqs(arguments, sans_bc_fq1_fpath, sans_bc_fq2_fpath)
-            else:
-                paired_align_fqs_and_tags_fpaths.append((sans_bc_fq2_fpath, sans_bc_fq1_fpath, tags2_fpath, tags1_fpath))
-                if arguments.output_format_bam:
-                    create_bam_from_fastqs(arguments, sans_bc_fq2_fpath, sans_bc_fq1_fpath)
+                for read_qc_pair in process_fastqs_func(
+                    arguments,
+                    bc_fq1_fpath,
+                    bc_fq2_fpath,
+                    sans_bc_fq1_fpath,
+                    sans_bc_fq2_fpath,
+                    tags1_fpath,
+                    tags2_fpath,
+                    bcs_on_both_reads
+                ):
+                    for read_member_idx, read_qc in enumerate(read_qc_pair):
+                        if read_qc is None:
+                            continue
+                        meta_list = r1_meta if read_member_idx == 0 else r2_meta
+                        qc_metrics.handle_read_qc(
+                            read_qc,
+                            meta_list,
+                            counts,
+                            conflict_counts,
+                            block_summary_counts,
+                        )
 
-        qc_metrics.generate_qc_metrics(arguments, all_reads_qcs)
-        qc_metrics.generate_qc_metrics_reads(arguments, all_reads_qcs)
+                    row, status = qc_metrics.get_read_row_pair(arguments, read_idx, read_qc_pair)
+                    reads_writer.writerow(row)
+                    status_counts[status] += 1
+                    read_idx += 1
+
+                if bc_fq_idx == 0:
+                    paired_align_fqs_and_tags_fpaths.append((sans_bc_fq1_fpath, sans_bc_fq2_fpath, tags1_fpath, tags2_fpath))
+                    if arguments.output_format_bam:
+                        create_bam_from_fastqs(arguments, sans_bc_fq1_fpath, sans_bc_fq2_fpath)
+                else:
+                    paired_align_fqs_and_tags_fpaths.append((sans_bc_fq2_fpath, sans_bc_fq1_fpath, tags2_fpath, tags1_fpath))
+                    if arguments.output_format_bam:
+                        create_bam_from_fastqs(arguments, sans_bc_fq2_fpath, sans_bc_fq1_fpath)
+
+        qc_metrics.write_qc_metrics_from_counts(arguments, counts, conflict_counts, block_summary_counts)
+        qc_metrics.write_read_summary(arguments, status_counts)
         return paired_align_fqs_and_tags_fpaths, namepairidxs
 
 def process_fastqs(arguments):
@@ -1051,7 +1100,6 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
     log.info(f'Score threshold: {thresh[0]:.2f}{f"{thresh[1]:.2f}" if thresh[1] != -np.inf else ""}')
 
     total_out = 0
-    all_reads_qcs = []
 
     with (open(sans_bc_fq1_fpath, 'w') if sans_bc_fq1_fpath else nullcontext(None)) as bc_fq1_fh, \
             (open(sans_bc_fq2_fpath, 'w') if sans_bc_fq2_fpath else nullcontext(None)) as bc_fq2_fh, \
@@ -1141,11 +1189,10 @@ def serial_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, sa
                             threshold_fail_fh,
                         )
 
-            all_reads_qcs.append(tuple(read_qcs[:len(blocks)]))
+            yield tuple(read_qcs[:len(blocks)])
 
     log.info(f'{i+1:,d} barcode records processed')
     log.info(f'{total_out:,d} pairs of records output')
-    return all_reads_qcs
 
 def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, tags1_fpath):
     blocks = arguments.config["barcode_struct_r1"]["blocks"]
@@ -1170,7 +1217,6 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
 
     total_out = 0
     n_processed = 0
-    all_reads_qcs = []
 
     r1_meta = qc_metrics.get_config_metadata(arguments, "barcode_struct_r1")
     qc_fastq_paths = get_per_fastq_qc_fastq_paths(arguments, fq1_fpath)
@@ -1189,7 +1235,6 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
 
             read_first_scores_recs_tags_plus_qc = bc_parser.process_bc_rec(arguments, blocks, keep_nonbarcode, bc_rec, aligners, decoders) # get our tags for each read and trim the read
             read_qc = read_first_scores_recs_tags_plus_qc[-1] # get our QC (last item of the tuple)
-            all_reads_qcs.append(read_qc)
             score, sans_bc_rec, tags = read_first_scores_recs_tags_plus_qc[:-1] # get the first three tuple entries
 
             # write raw failure reads
@@ -1223,9 +1268,10 @@ def serial_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, ta
                         threshold_fail_fh,
                     )
 
+            yield read_qc
+
     log.info(f'{n_processed:,d} barcode records processed')
     log.info(f'{total_out:,d} records output')
-    return all_reads_qcs
 
 def worker_build_aligners(aarguments, ablocks, akeep_nonbarcodes, unknown_read_orientation, athresh):
     global arguments, blocks, keep_nonbarcodes, aligners, decoders, thresh
@@ -1362,7 +1408,6 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
     r1_qc_fastq_paths = get_per_fastq_qc_fastq_paths(arguments, fq1_fpath)
     r2_qc_fastq_paths = get_per_fastq_qc_fastq_paths(arguments, fq2_fpath) if bcs_on_both_reads else None
 
-    all_reads_qcs = []
     # multiprocessing.pool.imap tends to prefetch too many values into memory. The semaphore prevents that.
     sem = BoundedSemaphore(3 * chunksize * arguments.threads)
     with (open(sans_bc_fq1_fpath, 'w') if sans_bc_fq1_fpath else nullcontext(None)) as bc_fq1_fh, \
@@ -1386,7 +1431,7 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
                 log.info(f'  {i:,d} processed,  {total_out:,d} output')
             sem.release()
 
-            all_reads_qcs.append(tuple(read_qcs[:len(blocks)]))
+            yield tuple(read_qcs[:len(blocks)])
 
             if qc_failure_recs["r1_ambiguous"] is not None:
                 SeqIO.write(qc_failure_recs["r1_ambiguous"], r1_ambiguous_fh, "fastq")
@@ -1413,7 +1458,6 @@ def parallel_process_fastqs(arguments, fq1_fpath, fq2_fpath, sans_bc_fq1_fpath, 
             total_out += processed
     log.info(f'{i+1:,d} barcode records processed')
     log.info(f'{total_out:,d} pairs of records output')
-    return all_reads_qcs
 
 def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, tags1_fpath):
     chunksize = 100
@@ -1455,7 +1499,6 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
             ) as pool:
         log.info('Continuing...')
         total_out = 0
-        all_reads_qcs = []
 
         for i, (output_rec, output_tags, read_qc, ambiguous_rec, no_match_rec, threshold_fail_rec) in enumerate(
             pool.imap(worker_process_read_single_end, read_iterator_single_end(fq1_fpath, sem), chunksize=chunksize)
@@ -1463,8 +1506,6 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
             if i % 100000 == 0 and i > 0:
                 log.info(f'  {i:,d} processed,  {total_out:,d} output')
             sem.release()
-
-            all_reads_qcs.append(read_qc)
 
             if ambiguous_rec is not None:
                 SeqIO.write(ambiguous_rec, ambiguous_fh, "fastq")
@@ -1482,9 +1523,10 @@ def parallel_process_fastqs_single_end(arguments, fq1_fpath, sans_bc_fq1_fpath, 
 
             total_out += processed
 
+            yield read_qc
+
     log.info(f'{i+1:,d} barcode records processed')
     log.info(f'{total_out:,d} records output')
-    return all_reads_qcs
 
 def count_parallel_wrapper(ref_and_input_bam_fpath):
     ref, input_bam_fpath = ref_and_input_bam_fpath

@@ -114,6 +114,201 @@ def handle_read_qc(read_qc, meta_list, counts, conflict_counts, block_summary_co
                 for entry in conflict_meta:
                     conflict_counts[key][entry] += 1
 
+
+def get_reads_header(arguments):
+    """
+    Build the TSV header for read-level QC output.
+
+    The header includes the read-level status columns plus one block-name /
+    block-status pair for each barcode block in the active read layout.
+    """
+    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
+    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
+
+    if arguments.single_end_reads:
+        max_blocks = len(r1_meta)
+    else:
+        max_blocks = len(r1_meta) + len(r2_meta)
+
+    header = ["read_index", "read_name", "read_status"]
+    for i in range(1, max_blocks + 1):
+        header.extend([f"block_name_{i}", f"block_status_{i}"])
+    return header
+
+
+def get_read_row_single(arguments, read_idx, read_qc):
+    """
+    Convert one single-end read QC record into a TSV row.
+
+    Returns a tuple of (row, collapsed_status), where collapsed_status is the
+    final read-level status used for summary counting.
+    """
+    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
+    block_entries = []
+    statuses = []
+
+    for block_idx, status in enumerate(read_qc["statuses"]):
+        blockname = r1_meta[block_idx]["blockname"]
+        block_entries.extend([blockname, status])
+        statuses.append(status)
+
+    collapsed_status = collapse_read_status(statuses)
+    if read_qc.get("status") == "__BELOW_THRESHOLD__" and collapsed_status in ["exact", "corrected"]:
+        collapsed_status = "below_threshold"
+
+    while len(block_entries) < 2 * len(r1_meta):
+        block_entries.extend(["", ""])
+
+    return [
+        read_idx,
+        read_qc.get("read_name"),
+        collapsed_status,
+        *block_entries,
+    ], collapsed_status
+
+
+def get_read_row_pair(arguments, read_idx, read_qc_pair):
+    """
+    Convert one paired-end read QC pair into a TSV row.
+
+    Returns a tuple of (row, collapsed_status), where collapsed_status is the
+    final read-level status used for summary counting.
+    """
+    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
+    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
+    block_entries = []
+    statuses = []
+
+    for read_member_idx, read_qc in enumerate(read_qc_pair):
+        if read_qc is None:
+            continue
+
+        meta_list = r1_meta if read_member_idx == 0 else r2_meta
+        for block_idx, status in enumerate(read_qc["statuses"]):
+            read_label = meta_list[block_idx]["read_label"]
+            blockname = meta_list[block_idx]["blockname"]
+            full_blockname = f"{read_label}_{blockname}"
+            block_entries.extend([full_blockname, status])
+            statuses.append(status)
+
+    collapsed_status = collapse_read_status(statuses)
+    if (
+        any(
+            read_qc is not None and read_qc.get("status") == "__BELOW_THRESHOLD__"
+            for read_qc in read_qc_pair
+        )
+        and collapsed_status in ["exact", "corrected"]
+    ):
+        collapsed_status = "below_threshold"
+
+    while len(block_entries) < 2 * (len(r1_meta) + len(r2_meta)):
+        block_entries.extend(["", ""])
+
+    return [
+        read_idx,
+        common_read_name_from_qc_pair(read_qc_pair),
+        collapsed_status,
+        *block_entries,
+    ], collapsed_status
+
+
+def write_read_summary(arguments, status_counts):
+    """
+        Write the read-level summary TSV in output_dir/QC_metrics.
+
+        The output contains one row per collapsed read-level status: status, count.
+    """
+
+    paths = get_qc_paths(arguments)
+    output_summary = paths["reads_summary_tsv"]
+    with open(output_summary, "w", newline="") as out_fh:
+        writer = csv.writer(out_fh, delimiter="\t")
+        writer.writerow(["status", "count"])
+        for status in ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]:
+            writer.writerow([status, status_counts.get(status, 0)])
+
+
+def write_qc_metrics_from_counts(arguments, counts, conflict_counts, block_summary_counts):
+    """
+        Write barcode-level QC TSV outputs in output_dir/QC_metrics.
+
+    Outputs:
+        - bcs.tsv
+            One row per barcode label, with per-status counts and conflict summaries.
+        - bcs_summary.tsv
+            One row per barcode block, with aggregated status counts.
+
+        The counts are expected to be accumulated incrementally during streaming
+        preprocessing.
+    """
+
+    paths = get_qc_paths(arguments)
+    output_file_bcs = paths["bcs_tsv"]
+    output_file_summary = paths["bcs_summary_tsv"]
+    status_columns = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
+
+    with open(output_file_bcs, "w", newline="") as out_fh:
+        writer = csv.writer(out_fh, delimiter="\t")
+        writer.writerow(["read", "blockname", "barcode", *status_columns, "total", "conflict_bcs"])
+
+        for meta in get_sanitized_metadata(arguments, "barcode_struct_r1") + get_sanitized_metadata(arguments, "barcode_struct_r2"):
+            read_label = meta["read_label"]
+            blockname = meta["blockname"]
+
+            barcode_iter = chain(
+                meta["whitelist"],
+                ["__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"],
+            )
+
+            for barcode_label in barcode_iter:
+                key = (read_label, blockname, barcode_label)
+                status_counter = counts.get(key)
+                if status_counter is None:
+                    status_values = [0 for _ in status_columns]
+                    total = 0
+                else:
+                    status_values = [
+                        status_counter.get(status, 0)
+                        for status in status_columns
+                    ]
+                    total = sum(status_values)
+
+                conflict_counter = conflict_counts.get(key)
+                if conflict_counter:
+                    conflict_summary = ";".join(
+                        f"{entry}:{count}"
+                        for entry, count in sorted(conflict_counter.items())
+                    )
+                else:
+                    conflict_summary = ""
+
+                writer.writerow([
+                    read_label,
+                    blockname,
+                    barcode_label,
+                    *status_values,
+                    total,
+                    conflict_summary,
+                ])
+
+    with open(output_file_summary, "w", newline="") as out_fh:
+        writer = csv.writer(out_fh, delimiter="\t")
+        writer.writerow(["read", "blockname", *status_columns, "total"])
+
+        for read_label, blockname in sorted(block_summary_counts.keys()):
+            summary = block_summary_counts[(read_label, blockname)]
+            status_values = [summary.get(status, 0) for status in status_columns]
+            total = sum(status_values)
+            writer.writerow([
+                read_label,
+                blockname,
+                *status_values,
+                total,
+            ])
+
+    log.info(f"Wrote barcode-level QC metrics to: {output_file_bcs}")
+    log.info(f"Wrote block summary QC metrics to: {output_file_summary}")
+
 def parse_conflicts(conflicts):
     """
     Split conflict information into parsable whitelist candidates and metadata entries.
@@ -143,64 +338,6 @@ def collapse_read_status(statuses):
         return "corrected"
     return "exact"
 
-def iter_read_qc_rows(arguments, read_qcs):
-    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
-    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
-
-    if arguments.single_end_reads:
-        for read_idx, read_qc in enumerate(read_qcs, start=1):
-            for block_idx, (raw_bc, decoded_bc, status, conflict_bcs) in enumerate(
-                zip(
-                    read_qc["raw_bcs"],
-                    read_qc["decoded_bcs"],
-                    read_qc["statuses"],
-                    read_qc["conflict_bcs"],
-                )
-            ):
-                meta = r1_meta[block_idx]
-                read_name = read_qc.get("read_name", meta["read_label"])
-                final_status = status
-                if read_qc.get('status') == '__BELOW_THRESHOLD__' and status == "corrected":
-                    final_status = "__BELOW_THRESHOLD__"
-                yield {
-                    "read_index": read_idx,
-                    "read_label": read_name,
-                    "block_index": block_idx,
-                    "blockname": meta["blockname"],
-                    "raw_bc": raw_bc,
-                    "decoded_bc": decoded_bc if decoded_bc is not None else "",
-                    "status": final_status,
-                    "conflict_bcs": ";".join(conflict_bcs) if conflict_bcs else "",
-                }
-    else:
-        for read_idx, read_qc_pair in enumerate(read_qcs, start=1):
-            for read_member_idx, read_qc in enumerate(read_qc_pair):
-                if read_qc is None:
-                    continue
-                meta_list = r1_meta if read_member_idx == 0 else r2_meta
-                for block_idx, (raw_bc, decoded_bc, status, conflict_bcs) in enumerate(
-                    zip(
-                        read_qc["raw_bcs"],
-                        read_qc["decoded_bcs"],
-                        read_qc["statuses"],
-                        read_qc["conflict_bcs"],
-                    )
-                ):
-                    meta = meta_list[block_idx]
-                    read_name = read_qc.get("read_name", meta["read_label"])
-                    final_status = status
-                    if read_qc.get('status') == '__BELOW_THRESHOLD__' and status == "corrected":
-                        final_status = "__BELOW_THRESHOLD__"
-                    yield {
-                        "read_index": read_idx,
-                        "read_label": read_name,
-                        "block_index": block_idx,
-                        "blockname": meta["blockname"],
-                        "raw_bc": raw_bc,
-                        "decoded_bc": decoded_bc if decoded_bc is not None else "",
-                        "status": final_status,
-                        "conflict_bcs": ";".join(conflict_bcs) if conflict_bcs else "",
-                    }
 def common_read_name(name1, name2):
     """
     Return the shared part of two paired-end read names.
@@ -242,244 +379,6 @@ def common_read_name_from_qc_pair(read_qc_pair):
         return read_names[0]
 
     return common_read_name(read_names[0], read_names[1])
-
-def generate_qc_metrics(arguments, read_qcs):
-    """
-    Generate barcode-level and block-level QC TSV files in output_dir/QC_metrics.
-
-    Outputs:
-    - bcs.tsv
-    - bcs_summary.tsv
-    """
-    log.info(f"Collected {len(read_qcs):,d} read QC entries")
-
-    paths = get_qc_paths(arguments)
-    output_file_bcs = paths["bcs_tsv"]
-    output_file_summary = paths["bcs_summary_tsv"]
-    status_columns = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
-
-    r1_meta = get_sanitized_metadata(arguments, "barcode_struct_r1")
-    r2_meta = get_sanitized_metadata(arguments, "barcode_struct_r2")
-
-    counts = defaultdict(Counter)
-    conflict_counts = defaultdict(Counter)
-    block_summary_counts = defaultdict(Counter)
-
-    # Only initialize block-level summary rows.
-    # Do not initialize every whitelist barcode as an empty Counter.
-    for meta in r1_meta + r2_meta:
-        block_summary_counts[(meta["read_label"], meta["blockname"])]
-
-    if arguments.single_end_reads:
-        for read_qc in read_qcs:
-            handle_read_qc(
-                read_qc,
-                r1_meta,
-                counts,
-                conflict_counts,
-                block_summary_counts,
-            )
-    else:
-        for read_qc_pair in read_qcs:
-            for read_idx, read_qc in enumerate(read_qc_pair):
-                if read_qc is None:
-                    continue
-
-                meta_list = r1_meta if read_idx == 0 else r2_meta
-                handle_read_qc(
-                    read_qc,
-                    meta_list,
-                    counts,
-                    conflict_counts,
-                    block_summary_counts,
-                )
-
-    with open(output_file_bcs, "w", newline="") as out_fh:
-        writer = csv.writer(out_fh, delimiter="\t")
-        writer.writerow(["read", "blockname", "barcode", *status_columns, "total", "conflict_bcs"])
-
-        for meta in r1_meta + r2_meta:
-            read_label = meta["read_label"]
-            blockname = meta["blockname"]
-
-            barcode_iter = chain(
-                meta["whitelist"],
-                ["__NO_MATCH__", "__AMBIGUOUS_UNIDENTIFIED__"],
-            )
-
-            for barcode_label in barcode_iter:
-                key = (read_label, blockname, barcode_label)
-
-                status_counter = counts.get(key)
-                if status_counter is None:
-                    status_values = [0 for _ in status_columns]
-                    total = 0
-                else:
-                    status_values = [
-                        status_counter.get(status, 0)
-                        for status in status_columns
-                    ]
-                    total = sum(status_values)
-
-                conflict_counter = conflict_counts.get(key)
-                if conflict_counter:
-                    conflict_summary = ";".join(
-                        f"{entry}:{count}"
-                        for entry, count in sorted(conflict_counter.items())
-                    )
-                else:
-                    conflict_summary = ""
-
-                writer.writerow([
-                    read_label,
-                    blockname,
-                    barcode_label,
-                    *status_values,
-                    total,
-                    conflict_summary,
-                ])
-
-    with open(output_file_summary, "w", newline="") as out_fh:
-        writer = csv.writer(out_fh, delimiter="\t")
-        writer.writerow(["read", "blockname", *status_columns, "total"])
-
-        for read_label, blockname in sorted(block_summary_counts.keys()):
-            summary = block_summary_counts[(read_label, blockname)]
-
-            status_values = [
-                summary.get(status, 0)
-                for status in status_columns
-            ]
-            total = sum(status_values)
-
-            writer.writerow([
-                read_label,
-                blockname,
-                *status_values,
-                total,
-            ])
-
-    log.info(f"Wrote barcode-level QC metrics to: {output_file_bcs}")
-    log.info(f"Wrote block summary QC metrics to: {output_file_summary}")
-
-def generate_qc_metrics_reads(arguments, read_qcs):
-    """
-    Generate read-level QC outputs in output_dir/QC_metrics.
-
-    Outputs:
-    - reads.tsv
-      One row per read (single-end) or read pair (paired-end), with:
-        read_index, read_label, status, blockname_1, blockstatus_1, blockname_2, blockstatus_2, ...
-
-    - reads_summary.tsv
-      One row per collapsed read-level status:
-        status, count
-
-    Uses collapse_read_status(statuses) to assign one final status per read/read-pair.
-    """
-    paths = get_qc_paths(arguments)
-    output_reads = paths["reads_tsv"]
-    output_summary = paths["reads_summary_tsv"]
-
-    r1_meta = get_config_metadata(arguments, "barcode_struct_r1")
-    r2_meta = get_config_metadata(arguments, "barcode_struct_r2")
-
-    status_counts = Counter()
-
-    if arguments.single_end_reads:
-        max_blocks = len(r1_meta)
-    else:
-        max_blocks = len(r1_meta) + len(r2_meta)
-
-    header = ["read_index", "read_name", "read_status"]
-    for i in range(1, max_blocks + 1):
-        header.extend([f"block_name_{i}", f"block_status_{i}"])
-
-    with open(output_reads, "w", newline="") as out_fh:
-        writer = csv.writer(out_fh, delimiter="\t")
-        writer.writerow(header)
-
-        if arguments.single_end_reads:
-            for read_idx, read_qc in enumerate(read_qcs, start=1):
-                block_entries = []
-                statuses = []
-
-                for block_idx, status in enumerate(read_qc["statuses"]):
-                    blockname = r1_meta[block_idx]["blockname"]
-                    block_entries.extend([blockname, status])
-                    statuses.append(status)
-
-                collapsed_status = collapse_read_status(statuses)
-
-                if (
-                    read_qc.get("status") == "__BELOW_THRESHOLD__"
-                    and collapsed_status in ["exact", "corrected"]
-                ):
-                    collapsed_status = "below_threshold"
-
-                status_counts[collapsed_status] += 1
-
-                while len(block_entries) < 2 * max_blocks:
-                    block_entries.extend(["", ""])
-
-                writer.writerow([
-                    read_idx,
-                    read_qc.get("read_name"),
-                    collapsed_status,
-                    *block_entries,
-                ])
-
-        else:
-            for read_idx, read_qc_pair in enumerate(read_qcs, start=1):
-                block_entries = []
-                statuses = []
-
-                for read_member_idx, read_qc in enumerate(read_qc_pair):
-                    if read_qc is None:
-                        continue
-
-                    meta_list = r1_meta if read_member_idx == 0 else r2_meta
-
-                    for block_idx, status in enumerate(read_qc["statuses"]):
-                        read_label = meta_list[block_idx]["read_label"]
-                        blockname = meta_list[block_idx]["blockname"]
-                        full_blockname = f"{read_label}_{blockname}"
-
-                        block_entries.extend([full_blockname, status])
-                        statuses.append(status)
-
-                collapsed_status = collapse_read_status(statuses)
-
-                if (
-                    any(
-                        read_qc.get("status") == "__BELOW_THRESHOLD__"
-                        for read_qc in read_qc_pair
-                        if read_qc is not None
-                    )
-                    and collapsed_status in ["exact", "corrected"]
-                ):
-                    collapsed_status = "below_threshold"
-
-                status_counts[collapsed_status] += 1
-
-                while len(block_entries) < 2 * max_blocks:
-                    block_entries.extend(["", ""])
-
-                writer.writerow([
-                    read_idx,
-                    common_read_name_from_qc_pair(read_qc_pair),
-                    collapsed_status,
-                    *block_entries,
-                ])
-
-    with open(output_summary, "w", newline="") as out_fh:
-        writer = csv.writer(out_fh, delimiter="\t")
-        writer.writerow(["status", "count"])
-        for status in ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]:
-            writer.writerow([status, status_counts.get(status, 0)])
-
-    log.info(f"Wrote read-level QC metrics to: {output_reads}")
-    log.info(f"Wrote read-level QC summary to: {output_summary}")
 
 STATUS_ORDER = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
 STATUS_COLOR_MAP = {
