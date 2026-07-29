@@ -118,6 +118,7 @@ def preprocess_fastqs(arguments):
 
         qc_metrics.write_qc_metrics_from_counts(arguments, counts, conflict_counts, block_summary_counts)
         qc_metrics.write_read_summary(arguments, status_counts)
+        log.info('Preprocessing Done')
         return single_align_fq_and_tags_fpaths
 
     # For paired reads
@@ -247,6 +248,7 @@ def preprocess_fastqs(arguments):
 
         qc_metrics.write_qc_metrics_from_counts(arguments, counts, conflict_counts, block_summary_counts)
         qc_metrics.write_read_summary(arguments, status_counts)
+        log.info('Preprocessing Done')
         return paired_align_fqs_and_tags_fpaths, namepairidxs
 
 def process_fastqs(arguments):
@@ -495,7 +497,7 @@ def process_fastqs(arguments):
     qc_metrics.make_stacked_barplots_bcs(arguments)
     qc_metrics.make_stacked_barplot_reads(arguments)
 
-    log.info('Done')
+    log.info('Count Done')
 
 
 def handle_intermediary_files(arguments, star_w_bc_umi_sorted_fpath):
@@ -757,6 +759,8 @@ def create_bam_from_fastqs(arguments, R1_fpath, R2_fpath=None, feature_name="toy
             seg.template_length = template_length
 
         return seg
+
+    log.info("Compiling BAM from FASTQ because --output-format-bam was specified: %s", star_out_fpath)
 
     with pysam.AlignmentFile(star_out_fpath, "wb", header=header) as bam_out:
 
