@@ -407,8 +407,31 @@ def _draw_status_stack(ax, x, values_by_status, width=0.8, show_legend=True):
         bottom += values
 
     if show_legend:
-        ax.legend()
+        ax.legend(loc="upper right")
 
+def _draw_barcode_status_stack(ax, x, values_by_status, show_legend=True):
+    """Draw contiguous stacked barcode values efficiently."""
+    n_bcs = len(x)
+    edges = np.arange(n_bcs + 1) - 0.5
+    bottom = np.zeros(n_bcs, dtype=float)
+
+    for status in STATUS_ORDER:
+        values = np.asarray(values_by_status[status], dtype=float)
+        top = bottom + values
+
+        ax.stairs(
+            top,
+            edges,
+            baseline=bottom,
+            fill=True,
+            color=STATUS_COLOR_MAP[status],
+            label=status,
+        )
+
+        bottom = top
+
+    if show_legend:
+        ax.legend(loc="upper right")
 
 def _load_read_status_percentages(arguments):
     paths = get_qc_paths(arguments)
@@ -579,11 +602,10 @@ def _plot_stacked_barcodes_on_ax(
     n_bcs = len(labels)
     x = np.arange(n_bcs)
 
-    _draw_status_stack(
+    _draw_barcode_status_stack(
         ax=ax,
         x=x,
         values_by_status=values_by_status,
-        width=1.0,
         show_legend=show_legend,
     )
 

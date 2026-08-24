@@ -26,7 +26,7 @@ star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
 # Set to True to use a temp directory that is deleted automatically.
 # Set to False to write into SCRIPT_DIR/<sample_type>_single_end_STAR_out and keep the output.
-USE_TEMP_OUTPUT = True
+USE_TEMP_OUTPUT = False
 verbosity = "-vv"
 
 def get_star_env():
