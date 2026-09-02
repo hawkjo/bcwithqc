@@ -1,0 +1,46 @@
+{
+    "unknown_read_orientation": false,
+    "single_end_reads": true,
+    "barcode_struct_r1": {
+        "keep_nonbarcode": true,
+        "blocks": [
+            {
+                "maxerrors": 1,
+                "blockfunction": "barcode",
+                "name": [
+                    "bc_1",
+                    "bc_2",
+                    "bc_3",
+                    "bc_4"
+                ],
+                "sequence": [
+                    "CCTTAACAT",
+                    "AGCGTAGAA",
+                    "TATAGGTGT",
+                    "GGCGACTCA"
+                ],
+                "blocktype": "barcodeList",
+                "blockname": "cb1",
+                "keepblock": false
+            },
+            {
+                "maxerrors": 1,
+                "blockfunction": "barcode",             
+                "sequence": [
+                    "GGGTCAGTACGTACGAGTCCC"
+                ],
+                "blocktype": "constantRegion",
+                "blockname": "con1",
+                "keepblock": true
+            },
+            {
+                "maxerrors": 0,
+                "blockfunction": "UMI",
+                "length": 6,
+                "blocktype": "randomBarcode",
+                "blockname": "umi",
+                "keepblock": false
+            }
+        ]
+    }
+}

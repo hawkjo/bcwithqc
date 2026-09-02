@@ -1,0 +1,71 @@
+STAR version=2.7.11b
+STAR compilation time,server,dir=2025-05-14T08:52:47+00:00 jupyter-link:/home/link/local/lib/STAR-2.7.11b/source
+STAR git: 
+##### Command Line:
+STAR --runMode genomeGenerate --genomeDir /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index --genomeFastaFiles /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.fa --runThreadN 1 --genomeSAindexNbases 3 --sjdbGTFfile /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.gtf
+##### Initial USER parameters from Command Line:
+###### All USER parameters from Command Line:
+runMode                       genomeGenerate        ~RE-DEFINED
+genomeDir                     /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index     ~RE-DEFINED
+genomeFastaFiles              /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.fa        ~RE-DEFINED
+runThreadN                    1     ~RE-DEFINED
+genomeSAindexNbases           3     ~RE-DEFINED
+sjdbGTFfile                   /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.gtf     ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runMode                           genomeGenerate   
+runThreadN                        1
+genomeDir                         /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index
+genomeFastaFiles                  /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.fa   
+genomeSAindexNbases               3
+sjdbGTFfile                       /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.gtf
+
+-------------------------------
+##### Final effective command line:
+STAR   --runMode genomeGenerate      --runThreadN 1   --genomeDir /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index   --genomeFastaFiles /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.fa      --genomeSAindexNbases 3   --sjdbGTFfile /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.gtf
+----------------------------------------
+
+Number of fastq files for each mate = 1
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+Finished loading and checking parameters
+--genomeDir directory exists and will be overwritten: /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index/
+Apr 27 11:52:37 ... starting to generate Genome files
+/home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.fa : chr # 0  "toy_chr" chrStart: 0
+Chromosome sequence lengths: 
+toy_chr	64
+Genome sequence total length = 64
+Genome size with padding = 262144
+Apr 27 11:52:37 ..... processing annotations GTF
+Processing pGe.sjdbGTFfile=/home/link/John_UMIs/bcwithqc/examples/pe_mini_genome/pe_mini.gtf, found:
+		1 transcripts
+		1 exons (non-collapsed)
+		0 collapsed junctions
+Total junctions: 0
+Apr 27 11:52:37 ..... finished GTF processing
+
+!!!!! WARNING: --genomeSAindexNbases 3 is too large for the genome size=64, which may cause seg-fault at the mapping step. Re-run genome generation with recommended --genomeSAindexNbases 2
+Estimated genome size with padding and SJs: total=genome+SJ=201262144 = 262144 + 201000000
+GstrandBit=32
+Number of SA indices: 128
+Apr 27 11:52:37 ... starting to sort Suffix Array. This may take a long time...
+Number of chunks: 1;   chunks size limit: 18599685304 bytes
+Apr 27 11:52:37 ... sorting Suffix Array chunks and saving them to disk...
+Writing 1024 bytes into /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index//SA_0 ; empty space on disk = 727779901440 bytes ... done
+Apr 27 11:52:37 ... loading chunks from disk, packing SA...
+Apr 27 11:52:37 ... finished generating suffix array
+Apr 27 11:52:37 ... generating Suffix Array index
+Apr 27 11:52:37 ... completed Suffix Array index
+Apr 27 11:52:37   Finished preparing junctions
+Apr 27 11:52:37 ..... finished inserting junctions into genome
+Apr 27 11:52:37 ... writing Genome to disk ...
+Writing 262144 bytes into /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index//Genome ; empty space on disk = 727779901440 bytes ... done
+SA size in bytes: 531
+Apr 27 11:52:37 ... writing Suffix Array to disk ...
+Writing 531 bytes into /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index//SA ; empty space on disk = 727778852864 bytes ... done
+Apr 27 11:52:37 ... writing SAindex to disk
+Writing 8 bytes into /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index//SAindex ; empty space on disk = 727778852864 bytes ... done
+Writing 32 bytes into /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index//SAindex ; empty space on disk = 727778852864 bytes ... done
+Writing 371 bytes into /home/link/John_UMIs/bcwithqc/examples/pe_mini_genome_index//SAindex ; empty space on disk = 727778852864 bytes ... done
+Apr 27 11:52:37 ..... finished successfully
+DONE: Genome generation, EXITING

@@ -1,0 +1,22 @@
+# bc_lookup random query candidate percentage summary
+# reference_barcode_file	/home/link/John_UMIs/bcwithqc/tests/../tests/class_bc_lookup/barcodes.txt
+# n_reference_barcodes	74237
+# n_random_queries	1000
+# query_length_18_count	66
+# query_length_19_count	67
+# query_length_20_count	735
+# query_length_21_count	68
+# query_length_22_count	64
+
+allowed_errors	k	n_reference_barcodes	n_random_queries	mean_candidate_percentage	min_candidate_percentage	max_candidate_percentage
+0	20	74237	1000	0.000000	0.000000	0.000000
+1	10	74237	1000	0.000392	0.000000	0.006735
+2	6	74237	1000	0.124913	0.004041	0.530733
+3	5	74237	1000	2.142178	0.684295	4.408853
+4	4	74237	1000	13.477212	6.044156	21.702116
+5	3	74237	1000	47.428889	20.844054	62.441909
+6	2	74237	1000	76.163491	46.800113	89.782723
+7	2	74237	1000	96.718122	72.286057	99.869337
+8	2	74237	1000	99.745337	93.729542	100.000000
+9	2	74237	1000	99.960310	97.692525	100.000000
+10	1	74237	1000	99.997687	99.517761	100.000000

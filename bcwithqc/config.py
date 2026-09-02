@@ -67,7 +67,8 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
 
     @property
     def star_output_path(self):
-        return self._arguments['--STAR-output']
+        value = self._arguments['--STAR-output-dir']
+        return False if value is None else value
 
     @property
     def threads(self):
@@ -76,14 +77,22 @@ class AnalysisCommandLineArguments(CommandLineArgumentsBase):
     @property
     def output_dir(self):
         return self._arguments['--output-dir']
+        
+    @property
+    def keep_intermediary_files(self):
+        return self._arguments['--keep-intermediary']
+        
+    @property
+    def output_format_bam(self):
+        return self._arguments['--output-format-bam']
+    
+    @property
+    def single_end_reads(self):
+        return self._config["single_end_reads"]
 
 class SimulationCommandLineArguments(CommandLineArgumentsBase):
     def __init__(self, arguments):
         super().__init__(arguments)
-
-    @property
-    def fastq_prefix(self):
-        return self._arguments['--fastq-prefix']
 
     @property
     def nreads(self):
@@ -108,3 +117,18 @@ class SimulationCommandLineArguments(CommandLineArgumentsBase):
     @property
     def insertion_probability(self):
         return float(self._arguments['--insertion-probability'])
+    
+    @property
+    def random_tail_length(self):
+        val = self._arguments['--random-tail-length']
+        if val is None:
+            return 0.0
+        return float(val)
+    
+    @property
+    def output_dir(self):
+        return self._arguments['--output-dir']
+        
+    @property
+    def single_end_reads(self):
+        return self._config["single_end_reads"]

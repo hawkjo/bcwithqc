@@ -1,0 +1,4 @@
+read	blockname	exact	corrected	below_threshold	ambiguous	no_match	total
+R1	cb1	19715	186	7	1	91	20000
+R1	cb2	18866	943	8	43	140	20000
+R1	sb	18406	875	38	2	679	20000
