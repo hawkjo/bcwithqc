@@ -1,0 +1,18 @@
+sys.executable: /home/link/.conda/envs/py313/bin/python
+cwd: /home/link/John_UMIs
+which python: /home/link/.conda/envs/py313/bin/python
+which bcwithqc: /home/link/.local/bin/bcwithqc
+PYTHONPATH: /home/link/.local/share/code-server/extensions/ms-python.python-2026.4.0-linux-x64/python_files
+PATH: /usr/lib/code-server/lib/vscode/bin/remote-cli:/home/link/local/lib/STAR-2.7.11b/source:/home/link/.local/bin:/usr/local/bin:/usr/bin:/bin:/home/link/.local/bin:/home/link/.conda/envs/py313/bin:/opt/conda/condabin:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+subprocess returncode:
+0
+
+subprocess stdout:
+/home/link/.conda/envs/py313/bin/python
+ModuleSpec(name='bcwithqc', loader=None, submodule_search_locations=_NamespacePath(['/home/link/John_UMIs/bcwithqc']))
+origin: None
+submodule_search_locations: _NamespacePath(['/home/link/John_UMIs/bcwithqc'])
+
+subprocess stderr:
+
