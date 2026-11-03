@@ -255,10 +255,18 @@ def get_all_paths_filtered(base_dir):
     return paths
 
 
+def read_expected_paths(expected_dir):
+    """Return the relative paths listed in ``expected_dir/expected_paths.txt``."""
+    with open(os.path.join(expected_dir, "expected_paths.txt")) as fh:
+        return {os.path.normpath(line.strip()) for line in fh if line.strip()}
+
+
 def test_file_existence(sample_dirs):
     sample_type, threads, output_dir, expected_dir = sample_dirs
 
-    expected_paths = get_all_paths_filtered(expected_dir)
+    # Only the content-compared files of the expected output are committed;
+    # the full directory structure is recorded in expected_paths.txt.
+    expected_paths = read_expected_paths(expected_dir)
     output_paths = get_all_paths_filtered(output_dir)
 
     missing_in_output = expected_paths - output_paths

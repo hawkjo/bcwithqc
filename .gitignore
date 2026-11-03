@@ -7,3 +7,13 @@ envbcwithqc
 build
 dist
 bcwithqc.egg-info
+# Output written by the test suite on every run (not committed)
+tests/se_mini/
+tests/se_mini_bam/
+tests/pe_mini/
+tests/pe_mini_bam/
+tests/simulate_se/
+tests/cDNA_single_end_no_STAR/
+tests/gDNA_single_end_no_STAR/
+tests/tmp_*/
+tests/shuffled_sequences/output/tmp_shuffle/

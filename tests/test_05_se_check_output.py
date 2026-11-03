@@ -246,6 +246,12 @@ def should_ignore_relpath(rel_path):
     return False
 
 
+def read_expected_paths(expected_dir):
+    """Return the relative paths listed in ``expected_dir/expected_paths.txt``."""
+    with open(os.path.join(expected_dir, "expected_paths.txt")) as fh:
+        return {os.path.normpath(line.strip()) for line in fh if line.strip()}
+
+
 def test_file_existence(sample_dirs):
     sample_type, threads, output_dir, expected_dir = sample_dirs
 
@@ -265,7 +271,9 @@ def test_file_existence(sample_dirs):
                     paths.add(rel_path)
         return paths
 
-    expected_paths = get_all_paths(expected_dir)
+    # Only the content-compared files of the expected output are committed;
+    # the full directory structure is recorded in expected_paths.txt.
+    expected_paths = read_expected_paths(expected_dir)
     tmp_paths = get_all_paths(output_dir)
 
     missing_in_tmp = expected_paths - tmp_paths
