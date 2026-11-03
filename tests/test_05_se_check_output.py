@@ -92,6 +92,9 @@ def get_star_env():
         star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
         star_executable = os.path.join(star_dir_local, "STAR")
         if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
+            if shutil.which("STAR"):
+                # Fall back to a STAR executable already on PATH.
+                return env
             raise RuntimeError(
                 f"STAR executable not found or not executable at '{star_executable}'. "
                 "Please set 'star_dir_local' to the correct local STAR installation path."
