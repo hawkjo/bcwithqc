@@ -8,7 +8,7 @@ An end-to-end tool for processing fastq files with barcoded sequences into annot
 
 ## Installation
 
-bcwithqc works in Linux, and has been tested on el8 and CentOS 7. 
+bcwithqc works in Linux, and has been tested on el8 and CentOS 7. It requires Python 3.10 or 3.11 (`biopython==1.79` is pinned).
 
 You can install bcwithqc from github directly into your local (conda or virtual) environment using pip:
 ```
@@ -16,14 +16,14 @@ pip install git+https://github.com/hawkjo/bcwithqc.git
 ```
 This typically takes a few minutes. 
 
-[STAR aligner](https://github.com/alexdobin/STAR)  needs to be installed independently as well.
+bcwithqc does not align reads itself. Install an aligner separately; the examples and tests use the [STAR aligner](https://github.com/alexdobin/STAR) (CI uses STAR 2.7.10b).
 
 ## Usage
 
 The basic usage for bcwithqc can be displayed at any time via `bcwithqc --help`:
 ```
 Usage:
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv] [--output-format-bam]
   bcwithqc count            <fastq_dir> --STAR-output-dir=<> --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
@@ -33,7 +33,8 @@ Options:
   --config=<>:                        Path to JSON configuration.
   --output-dir=<>:                    Path to output directory [default: .].
   --threads=<>:                       Number of threads [default: 1].
-  -v:                                 Verbose output.
+  --output-format-bam:                Produces a BAM file with pre-processed reads instead of a fastq file that requires STAR alignment [default: False].
+  -v:                                 Verbosity of output. Can be -v, -vv, or -vvv, with more v's leading to more verbose output.
   --nreads=<>:                        Number of reads to simulate.
   --unique-umis=<>:                   Fraction of all reads that have unique UMIs [default: 0.5].
   --seed=<>:                          Random seed [default: 42].
@@ -53,9 +54,9 @@ Commands:
   count_matrix     Build a count matrix (or matrices) from an existing bam file.
   simulate_reads   Generate synthetic sequencing reads given a barcode configuration.
 ```
-The barcode details are input via a json configuration file, of which standard gDNA and RNA versions can be found in the `examples` folder. 
+The barcode details are input via a json configuration file, of which standard gDNA and RNA versions can be found in the `examples` folder. `CONFIG_and_GUI_DESGIN_DOC.txt` describes every config key, its default and its meaning.
 
-STAR references need to be prebuilt and their top directory input as a parameter.
+Alignment is done by the user between `preprocess` and `count` (see Basic Workflow).
 
 ## Example Workflow
 
@@ -63,15 +64,20 @@ The `examples` folder contains several small example gDNA and RNA datasets for b
 
 ### Basic Workflow:
 1. Run `bcwithqc preprocess` on your fastq files while providing a `config.json` file and specifying an output directory.
-    (Important: The config file specifies which parts of the reads will be kept for aligment with STAR)
-2. Run `STAR` (BAM unsorted) on the `sans_bc_*.fq` files in the preprocess output directory while providing a `STAR genome index`.
-3. Run `bcwithqc count` on the `sans_bc_*.fq` files while providing the STAR output directory containing the `*Aligned.out.bam` files. 
+    (Important: The config file specifies which parts of the reads will be kept for alignment, via `keep_nonbarcode` and `keepblock`.)
+    `single_end_reads` in the config selects single-end or paired-end processing.
+2. Align the `sans_bc_*.fq` files from the preprocess output directory yourself, producing one unsorted BAM per input FASTQ (pair), named `*Aligned.out.bam` and placed in one directory. Counting needs the `GX`/`GN` gene tags. The tests use:
+    ```
+    STAR --genomeDir <index> --readFilesIn <sans_bc fastq(s)> --outFileNamePrefix <star_dir>/<sample>_ \
+         --outFilterMultimapNmax 1 --outSAMtype BAM Unsorted --outSAMattributes NH HI AS nM GX GN
+    ```
+3. Run `bcwithqc count <preprocess output dir> --STAR-output-dir=<star_dir> --config=<same config>` with the same `--output-dir` as `preprocess`. BAMs and tag files are matched in lexicographic order.
 
 ## Outputs
 The primary outputs from bcwithqc are:
 * An annotated BAM file
 * A read count matrix
-* A UMI count matrix
+* A UMI count matrix (only when the config contains a `UMI` block)
 
 ```text
 <sample_output_folder>/
@@ -82,22 +88,22 @@ The primary outputs from bcwithqc are:
 │   ├── matrix.mtx.gz
 │   ├── barcodes.tsv.gz
 │   └── features.tsv.gz
-├── raw_umis_bc_matrix/
+├── raw_umis_bc_matrix/         # only with UMI blocks
 │   ├── matrix.mtx.gz
 │   ├── barcodes.tsv.gz
 │   └── features.tsv.gz
-├── with_bc_umi_sorted.bam
-└── with_bc_umi_sorted.bam.bai
+├── with_bc_umi.sorted.bam
+└── with_bc_umi.sorted.bam.bai
 ```
 
 ### BAM file tags
-The BAM file `with_bc_umi_sorted.bam` is annotated with custom tags that have been created in the style of current community standards. These are:
+The BAM file `with_bc_umi.sorted.bam` is annotated with custom tags that have been created in the style of current community standards. These are:
 
 | Tag  | Meaning                                 |
 | ---- | --------------------------------------- |
 | `CB` | Cell barcode                            |
 | `CR` | Raw, uncorrected cell barcode           |
-| `UB` | UMI                                     |
+| `UB` | Corrected UMI (only with UMI blocks)    |
 | `UR` | Raw, uncorrected UMI                    |
 | `FL` | Combined length of the linker sequences |
 
