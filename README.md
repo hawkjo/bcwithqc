@@ -24,14 +24,15 @@ The basic usage for bcwithqc can be displayed at any time via `bcwithqc --help`:
 ```
 Usage:
   bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv] [--output-format-bam]
-  bcwithqc count            <fastq_dir> --STAR-output-dir=<> --config=<> [--output-dir=<>] [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
+  bcwithqc count            <fastq_dir> --STAR-output-dir=<> --config=<> --output-dir=<> [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
 
 Options:
   --STAR-output-dir=<>:               Path to STAR output directory. All BAM/SAM files with the suffix "*Aligned.out.bam" will be processed in lexicographic order.
   --config=<>:                        Path to JSON configuration.
-  --output-dir=<>:                    Path to output directory [default: .].
+  --output-dir=<>:                    Path to output directory [default: .]. Required for count, which removes
+                                        (or, with --keep-intermediary, moves) everything in it except its final outputs.
   --threads=<>:                       Number of threads [default: 1].
   --output-format-bam:                Produces a BAM file with pre-processed reads instead of a fastq file that requires STAR alignment [default: False].
   -v:                                 Verbosity of output. Can be -v, -vv, or -vvv, with more v's leading to more verbose output.
