@@ -23,7 +23,7 @@ bcwithqc does not align reads itself. Install an aligner separately; the example
 The basic usage for bcwithqc can be displayed at any time via `bcwithqc --help`:
 ```
 Usage:
-  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv] [--output-format-bam]
+  bcwithqc preprocess       <fastq_dir> --config=<> [--output-dir=<>] [--threads=<>] [-v | -vv | -vvv]
   bcwithqc count            <fastq_dir> --STAR-output-dir=<> --config=<> --output-dir=<> [--threads=<>] [--keep-intermediary] [-v | -vv | -vvv]
   bcwithqc count_matrix     <bcwithqc_bam_file> --output-dir=<> [--threads=<>] [-v | -vv | -vvv]
   bcwithqc simulate_reads   --config=<> --output-dir=<> --nreads=<> [--unique-umis=<>] [--seed=<>] [--error-probability=<>] [--substitution-probability=<>] [--insertion-probability=<>] [--random-tail-length=<>] [-v | -vv | -vvv]
@@ -34,7 +34,6 @@ Options:
   --output-dir=<>:                    Path to output directory [default: .]. Required for count, which removes
                                         (or, with --keep-intermediary, moves) everything in it except its final outputs.
   --threads=<>:                       Number of threads [default: 1].
-  --output-format-bam:                Produces a BAM file with pre-processed reads instead of a fastq file that requires STAR alignment [default: False].
   -v:                                 Verbosity of output. Can be -v, -vv, or -vvv, with more v's leading to more verbose output.
   --nreads=<>:                        Number of reads to simulate.
   --unique-umis=<>:                   Fraction of all reads that have unique UMIs [default: 0.5].

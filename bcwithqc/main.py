@@ -13,7 +13,9 @@ Options:
   --output-dir=<>:                    Path to output directory [default: .]. Required for count, which removes
                                         (or, with --keep-intermediary, moves) everything in it except its final outputs.
   --threads=<>:                       Number of threads [default: 1].
-  --output-format-bam:                Produces a BAM file with pre-processed reads instead of a fastq file that requires STAR alignment [default: False].
+  --output-format-bam:                For testing: also write a placeholder <prefix>_Aligned.out.bam in which every read is
+                                        reported as aligned to one dummy feature, 'toy_gene' (no real alignment), so that
+                                        count can run without an aligner [default: False].
   -v:                                 Verbosity of output. Can be -v, -vv, or -vvv, with more v's leading to more verbose output.
   --nreads=<>:                        Number of reads to simulate.
   --unique-umis=<>:                   Fraction of all reads that have unique UMIs [default: 0.5].
