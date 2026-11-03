@@ -1,0 +1,53 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[project]
+name = "bcwithqc"
+description = "A tool for processing Single-cell DNA and RNA sequencing data."
+readme = "README.md"
+authors = [
+    {name="John Hawkins", email="john.hawkins@embl.de"},
+    {name="Ilia Kats", email="i.kats@dkfz-heidelberg.de"}
+]
+# Upper bound carried over from setup.py (python_requires < 3.12).
+requires-python = ">=3.10,<3.12"
+keywords = ["DNA", "NGS", "bioinformatics", "TAP-Seq", "multiomics"]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dynamic = [ "version" ]
+dependencies = [
+    "numpy>=2.0.0",
+    "docopt-ng",
+    "biopython==1.79",  # > 1.79 breaks non-mainline features
+    "matplotlib>=3.5.2",
+    "pysam>=0.23.0",
+    "scipy>=1.10.1",
+    # hawkjo/freebarcodes master (numpy 2 fixes; not yet released on PyPI, where 3.1.0 fails under numpy 2).
+    "freebarcodes @ git+https://github.com/hawkjo/freebarcodes.git@2aa1e6f4c2b02d1e7dd99052ff10aea7c575d6d2",
+    "regex>=2024.11.6",
+    "pywfa>=0.6.0"
+]
+
+urls.Home-page = "https://github.com/hawkjo/bcwithqc"
+urls.Source = "https://github.com/hawkjo/bcwithqc"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+bcwithqc = "bcwithqc.main:main"
+
+[tool.hatch.version]
+path = "bcwithqc/__init__.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
