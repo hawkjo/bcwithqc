@@ -69,7 +69,7 @@ def preprocess_fastqs(arguments):
         read_idx = 1
 
         with open(paths["reads_tsv"], "w", newline="") as reads_fh:
-            reads_writer = csv.writer(reads_fh, delimiter="\t")
+            reads_writer = csv.writer(reads_fh, delimiter="\t", lineterminator="\n")
             reads_writer.writerow(qc_metrics.get_reads_header(arguments))
 
             for fpath in single_fpaths:
@@ -157,7 +157,7 @@ def preprocess_fastqs(arguments):
         read_idx = 1
 
         with open(paths["reads_tsv"], "w", newline="") as reads_fh:
-            reads_writer = csv.writer(reads_fh, delimiter="\t")
+            reads_writer = csv.writer(reads_fh, delimiter="\t", lineterminator="\n")
             reads_writer.writerow(qc_metrics.get_reads_header(arguments))
 
             for fpath_tup in paired_fpaths:

@@ -222,7 +222,7 @@ def write_read_summary(arguments, status_counts):
     paths = get_qc_paths(arguments)
     output_summary = paths["reads_summary_tsv"]
     with open(output_summary, "w", newline="") as out_fh:
-        writer = csv.writer(out_fh, delimiter="\t")
+        writer = csv.writer(out_fh, delimiter="\t", lineterminator="\n")
         writer.writerow(["status", "count"])
         for status in ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]:
             writer.writerow([status, status_counts.get(status, 0)])
@@ -248,7 +248,7 @@ def write_qc_metrics_from_counts(arguments, counts, conflict_counts, block_summa
     status_columns = ["exact", "corrected", "below_threshold", "ambiguous", "no_match"]
 
     with open(output_file_bcs, "w", newline="") as out_fh:
-        writer = csv.writer(out_fh, delimiter="\t")
+        writer = csv.writer(out_fh, delimiter="\t", lineterminator="\n")
         writer.writerow(["read", "blockname", "barcode", *status_columns, "total", "conflict_bcs"])
 
         for meta in get_sanitized_metadata(arguments, "barcode_struct_r1") + get_sanitized_metadata(arguments, "barcode_struct_r2"):
@@ -292,7 +292,7 @@ def write_qc_metrics_from_counts(arguments, counts, conflict_counts, block_summa
                 ])
 
     with open(output_file_summary, "w", newline="") as out_fh:
-        writer = csv.writer(out_fh, delimiter="\t")
+        writer = csv.writer(out_fh, delimiter="\t", lineterminator="\n")
         writer.writerow(["read", "blockname", *status_columns, "total"])
 
         for read_label, blockname in sorted(block_summary_counts.keys()):
