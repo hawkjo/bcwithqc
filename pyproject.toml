@@ -31,12 +31,17 @@ dependencies = [
     "matplotlib>=3.5.2",
     "pysam>=0.23.0",
     "scipy>=1.10.1",
-    "freebarcodes @ git+https://github.com/lukaslink/freebarcodes.git@master",
+    # hawkjo/freebarcodes master (numpy 2 fixes; not yet released on PyPI, where 3.1.0 fails under numpy 2).
+    "freebarcodes @ git+https://github.com/hawkjo/freebarcodes.git@2aa1e6f4c2b02d1e7dd99052ff10aea7c575d6d2",
     "regex>=2024.11.6",
-    "pywfa @ git+https://github.com/kcleal/pywfa.git@master"
+    "pywfa>=0.6.0"
 ]
+
 urls.Home-page = "https://github.com/hawkjo/bcwithqc"
 urls.Source = "https://github.com/hawkjo/bcwithqc"
+
+[project.optional-dependencies]
+test = ["pytest"]
 
 [project.scripts]
 bcwithqc = "bcwithqc.main:main"
