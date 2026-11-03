@@ -4,18 +4,19 @@ This is an instruction for how the GUI should create the config.json file, as we
 ## Under the Hood: 
 The GUI needs to produce a .json or .json.gz file (example below), that contains one dictionary/JSON object, which has the following key-value pairs: 
     1. "unknown_read_orientation": [BOL]
-    2. "single_end_reads":[BOL] 
+    2. "single_end_reads":[BOL]
     3. Create one (single end) or two (paired end) dictionaries "barcode_struct_r1" and "barcode_struct_r2", which each must contain the following key-value pairs:
         1. "keep_nonbarcode":[BOL]
         2. "blocks":[LIST of dicts] -> Each Block must contain the following key-value pairs:
             1. "maxerrors":[INT]
-            2. "blockfunction":["UMI"/"barcode"]
+            2. "blockfunction":["UMI"/"barcode"/"discard"]
             3. "blocktype":["barcodeList"/"constantRegion"/"randomBarcode"]
             4. One of the following:
                 1. "length":[INT] for "randomBarcode"
                 2. "sequence":[LIST OF STRINGS] for "barcodeList" and "constantRegion" (List can be length=1)
             5. "blockname":[STRING]
             6. "keepblock":[BOL]
+    See "Key reference (merged code)" below for which keys the code requires, their defaults, and their meaning.
 
 ## Options the user should have: 
     Inform the user that right now blocks NEED to be continous, starting at the left side, with an allowed undeclared overhang after the last block.
@@ -29,7 +30,7 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
                                         
         1. Select for each barcode block:   -> "blocks":[LIST of dicts]
             1. Allowed maxerrors                -> "maxerrors":[INT]
-            2. What kind of block it is         -> "blockfunction":["UMI"/"barcode"]
+            2. What kind of block it is         -> "blockfunction":["UMI"/"barcode"/"discard"]
                                                 -> "blocktype":["barcodeList"/"constantRegion"/"randomBarcode"]
                                                         -> "length":[INT] for "randomBarcode"
                                                         -> "sequence":[LIST OF STRINGS] for "barcodeList" and "constantRegion" (List can be length=1)
@@ -79,7 +80,7 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
                 "keepblock": false
             }
         ]
-    }
+    },
     "barcode_struct_r2": {
         "keep_nonbarcode": true,
         "blocks":[]
@@ -96,7 +97,70 @@ Changes I made to the config files and how it is handled:
         3. "blocks":[]
     3. Each block now must contain the key-value pair: "keepblock": [BOL]
 
-# Planned Changes to the Readme
-I am tracking changes that need to be made to the readme here:
-    1. Explain exactly how STAR should be used by the user. (see test_mini_se_STAR_output.py)
+## Key reference (merged code)
+How bcwithqc reads each key after merging PRs #6, #1 and #2 into master. "Required" means the code
+raises KeyError when the key is missing. The GUI should still write every key listed above.
+
+Top level:
+    "unknown_read_orientation" [BOL], required for preprocess and simulate_reads.
+        Paired end: before barcode parsing, each read pair is assigned to Read 1 / Read 2 by fuzzy-matching
+        the constant regions of barcode_struct_r1 and barcode_struct_r2 (mate swap). Reads are not
+        reverse-complemented. Structures without constant regions give no signal (all pairs keep their order).
+        Single end: ignored with a warning.
+        simulate_reads still models the older per-read orientation (it reverses ~half the reads).
+    "single_end_reads" [BOL], required for preprocess, count and simulate_reads.
+        true: every FASTQ in <fastq_dir> is processed as a single-end file; barcode_struct_r2 is ignored.
+        false: FASTQs are processed as R1/R2 pairs.
+    "barcode_struct_r2" [DICT], optional in code. Omitting it and "blocks": [] both mean "no barcodes on Read 2".
+
+Per read ("barcode_struct_r1" / "barcode_struct_r2"):
+    "keep_nonbarcode" [BOL], required for every read that has blocks.
+        true: the sequence after the last block is written to sans_bc_*.fq for alignment.
+        false: it is dropped. The sans_bc_*.fq record still exists and holds only the "keepblock" blocks
+        (it can be empty).
+        For a paired-end read with no blocks, the whole read is written and this value is ignored.
+    "blocks" [LIST], required for barcode_struct_r1.
+
+Per block:
+    "blocktype": "barcodeList" / "constantRegion" / "randomBarcode", required.
+        Any other value is currently treated as "randomBarcode".
+    "blockfunction": "barcode" / "UMI" / "discard", required.
+        "barcode": contributes to CB/CR (barcodeList, randomBarcode) or FL (constantRegion).
+        "UMI": randomBarcode only; contributes to UR/UB. If no block in the config is a UMI, count skips
+            UMI correction, writes no UB tag and no raw_umis_bc_matrix/ (PR #2).
+        "discard": the block is still aligned and decoded but left out of the tags. Currently only safe on
+            randomBarcode blocks: on a barcodeList or constantRegion it shifts later barcodes / FL values.
+    "sequence" [LIST of STRINGS], required for barcodeList and constantRegion.
+        barcodeList: the aligner sizes the slot from the first entry. Lists decoded with Levenshtein
+        (BCDecoder) may mix lengths. A list decoded with FREE (SBCDecoder) must be fixed-length or
+        preprocess raises ValueError. FREE is used only for the read's last barcodeList, and only when it is
+        the read's last block or is followed by a randomBarcode.
+        constantRegion: each entry is one alternative; the best-matching alternative is used.
+        Only uppercase A/C/G/T match reliably.
+    "length" [INT], required for randomBarcode.
+    "maxerrors" [INT], required for barcodeList and constantRegion.
+        barcodeList: maximum edit distance for decoding.
+        constantRegion: maximum Levenshtein distance between the observed and expected sequence; reads above
+        it are dropped (new; master did not check constant regions).
+        randomBarcode: not used by the pipeline (UMI correction uses distance 1); used by simulate_reads.
+    "blockname" [STRING], optional, default "<barcode_struct_rN>_barcode".
+        Used only to name barcodeList QC outputs (bcs.tsv rows, barcodes_<read>_<blockname>.png).
+        Unnamed lists on the same read share the default; spaces currently zero out that block in bcs.tsv.
+    "keepblock" [BOL], optional, default false.
+        true: the block's raw sequence is kept in sans_bc_*.fq (blocks first, in order, then the trailing
+        sequence if keep_nonbarcode is true).
+    "name" [LIST of STRINGS], optional, barcodeList only, read only by simulate_reads (read-name labels;
+        falls back to the sequence).
+
+Changes against master (April 2025):
+    1. New required top-level key "single_end_reads" (single-end support is new).
+    2. "unknown_read_orientation" changed meaning: from per-read reverse-complement detection in the aligner
+       to a per-pair mate swap based on constant regions (paired end only).
+    3. New optional per-block key "keepblock" (default false). With all keepblock false, the sans_bc output
+       matches master, except that a read with keep_nonbarcode false now still gets a (possibly empty)
+       sans_bc record instead of no sans_bc file.
+    4. "maxerrors" is now enforced on constantRegion blocks.
+    5. "blockname" is now used (QC output names); master ignored it.
+    6. barcodeList "sequence" may mix lengths for Levenshtein-decoded lists (master assumed one length).
+    7. Configs without UMI blocks no longer produce UB tags or raw_umis_bc_matrix/ (PR #2).
 
