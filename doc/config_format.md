@@ -1,8 +1,13 @@
-#  Config.json Design instructions
-This is an instruction for how the GUI should create the config.json file, as well as a general config.json design guide. 
+# Config.json Design instructions
 
-## Under the Hood: 
-The GUI needs to produce a .json or .json.gz file (example below), that contains one dictionary/JSON object, which has the following key-value pairs: 
+This is an instruction for how the GUI should create the config.json file, as well as a general config.json design guide.
+
+(This file was previously `CONFIG_and_GUI_DESGIN_DOC.txt` in the repository root.)
+
+## Under the Hood:
+
+```text
+The GUI needs to produce a .json or .json.gz file (example below), that contains one dictionary/JSON object, which has the following key-value pairs:
     1. "unknown_read_orientation": [BOL]
     2. "single_end_reads":[BOL]
     3. Create one (single end) or two (paired end) dictionaries "barcode_struct_r1" and "barcode_struct_r2", which each must contain the following key-value pairs:
@@ -17,17 +22,20 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
             5. "blockname":[STRING]
             6. "keepblock":[BOL]
     See "Key reference (merged code)" below for which keys the code requires, their defaults, and their meaning.
+```
 
-## Options the user should have: 
+## Options the user should have:
+
+```text
     Inform the user that right now blocks NEED to be continous, starting at the left side, with an allowed undeclared overhang after the last block.
 
-    1. Select once for the the entire config file: 
+    1. Select once for the the entire config file:
         1. If the reads were shuffled between r1 and r2 and need to be identified -> "unknown_read_orientation":[BOL]
         2. Select if we are dealing with single end or paired end reads          -> "single_end_reads":[BOL]
 
-    2. Select for each read direction if the overhang should be kept or not 
+    2. Select for each read direction if the overhang should be kept or not
                             -> "keep_nonbarcode":[BOL] in both "barcode_struct_r1" dictionary, and for paired end also in "barcode_struct_r2"
-                                        
+
         1. Select for each barcode block:   -> "blocks":[LIST of dicts]
             1. Allowed maxerrors                -> "maxerrors":[INT]
             2. What kind of block it is         -> "blockfunction":["UMI"/"barcode"/"discard"]
@@ -35,13 +43,14 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
                                                         -> "length":[INT] for "randomBarcode"
                                                         -> "sequence":[LIST OF STRINGS] for "barcodeList" and "constantRegion" (List can be length=1)
             3. Name of the block                -> "blockname":[STRING]
-                Assign name if none given.                                           
+                Assign name if none given.
             4. If the block should be kept
                 for allignment.                 -> "keepblock":[BOL]
-
+```
 
 ## Example Config.json
 
+```json
 {
     "unknown_read_orientation": false,
     "single_end_reads": false,
@@ -63,7 +72,7 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
             },
             {
                 "maxerrors": 1,
-                "blockfunction": "barcode",             
+                "blockfunction": "barcode",
                 "sequence": [
                     "GGGTCAGTACGTACGAGTCCC"
                 ],
@@ -84,20 +93,26 @@ The GUI needs to produce a .json or .json.gz file (example below), that contains
     "barcode_struct_r2": {
         "keep_nonbarcode": true,
         "blocks":[]
-    }  
+    }
 }
+```
 
 ## Changes made by Lukas
+
+```text
 Changes I made to the config files and how it is handled:
-    1. I introduced the following key-value pairs: 
+    1. I introduced the following key-value pairs:
         1. "unknown_read_orientation": [BOL],
         2. "single_end_reads": [BOL],
     2. "barcode_struct_r2" is now required for paired end reads, and must include at least:
         1. "keep_nonbarcode": [BOL],
         3. "blocks":[]
     3. Each block now must contain the key-value pair: "keepblock": [BOL]
+```
 
 ## Key reference (merged code)
+
+```text
 How bcwithqc reads each key after merging PRs #6, #1 and #2 into master. "Required" means the code
 raises KeyError when the key is missing. The GUI should still write every key listed above.
 
@@ -163,4 +178,4 @@ Changes against master (April 2025):
     5. "blockname" is now used (QC output names); master ignored it.
     6. barcodeList "sequence" may mix lengths for Levenshtein-decoded lists (master assumed one length).
     7. Configs without UMI blocks no longer produce UB tags or raw_umis_bc_matrix/ (PR #2).
-
+```

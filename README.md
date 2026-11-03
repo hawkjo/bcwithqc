@@ -54,7 +54,7 @@ Commands:
   count_matrix     Build a count matrix (or matrices) from an existing bam file.
   simulate_reads   Generate synthetic sequencing reads given a barcode configuration.
 ```
-The barcode details are input via a json configuration file, of which standard gDNA and RNA versions can be found in the `examples` folder. `CONFIG_and_GUI_DESGIN_DOC.txt` describes every config key, its default and its meaning.
+The barcode details are input via a json configuration file, of which standard gDNA and RNA versions can be found in the `examples` folder. [`doc/config_format.md`](doc/config_format.md) describes every config key, its default and its meaning.
 
 Alignment is done by the user between `preprocess` and `count` (see Basic Workflow).
 
@@ -124,7 +124,7 @@ The count matrices `matrix.mtx.gz` are written in sparse Matrix Market format.
 ### QC_metrics 
 QC metrics contains:
 1. Filtered FASTQ files containing reads that were excluded from further processing because:
-- A sequence was decoded to multiple possible barcodes                   -> `*_ambiuous_reads.fq`
+- A sequence was decoded to multiple possible barcodes                   -> `*_ambiguous_reads.fq`
 - A sequence could not be decoded to any barcode                         -> `*_no_match_reads.fq`
 - A sequence was decoded, but the overall score of the read was too low  -> `*_threshold_fail_reads.fq`
 
