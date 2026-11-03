@@ -1,9 +1,10 @@
 *pyc
 *swp
 *pkl
-!tests/gDNA_paired_end/intermediary_files/namepairidx_gDNA_1_sequence.pkl
-!tests/cDNA_paired_end/intermediary_files/namepairidx_cDNA_1_sequence.pkl
 envbcwithqc
+.venv/
+venv/
+.DS_Store
 build
 dist
 bcwithqc.egg-info
@@ -17,3 +18,6 @@ tests/cDNA_single_end_no_STAR/
 tests/gDNA_single_end_no_STAR/
 tests/tmp_*/
 tests/shuffled_sequences/output/tmp_shuffle/
+tests/shuffled_sequences/output/oriented_*
+# Output of the example scripts in examples/example_scripts/
+examples/example_scripts/test_run/

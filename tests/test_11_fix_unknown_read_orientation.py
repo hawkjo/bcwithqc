@@ -1,4 +1,5 @@
 import os
+import random
 import pytest
 import gzip
 import shutil
@@ -163,28 +164,68 @@ dummy_gDNA_config_r1_only = {
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(SCRIPT_DIR, "shuffled_sequences/output")
 
-paired_cDNA_fpaths = [
-    (os.path.join(SCRIPT_DIR, "shuffled_sequences/cDNA_fastqs/cDNA_1_sequence_shuffled.txt.gz"),
-     os.path.join(SCRIPT_DIR, "shuffled_sequences/cDNA_fastqs/cDNA_2_sequence_shuffled.txt.gz"))
-]
+EXAMPLES_DIR = os.path.join(SCRIPT_DIR, "../examples")
+SAMPLE_TYPES = ("gDNA", "cDNA")
 
-paired_gDNA_fpaths = [
-    (os.path.join(SCRIPT_DIR, "shuffled_sequences/gDNA_fastqs/gDNA_1_sequence_shuffled.txt.gz"),
-     os.path.join(SCRIPT_DIR, "shuffled_sequences/gDNA_fastqs/gDNA_2_sequence_shuffled.txt.gz"))
-]
-
-
-# Expected original files
+# The unshuffled reference reads are the paired-end examples.
 EXPECTED_FASTQS = {
-    "gDNA": {
-        "r1": os.path.join(SCRIPT_DIR, "shuffled_sequences/gDNA_fastqs/gDNA_1_sequence.txt.gz"),
-        "r2": os.path.join(SCRIPT_DIR, "shuffled_sequences/gDNA_fastqs/gDNA_2_sequence.txt.gz"),
-    },
-    "cDNA": {
-        "r1": os.path.join(SCRIPT_DIR, "shuffled_sequences/cDNA_fastqs/cDNA_1_sequence.txt.gz"),
-        "r2": os.path.join(SCRIPT_DIR, "shuffled_sequences/cDNA_fastqs/cDNA_2_sequence.txt.gz"),
+    sample_type: {
+        "r1": os.path.join(EXAMPLES_DIR, f"{sample_type}_fastqs_paired_end", f"{sample_type}_1_sequence.txt.gz"),
+        "r2": os.path.join(EXAMPLES_DIR, f"{sample_type}_fastqs_paired_end", f"{sample_type}_2_sequence.txt.gz"),
     }
+    for sample_type in SAMPLE_TYPES
 }
+
+
+def read_fastq_records(fpath):
+    """Read a gzipped FASTQ file.
+
+    Args:
+        fpath: Path to a gzipped FASTQ file.
+
+    Returns:
+        List of records, each the four lines of one read joined into one string.
+    """
+    with gzip.open(fpath, "rt") as fh:
+        lines = fh.readlines()
+    return ["".join(lines[i:i + 4]) for i in range(0, len(lines), 4)]
+
+
+def write_shuffled_fastqs(sample_type, out_dir, seed=42):
+    """Write the example read pairs with R1 and R2 swapped for about half of the pairs.
+
+    Pair i is swapped when the i-th draw of ``random.Random(seed).random()`` is below
+    0.5. With seed 42 this reproduces the shuffled inputs the expected mismatch lists
+    in shuffled_sequences/output/mismatched_reads were made from (9,931 of 20,000
+    pairs swapped in both samples).
+
+    Args:
+        sample_type: "gDNA" or "cDNA".
+        out_dir: Directory to write the two files into.
+        seed: Seed for the swap decisions.
+
+    Returns:
+        Tuple (r1_fpath, r2_fpath), named <sample_type>_{1,2}_sequence_shuffled.txt.gz.
+    """
+    r1_records = read_fastq_records(EXPECTED_FASTQS[sample_type]["r1"])
+    r2_records = read_fastq_records(EXPECTED_FASTQS[sample_type]["r2"])
+    rng = random.Random(seed)
+    r1_fpath = os.path.join(out_dir, f"{sample_type}_1_sequence_shuffled.txt.gz")
+    r2_fpath = os.path.join(out_dir, f"{sample_type}_2_sequence_shuffled.txt.gz")
+    with gzip.open(r1_fpath, "wt") as out1, gzip.open(r2_fpath, "wt") as out2:
+        for record1, record2 in zip(r1_records, r2_records):
+            if rng.random() < 0.5:
+                record1, record2 = record2, record1
+            out1.write(record1)
+            out2.write(record2)
+    return r1_fpath, r2_fpath
+
+
+@pytest.fixture(scope="module")
+def shuffled_fpaths(tmp_path_factory):
+    """Shuffled read pairs per sample type, in the [(r1, r2)] form fix_unknown_read_orientation takes."""
+    out_dir = tmp_path_factory.mktemp("shuffled_fastqs")
+    return {sample_type: [write_shuffled_fastqs(sample_type, out_dir)] for sample_type in SAMPLE_TYPES}
 
 
 @pytest.fixture
@@ -273,13 +314,12 @@ def compare_gzipped_text_files(file1, file2, mismatch_threshold=0.002, output_di
 
 
 @pytest.mark.parametrize("sample_type", ["gDNA", "cDNA"])
-def test_fix_unknown_read_orientation(sample_type, cleanup_tmp_shuffle):
+def test_fix_unknown_read_orientation(sample_type, cleanup_tmp_shuffle, shuffled_fpaths):
+    paired_fpaths = shuffled_fpaths[sample_type]
     if sample_type == "gDNA":
         dummy_args = DummyArgs(OUTPUT_DIR, dummy_gDNA_config_r1_only)
-        paired_fpaths = paired_gDNA_fpaths
     else:
         dummy_args = DummyArgs(OUTPUT_DIR, dummy_cDNA_config_r1_only)
-        paired_fpaths = paired_cDNA_fpaths
 
     # Call the function with dummy arguments and input file paths
     new_fpaths = fix_unknown_read_orientation(dummy_args, paired_fpaths)

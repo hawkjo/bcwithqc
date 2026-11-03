@@ -119,7 +119,7 @@ def test_get_candidate_barcodes_can_return_single_exact_candidate(small_lookup):
     }
 
 
-def test_random_query_candidate_percentage_is_written_to_file():
+def test_random_query_candidate_percentage_is_written_to_file(tmp_path):
     """
     Load a larger reference barcode list and estimate how many reference
     barcodes are returned on average for random query sequences.
@@ -202,8 +202,9 @@ def test_random_query_candidate_percentage_is_written_to_file():
             "max_candidate_percentage": max(candidate_percentages),
         })
 
+    # Written to pytest's temporary directory, not next to the tracked input file.
     output_fpath = os.path.join(
-        os.path.dirname(ref_barcodes_fpath),
+        tmp_path,
         "bc_lookup_random_query_candidate_percentage_by_allowed_errors.tsv",
     )
 

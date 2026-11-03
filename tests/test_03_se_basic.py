@@ -25,7 +25,8 @@ cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA_single_end_config.json"
 star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
 # Set to True to use a temp directory that is deleted automatically.
-# Set to False to write into SCRIPT_DIR/<sample_type>_single_end_STAR_out and keep the output.
+# Set to False to write into SCRIPT_DIR/tmp_keep_<sample_type>_single_end and keep the output
+# (ignored by git; never the committed expected outputs that test_05 compares against).
 USE_TEMP_OUTPUT = True
 verbosity = "-vv"
 
@@ -90,7 +91,7 @@ def test_single_end_pipeline_runs(sample_type, input_dir, config):
     if USE_TEMP_OUTPUT:
         context = tempfile.TemporaryDirectory(prefix=f"{sample_type}_single_end_STAR_out_")
     else:
-        output_dir = os.path.join(SCRIPT_DIR, f"{sample_type}_single_end")
+        output_dir = os.path.join(SCRIPT_DIR, f"tmp_keep_{sample_type}_single_end")
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.makedirs(output_dir, exist_ok=True)
