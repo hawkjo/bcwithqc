@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barcode configurator · bcwithqc</title>
+<style>
+/* Styles. Block colours follow barcodinggui: barcode list green, constant region orange, random blue. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef0f4; --fg: #1a2130; --muted: #5b6577; --line: #d8dde5;
+  --accent: #3446a8; --accent-soft: #e4e8fb;
+  --list: #2f8a4a; --list-bg: #e5f3e9; --const: #c2650f; --const-bg: #fcebd9; --rand: #2f6fc4; --rand-bg: #e3ecfa;
+  --rest: #8a93a3; --rest-bg: #eef0f3;
+  --err: #b42318; --err-bg: #fde8e6; --warn: #8a6100; --warn-bg: #fff3cf;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10141a; --surface: #171c24; --surface-2: #1f2631; --fg: #e6e9ef; --muted: #9ca6b7; --line: #2c3544;
+    --accent: #9cadff; --accent-soft: #252c4c;
+    --list: #6cc287; --list-bg: #18301f; --const: #f0a25c; --const-bg: #382614; --rand: #7fadf0; --rand-bg: #172a45;
+    --rest: #8790a0; --rest-bg: #1d232c;
+    --err: #ff8a80; --err-bg: #3a1714; --warn: #e8c35a; --warn-bg: #352a0b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
+.mono, code { font-family: var(--font-mono); }
+#app { max-width: 1280px; margin: 0 auto; padding: 16px; }
+.banner { border: 1px solid var(--err); background: var(--err-bg); color: var(--err); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div id="app" data-busy="true">
+  <noscript><div class="banner">The barcode configurator needs JavaScript.</div></noscript>
+  <div id="feature_banner" class="banner" hidden></div>
+  <h1 style="font-size:20px;margin:0 0 8px">Barcode configurator</h1>
+  <p id="loading">Loading…</p>
+</div>
+
+<script id="barcode_core">
+/**
+ * Core of the barcode configurator: pure functions with no DOM access.
+ *
+ * The model is what the user means: both reads, every block, each list's
+ * sort choice, and the orientation choice, even where bcwithqc ignores them.
+ * config_to_json turns it into the exact text bcwithqc reads, and
+ * config_from_json turns any bcwithqc, SDRranger or barcodinggui config back
+ * into a model, listing every change it makes as a notice.
+ *
+ * Tests reach these functions through window.barcode_core.
+ */
+(function () {
+  'use strict';
+
+  /** Integers from first to last, inclusive. */
+  function code_range(first, last) {
+    const codes = [];
+    for (let code = first; code <= last; code++) codes.push(code);
+    return codes;
+  }
+
+  const BLOCK_TYPES = ['barcodeList', 'constantRegion', 'randomBarcode'];
+  const BLOCK_FUNCTIONS = ['barcode', 'UMI', 'discard'];
+  const READ_KEYS = ['barcode_struct_r1', 'barcode_struct_r2'];
+  const READ_LABELS = ['Read 1', 'Read 2'];
+  const DNA_PATTERN = /^[ACGT]+$/;
+  const BLOCK_KEYS = ['maxerrors', 'blockfunction', 'sequence', 'length', 'blocktype', 'blockname', 'keepblock', 'linkgroup', 'name'];
+  const READ_STRUCT_KEYS = ['keep_nonbarcode', 'blocks'];
+  const TOP_KEYS = ['unknown_read_orientation', 'single_end_reads', 'barcode_struct_r1', 'barcode_struct_r2'];
+  // Characters that are easy to paste by accident and invisible on screen: no-break
+  // space, soft hyphen, zero-width and direction marks, line and paragraph
+  // separators, word joiners and the byte-order mark. Built from code points so
+  // this source stays ASCII.
+  const INVISIBLE_CODES = [0x00a0, 0x00ad, ...code_range(0x200b, 0x200f), ...code_range(0x2028, 0x202f), ...code_range(0x2060, 0x2064), 0xfeff];
+  const INVISIBLE_PATTERN = new RegExp('[\\s' + String.fromCharCode(...INVISIBLE_CODES) + ']', 'g');
+
+  // ------------------------------------------------------------------
+  // JSON text exactly as Python writes it
+
+  /**
+   * Quote a string as Python's json.dumps does with ensure_ascii=True.
+   *
+   * Every character outside printable ASCII is written as a lowercase \uXXXX
+   * escape (characters above U+FFFF as their two UTF-16 halves, as Python
+   * does), so the file is plain ASCII.
+   * @param {string} text
+   * @returns {string} The quoted JSON string.
+   */
+  function python_json_string(text) {
+    let out = '"';
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      const code = text.charCodeAt(i);
+      if (ch === '"') out += '\\"';
+      else if (ch === '\\') out += '\\\\';
+      else if (ch === '\n') out += '\\n';
+      else if (ch === '\r') out += '\\r';
+      else if (ch === '\t') out += '\\t';
+      else if (code === 0x08) out += '\\b';
+      else if (code === 0x0c) out += '\\f';
+      else if (code < 0x20 || code > 0x7e) out += '\\u' + code.toString(16).padStart(4, '0');
+      else out += ch;
+    }
+    return out + '"';
+  }
+
+  /**
+   * Serialise a value exactly as Python's json.dumps(value, indent=4).
+   *
+   * Configs contain only null, booleans, numbers, strings, arrays and plain
+   * objects. Object keys keep their insertion order, as Python dicts do.
+   * @param {*} value
+   * @param {number} [level=0] Nesting depth, for indentation.
+   * @returns {string}
+   */
+  function python_json_dumps(value, level = 0) {
+    if (value === null) return 'null';
+    if (value === true) return 'true';
+    if (value === false) return 'false';
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) throw new Error('Cannot write ' + value + ' as JSON');
+      return String(value);
+    }
+    if (typeof value === 'string') return python_json_string(value);
+    const pad = ' '.repeat(4 * (level + 1));
+    const close_pad = ' '.repeat(4 * level);
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '[]';
+      return '[\n' + value.map((item) => pad + python_json_dumps(item, level + 1)).join(',\n') + '\n' + close_pad + ']';
+    }
+    if (typeof value === 'object') {
+      const keys = Object.keys(value);
+      if (keys.length === 0) return '{}';
+      return '{\n' + keys.map((key) => pad + python_json_string(key) + ': ' + python_json_dumps(value[key], level + 1)).join(',\n') + '\n' + close_pad + '}';
+    }
+    throw new Error('Cannot write a ' + typeof value + ' as JSON');
+  }
+
+  // ------------------------------------------------------------------
+  // Small helpers
+
+  function is_plain_object(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function is_sequence_block(block) {
+    return block.blocktype === 'barcodeList' || block.blocktype === 'constantRegion';
+  }
+
+  /** Reads the exported config contains: Read 1 only for single-end, otherwise both. */
+  function exported_read_indices(model) {
+    return model.single_end === true ? [0] : [0, 1];
+  }
+
+  function describe_raw(value) {
+    if (typeof value === 'string') return '"' + value + '"';
+    if (value === undefined) return 'nothing';
+    return JSON.stringify(value);
+  }
+
+  function block_label(block, index) {
+    return typeof block.blockname === 'string' && block.blockname !== '' ? block.blockname : 'block ' + (index + 1);
+  }
+
+  function plural(count, singular, plural_form) {
+    return count === 1 ? singular : (plural_form || singular + 's');
+  }
+
+  // ------------------------------------------------------------------
+  // The model
+
+  /**
+   * A new, empty model: no mode chosen yet, an empty Read 1, and an empty
+   * Read 2 that would send each read whole to alignment.
+   * @returns {Object}
+   */
+  function new_model() {
+    return {
+      single_end: null,
+      unknown_read_orientation: false,
+      reads: [{ keep_nonbarcode: false, blocks: [] }, { keep_nonbarcode: true, blocks: [] }],
+    };
+  }
+
+  /** The next free block id in a model ("b1", "b2", ...). */
+  function next_block_id(model) {
+    let highest = 0;
+    for (const read of model.reads) {
+      for (const block of read.blocks) {
+        const number = Number(String(block.id).slice(1));
+        if (Number.isInteger(number) && number > highest) highest = number;
+      }
+    }
+    return 'b' + (highest + 1);
+  }
+
+  /**
+   * The default name for a new block: bc1, con1, umi1, ..., unique across
+   * both reads, ignoring case.
+   * @param {Object} model
+   * @param {string} blocktype
+   * @returns {string}
+   */
+  function default_block_name(model, blocktype) {
+    const prefix = { barcodeList: 'bc', constantRegion: 'con', randomBarcode: 'umi' }[blocktype] || 'block';
+    const taken = new Set();
+    for (const read of model.reads) {
+      for (const block of read.blocks) {
+        if (typeof block.blockname === 'string') taken.add(block.blockname.toLowerCase());
+      }
+    }
+    let number = 1;
+    while (taken.has((prefix + number).toLowerCase())) number += 1;
+    return prefix + number;
+  }
+
+  /**
+   * A new block with the app's defaults: lists and constants allow 1 error;
+   * random blocks are 8 nt UMIs with 0 errors. New lists sort A→Z.
+   * @param {Object} model Used for the id and the default name.
+   * @param {string} blocktype
+   * @returns {Object}
+   */
+  function new_block(model, blocktype) {
+    const block = {
+      id: next_block_id(model),
+      blocktype,
+      blockname: default_block_name(model, blocktype),
+      blockfunction: blocktype === 'randomBarcode' ? 'UMI' : 'barcode',
+      maxerrors: blocktype === 'randomBarcode' ? 0 : 1,
+      keepblock: false,
+      linkgroup: null,
+    };
+    if (blocktype === 'randomBarcode') {
+      block.length = 8;
+    } else {
+      block.sequence = [];
+      block.sequence_source = [];
+      if (blocktype === 'barcodeList') block.sort = 'az';
+    }
+    return block;
+  }
+
+  /**
+   * Add a new block to a read.
+   * @param {Object} model
+   * @param {number} read_index 0 for Read 1, 1 for Read 2.
+   * @param {string} blocktype
+   * @param {number} [position] Insert before this index; default is the end.
+   * @returns {{model: Object, block_id: string}}
+   */
+  function add_block(model, read_index, blocktype, position) {
+    const result = clone(model);
+    const block = new_block(result, blocktype);
+    const blocks = result.reads[read_index].blocks;
+    blocks.splice(position === undefined ? blocks.length : position, 0, block);
+    return { model: result, block_id: block.id };
+  }
+
+  /**
+   * Remove a block. A link group left with one block is dissolved, so the
+   * model never holds a one-block group the user didn't open from a file.
+   * @param {Object} model
+   * @param {number} read_index
+   * @param {string} block_id
+   * @returns {Object} The new model.
+   */
+  function remove_block(model, read_index, block_id) {
+    const result = clone(model);
+    const read = result.reads[read_index];
+    const removed = read.blocks.find((block) => block.id === block_id);
+    read.blocks = read.blocks.filter((block) => block.id !== block_id);
+    if (removed && removed.linkgroup !== null) dissolve_single_groups(read, [removed.linkgroup]);
+    return result;
+  }
+
+  /**
+   * Move a block within its read.
+   * @param {Object} model
+   * @param {number} read_index
+   * @param {number} from_index
+   * @param {number} to_index Index the block ends up at.
+   * @returns {Object} The new model.
+   */
+  function move_block(model, read_index, from_index, to_index) {
+    const result = clone(model);
+    const blocks = result.reads[read_index].blocks;
+    const [block] = blocks.splice(from_index, 1);
+    blocks.splice(to_index, 0, block);
+    return result;
+  }
+
+  function dissolve_single_groups(read, groups) {
+    for (const group of groups) {
+      const members = read.blocks.filter((block) => block.linkgroup === group);
+      if (members.length === 1) members[0].linkgroup = null;
+    }
+  }
+
+  /**
+   * Link two blocks of the same read. Linking with a block that is already
+   * in a group joins that group; linking two groups merges them.
+   * @param {Object} model
+   * @param {number} read_index
+   * @param {string} block_id
+   * @param {string} other_id
+   * @returns {Object} The new model.
+   */
+  function add_link(model, read_index, block_id, other_id) {
+    const result = clone(model);
+    const read = result.reads[read_index];
+    const block = read.blocks.find((item) => item.id === block_id);
+    const other = read.blocks.find((item) => item.id === other_id);
+    if (!block || !other || block === other) return result;
+    if (block.linkgroup === null && other.linkgroup === null) {
+      const used = read.blocks.map((item) => item.linkgroup).filter((group) => Number.isInteger(group));
+      const group = used.length ? Math.max(...used) + 1 : 0;
+      block.linkgroup = group;
+      other.linkgroup = group;
+    } else if (block.linkgroup === null) {
+      block.linkgroup = other.linkgroup;
+    } else if (other.linkgroup === null) {
+      other.linkgroup = block.linkgroup;
+    } else if (block.linkgroup !== other.linkgroup) {
+      const merged = other.linkgroup;
+      for (const item of read.blocks) if (item.linkgroup === merged) item.linkgroup = block.linkgroup;
+    }
+    return result;
+  }
+
+  /**
+   * Take one block out of its link group. If only one block is left in the
+   * group, it is unlinked too.
+   * @param {Object} model
+   * @param {number} read_index
+   * @param {string} block_id
+   * @returns {Object} The new model.
+   */
+  function remove_link(model, read_index, block_id) {
+    const result = clone(model);
+    const read = result.reads[read_index];
+    const block = read.blocks.find((item) => item.id === block_id);
+    if (!block || block.linkgroup === null) return result;
+    const group = block.linkgroup;
+    block.linkgroup = null;
+    dissolve_single_groups(read, [group]);
+    return result;
+  }
+
+  // ------------------------------------------------------------------
+  // Writing the config
+
+  /**
+   * The sequences in the order the file gets them: a barcode list set to
+   * A→Z is sorted; constant regions always keep their entered order, since
+   * bcwithqc breaks ties between variants by order.
+   * @param {Object} block
+   * @returns {string[]}
+   */
+  function export_sequence_order(block) {
+    const sequence = Array.isArray(block.sequence) ? block.sequence.slice() : block.sequence;
+    if (block.blocktype === 'barcodeList' && block.sort === 'az' && Array.isArray(sequence)) {
+      return sequence.slice().sort();
+    }
+    return sequence;
+  }
+
+  function block_to_object(block, group_numbers) {
+    const out = { maxerrors: block.maxerrors, blockfunction: block.blockfunction };
+    if (block.sequence !== undefined) out.sequence = export_sequence_order(block);
+    if (block.length !== undefined) out.length = block.length;
+    out.blocktype = block.blocktype;
+    out.blockname = block.blockname;
+    out.keepblock = block.keepblock;
+    if (block.linkgroup !== null && block.linkgroup !== undefined) out.linkgroup = group_numbers.get(block.linkgroup);
+    return out;
+  }
+
+  /**
+   * Link groups renumbered from 0 per read, in order of first appearance.
+   * @param {Object[]} blocks
+   * @returns {Map} Model group id to exported number.
+   */
+  function linkgroup_numbers(blocks) {
+    const numbers = new Map();
+    for (const block of blocks) {
+      if (block.linkgroup !== null && block.linkgroup !== undefined && !numbers.has(block.linkgroup)) {
+        numbers.set(block.linkgroup, numbers.size);
+      }
+    }
+    return numbers;
+  }
+
+  /**
+   * The config object bcwithqc reads, in bcwithqc's key order.
+   *
+   * Single-end configs get no barcode_struct_r2 and write
+   * unknown_read_orientation as false, which bcwithqc requires today; the
+   * model keeps both, so switching back to paired-end restores them.
+   * @param {Object} model
+   * @returns {Object}
+   */
+  function config_to_object(model) {
+    const single_end = model.single_end === true;
+    const out = {
+      unknown_read_orientation: single_end ? false : model.unknown_read_orientation,
+      single_end_reads: model.single_end,
+    };
+    for (const read_index of exported_read_indices(model)) {
+      const read = model.reads[read_index];
+      const numbers = linkgroup_numbers(read.blocks);
+      out[READ_KEYS[read_index]] = {
+        keep_nonbarcode: read.keep_nonbarcode,
+        blocks: read.blocks.map((block) => block_to_object(block, numbers)),
+      };
+    }
+    return out;
+  }
+
+  /**
+   * The exact text of the config file: Python's json.dumps(config, indent=4)
+   * plus a trailing newline, in ASCII.
+   * @param {Object} model
+   * @returns {string}
+   */
+  function config_to_json(model) {
+    return python_json_dumps(config_to_object(model)) + '\n';
+  }
+
+  // ------------------------------------------------------------------
+  // Reading a config
+
+  function unknown_keys(object, known) {
+    return Object.keys(object).filter((key) => !known.includes(key));
+  }
+
+  /**
+   * Turn a config file's contents into a model, migrating older formats.
+   *
+   * A file without single_end_reads is from master, SDRranger or
+   * barcodinggui. For those: Read 2 present means paired-end, otherwise the
+   * caller asks (options.legacy_mode, default "paired", which adds a Read 2
+   * that sends each read whole to alignment, as the old pipeline did);
+   * missing keepblock becomes false; orientation true becomes false, since
+   * the setting changed meaning; spaces in block names become "_". In every
+   * file, per-sequence name lists are dropped and lowercase sequences are
+   * converted to uppercase. Each change is listed as a notice. Values the app
+   * can't represent are kept as they are, so validation reports them (E11).
+   * Every barcode list opens in entered order.
+   * @param {string|Object} input File text or parsed JSON.
+   * @param {{legacy_mode?: string, file_name?: string}} [options]
+   * @returns {{ok: boolean, error?: string, model?: Object, notices?: Object[], legacy?: boolean, needs_mode_choice?: boolean}}
+   */
+  function config_from_json(input, options = {}) {
+    let data = input;
+    if (typeof input === 'string') {
+      try {
+        data = JSON.parse(input);
+      } catch (error) {
+        return { ok: false, error: 'This file is not valid JSON (' + error.message + ').' };
+      }
+    }
+    if (!is_plain_object(data) || !is_plain_object(data.barcode_struct_r1)) {
+      return { ok: false, error: 'This is not a bcwithqc config: it has no "barcode_struct_r1" section.' };
+    }
+    const notices = [];
+    const notice = (level, text) => notices.push({ level, text });
+    const legacy = !('single_end_reads' in data);
+    const model = new_model();
+    let needs_mode_choice = false;
+    let added_read_2 = false;
+
+    for (const key of unknown_keys(data, TOP_KEYS)) {
+      notice('warning', 'The setting "' + key + '" is not used by bcwithqc and was left out.');
+    }
+
+    if (!legacy) {
+      model.single_end = data.single_end_reads;
+    } else if ('barcode_struct_r2' in data) {
+      model.single_end = false;
+      notice('info', 'This config is in an older format. It describes Read 2, so it opens as paired-end.');
+    } else {
+      const answer = options.legacy_mode || 'paired';
+      needs_mode_choice = !options.legacy_mode;
+      model.single_end = answer === 'single';
+      if (answer === 'paired') {
+        added_read_2 = true;
+        notice('info', 'This config is in an older format with no Read 2. It opens as paired-end with the barcodes on Read 1, and Read 2 is sent whole to alignment, as the old pipeline did.');
+      } else {
+        notice('info', 'This config is in an older format. It opens as single-end.');
+      }
+    }
+
+    if (!('unknown_read_orientation' in data)) {
+      model.unknown_read_orientation = false;
+      notice('warning', '"unknown_read_orientation" was missing and is set to false.');
+    } else if (legacy && data.unknown_read_orientation === true) {
+      model.unknown_read_orientation = false;
+      notice('warning', 'Orientation was on. In older bcwithqc it meant something else; now it means each molecule may be oriented either way. It is turned off; turn it on again if that is what you mean.');
+    } else {
+      model.unknown_read_orientation = data.unknown_read_orientation;
+    }
+
+    let used_ids = 0;
+    const dropped_names = [];
+    const uppercased = [];
+    const renamed = [];
+    const unnamed = [];
+    let keepblock_added = false;
+
+    READ_KEYS.forEach((read_key, read_index) => {
+      if (!(read_key in data)) return;
+      const struct = data[read_key];
+      const read = model.reads[read_index];
+      if (!is_plain_object(struct)) {
+        notice('warning', '"' + read_key + '" is not a section and was ignored.');
+        return;
+      }
+      for (const key of unknown_keys(struct, READ_STRUCT_KEYS)) {
+        notice('warning', 'The setting "' + key + '" in ' + READ_LABELS[read_index] + ' is not used by bcwithqc and was left out.');
+      }
+      if ('keep_nonbarcode' in struct) {
+        read.keep_nonbarcode = struct.keep_nonbarcode;
+      } else {
+        read.keep_nonbarcode = false;
+        notice('warning', READ_LABELS[read_index] + ' had no "keep_nonbarcode"; it is set to false.');
+      }
+      if (!Array.isArray(struct.blocks)) {
+        notice('warning', READ_LABELS[read_index] + ' has no list of blocks.');
+        read.blocks = [];
+        return;
+      }
+      read.blocks = [];
+      struct.blocks.forEach((raw, position) => {
+        if (!is_plain_object(raw)) {
+          notice('warning', 'Item ' + (position + 1) + ' in ' + READ_LABELS[read_index] + ' is not a block and was left out.');
+          return;
+        }
+        used_ids += 1;
+        const block = { id: 'b' + used_ids };
+        block.blocktype = raw.blocktype;
+        block.blockfunction = raw.blockfunction;
+        block.maxerrors = raw.maxerrors;
+        if ('blockname' in raw) {
+          block.blockname = raw.blockname;
+        } else {
+          unnamed.push(block);
+        }
+        if ('keepblock' in raw) {
+          block.keepblock = raw.keepblock;
+        } else {
+          block.keepblock = false;
+          keepblock_added = true;
+        }
+        if ('sequence' in raw) {
+          if (Array.isArray(raw.sequence)) {
+            const upper = raw.sequence.map((item) => (typeof item === 'string' ? item.toUpperCase() : item));
+            if (upper.some((item, i) => item !== raw.sequence[i])) uppercased.push(block_label(block, position));
+            block.sequence = upper;
+            block.sequence_source = upper.map(() => null);
+          } else {
+            block.sequence = raw.sequence;
+          }
+        } else if (is_sequence_block(block)) {
+          block.sequence = [];
+          block.sequence_source = [];
+        }
+        if ('length' in raw) block.length = raw.length;
+        block.linkgroup = 'linkgroup' in raw ? raw.linkgroup : null;
+        if (block.blocktype === 'barcodeList') block.sort = 'entered';
+        if ('name' in raw) dropped_names.push(block);
+        for (const key of unknown_keys(raw, BLOCK_KEYS)) {
+          notice('warning', 'The key "' + key + '" in block ' + block_label(block, position) + ' is not used by bcwithqc and was left out.');
+        }
+        if (legacy && typeof block.blockname === 'string' && /\s/.test(block.blockname)) {
+          const new_name = block.blockname.trim().replace(/\s+/g, '_');
+          renamed.push(block.blockname + ' → ' + new_name);
+          block.blockname = new_name;
+        }
+        read.blocks.push(block);
+      });
+    });
+
+    for (const block of unnamed) {
+      block.blockname = default_block_name(model, block.blocktype);
+      notice('info', 'A block without a name was named ' + block.blockname + '.');
+    }
+    if (added_read_2) model.reads[1] = { keep_nonbarcode: true, blocks: [] };
+    if (!legacy && model.single_end === true && 'barcode_struct_r2' in data) {
+      notice('info', 'This single-end config also describes Read 2. Read 2 is kept, but it is not written while single-end is selected.');
+    }
+    if (keepblock_added) notice('info', '"Keep for alignment" was not set in this file, so it is off for every block.');
+    if (dropped_names.length) {
+      notice('warning', 'Per-sequence names were dropped from ' + dropped_names.map((block) => block.blockname).join(', ') + '. bcwithqc uses them only to label simulated reads.');
+    }
+    if (uppercased.length) notice('info', 'Lowercase sequences in ' + uppercased.join(', ') + ' were converted to uppercase.');
+    if (renamed.length) notice('info', 'Spaces in block names became "_": ' + renamed.join(', ') + '.');
+    if (legacy) {
+      exported_read_indices(model).forEach((read_index) => {
+        const read = model.reads[read_index];
+        const keeps_something = read.keep_nonbarcode === true || read.blocks.some((block) => block.keepblock === true);
+        if (read.blocks.length && !keeps_something) {
+          notice('info', 'This config sends nothing from ' + READ_LABELS[read_index] + ', the barcode read, to alignment. As with the old pipeline, align only the other read\'s file.');
+        }
+      });
+    }
+    return { ok: true, model, notices, legacy, needs_mode_choice };
+  }
+
+  /**
+   * True when the bytes start with the gzip magic number.
+   * @param {Uint8Array} bytes
+   * @returns {boolean}
+   */
+  function is_gzip(bytes) {
+    return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+  }
+
+  /**
+   * Compress text with gzip.
+   * @param {string} text
+   * @returns {Promise<Uint8Array>}
+   */
+  async function gzip_text(text) {
+    const stream = new Blob([new TextEncoder().encode(text)]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  /**
+   * Decompress gzip bytes into UTF-8 text.
+   * @param {Uint8Array} bytes
+   * @returns {Promise<string>}
+   */
+  async function gunzip_bytes(bytes) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return new TextDecoder('utf-8', { fatal: true }).decode(await new Response(stream).arrayBuffer());
+  }
+
+  /**
+   * The text of a config file, gzipped or not (detected from its bytes).
+   * A UTF-8 byte-order mark is removed.
+   * @param {Uint8Array} bytes
+   * @returns {Promise<string>}
+   */
+  async function read_config_bytes(bytes) {
+    if (is_gzip(bytes)) return gunzip_bytes(bytes);
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  }
+
+  // ------------------------------------------------------------------
+  // Decoders and structure
+
+  /**
+   * The decoder each barcode list gets under the app's rule (decision D1):
+   * a list whose end is fixed by the next block (a constant region or
+   * another list) uses Levenshtein; a list that is the read's last block,
+   * or is followed by a random block, uses FREE.
+   * @param {Object[]} blocks One read's blocks.
+   * @returns {Array<?string>} "Levenshtein", "FREE", or null for other blocks.
+   */
+  function decoder_for_each_list(blocks) {
+    return blocks.map((block, index) => {
+      if (block.blocktype !== 'barcodeList') return null;
+      const next = blocks[index + 1];
+      return !next || next.blocktype === 'randomBarcode' ? 'FREE' : 'Levenshtein';
+    });
+  }
+
+  function valid_sequences(block) {
+    return Array.isArray(block.sequence) ? block.sequence.filter((item) => typeof item === 'string') : [];
+  }
+
+  /**
+   * Shortest and longest length a block can take in a read. A barcode list
+   * takes the length of the first sequence written, because bcwithqc sizes
+   * the slot from it; a constant region takes any of its variants' lengths.
+   */
+  function block_length_range(block) {
+    if (block.blocktype === 'randomBarcode') {
+      return Number.isInteger(block.length) ? [block.length, block.length] : [0, 0];
+    }
+    const sequences = valid_sequences({ sequence: export_sequence_order(block) });
+    if (!sequences.length) return [0, 0];
+    if (block.blocktype === 'barcodeList') return [sequences[0].length, sequences[0].length];
+    const lengths = sequences.map((item) => item.length);
+    return [Math.min(...lengths), Math.max(...lengths)];
+  }
+
+  /**
+   * Facts about one read's structure, shown as the caption under the
+   * diagram.
+   * @param {Object[]} blocks
+   * @returns {?{min_length: number, max_length: number, linker_combinations: number, min_read_length: number}}
+   *   min_read_length is the shortest read bcwithqc can process: every block
+   *   but the last at its longest, plus one base. Null for a read without blocks.
+   */
+  function describe_structure(blocks) {
+    if (!blocks.length) return null;
+    let min_length = 0;
+    let max_length = 0;
+    let linker_combinations = 1;
+    blocks.forEach((block) => {
+      const [low, high] = block_length_range(block);
+      min_length += low;
+      max_length += high;
+      if (block.blocktype === 'constantRegion') linker_combinations *= Math.max(1, valid_sequences(block).length);
+    });
+    const all_but_last = blocks.slice(0, -1).reduce((total, block) => total + block_length_range(block)[1], 0);
+    return { min_length, max_length, linker_combinations, min_read_length: all_but_last + 1 };
+  }
+
+  /**
+   * What bcwithqc writes for the config: the BAM tags and the files for
+   * alignment, as structured data the panel text is rendered from.
+   *
+   * Per read, CB and CR take the barcode lists and random blocks set to
+   * barcode (lists set to UMI count as barcode), UR the random blocks set to
+   * UMI, and FL the constant regions not set to discard. Pieces are joined
+   * with "."; with blocks on both reads, the two reads' values are joined
+   * with "." again, which gives a leading or trailing dot when one read
+   * contributes nothing. UB exists only if some block has function UMI.
+   * @param {Object} model
+   * @returns {Object}
+   */
+  function describe_outputs(model) {
+    const read_indices = exported_read_indices(model).filter((index) => model.reads[index].blocks.length);
+    const tags = { CB: [], CR: [], UR: [] };
+    const fl_ranges = [];
+    const fl_blocks = [];
+    for (const read_index of read_indices) {
+      const pieces = { CB: [], UR: [] };
+      let fl_low = 0;
+      let fl_high = 0;
+      const fl_names = [];
+      for (const block of model.reads[read_index].blocks) {
+        if (block.blockfunction === 'discard') continue;
+        if (block.blocktype === 'barcodeList') {
+          pieces.CB.push(block.blockname);
+        } else if (block.blocktype === 'constantRegion') {
+          const lengths = valid_sequences(block).map((item) => item.length);
+          if (lengths.length) {
+            fl_low += Math.min(...lengths);
+            fl_high += Math.max(...lengths);
+          }
+          fl_names.push(block.blockname);
+        } else if (block.blocktype === 'randomBarcode') {
+          if (block.blockfunction === 'UMI') pieces.UR.push(block.blockname);
+          else pieces.CB.push(block.blockname);
+        }
+      }
+      tags.CB.push(pieces.CB);
+      tags.CR.push(pieces.CB.slice());
+      tags.UR.push(pieces.UR);
+      fl_ranges.push([fl_low, fl_high]);
+      fl_blocks.push(fl_names);
+    }
+    const join_reads = (per_read) => per_read.map((names) => names.join('.')).join('.');
+    const has_umi_block = exported_read_indices(model).some((index) =>
+      model.reads[index].blocks.some((block) => block.blockfunction === 'UMI'));
+    const alignment_files = exported_read_indices(model).map((read_index) => {
+      const read = model.reads[read_index];
+      if (!read.blocks.length) return { read: read_index, kind: 'whole', parts: [] };
+      const parts = read.blocks.filter((block) => block.keepblock === true).map((block) => block.blockname);
+      if (read.keep_nonbarcode === true) parts.push('rest of read');
+      return { read: read_index, kind: parts.length ? 'parts' : 'none', parts };
+    });
+    return {
+      reads_with_blocks: read_indices,
+      CB: { pieces: tags.CB, value: join_reads(tags.CB) },
+      CR: { pieces: tags.CR, value: join_reads(tags.CR) },
+      UR: { pieces: tags.UR, value: join_reads(tags.UR) },
+      UB: { written: has_umi_block },
+      FL: {
+        blocks: fl_blocks,
+        min: fl_ranges.reduce((total, range) => total + range[0], 0),
+        max: fl_ranges.reduce((total, range) => total + range[1], 0),
+      },
+      has_umi_block,
+      alignment_files,
+    };
+  }
+
+  window.barcode_core = {
+    BLOCK_TYPES,
+    BLOCK_FUNCTIONS,
+    READ_KEYS,
+    python_json_dumps,
+    python_json_string,
+    new_model,
+    new_block,
+    add_block,
+    remove_block,
+    move_block,
+    add_link,
+    remove_link,
+    default_block_name,
+    export_sequence_order,
+    linkgroup_numbers,
+    config_to_object,
+    config_to_json,
+    config_from_json,
+    is_gzip,
+    gzip_text,
+    gunzip_bytes,
+    read_config_bytes,
+    decoder_for_each_list,
+    describe_structure,
+    describe_outputs,
+  };
+})();
+</script>
+
+<script id="barcode_ui">
+/**
+ * User interface: state, rendering and event handlers. It keeps one model
+ * and re-renders from it after every change.
+ */
+(function () {
+  'use strict';
+
+  /** Features the page needs; a banner names the minimum browsers if one is missing. */
+  function missing_features() {
+    const missing = [];
+    if (typeof CompressionStream === 'undefined' || typeof DecompressionStream === 'undefined') missing.push('gzip streams');
+    return missing;
+  }
+
+  /** The templates, with shared barcode lists expanded. */
+  function load_templates() {
+    const element = document.getElementById('template_data');
+    const data = JSON.parse(element.textContent);
+    return data.templates.map((template) => {
+      const config = JSON.parse(JSON.stringify(template.config));
+      for (const key of ['barcode_struct_r1', 'barcode_struct_r2']) {
+        if (!config[key]) continue;
+        for (const block of config[key].blocks) {
+          if (block.sequence && !Array.isArray(block.sequence)) block.sequence = data.lists[block.sequence.$list].slice();
+        }
+      }
+      return { id: template.id, title: template.title, source: template.source, config };
+    });
+  }
+
+  function init() {
+    const missing = missing_features();
+    if (missing.length) {
+      const banner = document.getElementById('feature_banner');
+      banner.hidden = false;
+      banner.textContent = 'This browser lacks ' + missing.join(' and ') + '. Use Chrome or Edge 80+, Firefox 113+ or Safari 16.4+.';
+    }
+    window.barcode_templates = load_templates();
+    document.getElementById('loading').hidden = true;
+    document.getElementById('app').dataset.busy = 'false';
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+<script type="application/json" id="template_data">
+{"lists":{"list_1":["CCTTAACAT","AGCGTAGAA","CATAGGTGT","CACGACTCA","AGCATTCCA","TCCACCGGT","GCAGCTTGA","TAACACATC","ACGCTATGT","TAGACCATG","TTCTGAATG","CTCTTCAGC","CTGTACGAC","AAGCCAAGT","AGAATCAGA","TTGGTAACT","GTCAGCGTC","AGTGAACGG","TAATCTGGA","ACCGTCCTA","AGTTGAGCG","AAGAGAACT","GTTAGTCAA","AAGCACAAC","CTACGTTGG","CCATGCGTC","TTACTTACG","GTGTCCGTG","GACTCTCAC","AATTAGAGG","ATTAGCCAC","GGAAGTATG","CCATATCTT","CGCTGTAGT","TGAGAGGAC","ACCTGTACC","TATGCCTTC","TAGCAGAGT","CGGTAGCTT","GATAACGTC","TGTTGTCGA","ATTAGCACA","ATCCGGTCC","GCCATCGCT","GCGAAGACA","AGGTCAGCA","ACTGTGTCA","GAGACGATC","AGTCCAGTG","GTGAATGCC","CCTAAGTCT","CCGGTTGAG","GACTGCCTG","TACGGTCGT","ACCTCCTAG","CTAACCGGT","ACTCGTAGG","GTAGTTGGT","GCTACCTTA","CTACGGTAT","GATTAGTGT","CGCAATCGA","CCGGTTCTA","CCATCTAGG","AAGCAACTA","CGACCACTT","GATGCGGTT","CACTCACTA","TAGGTTAGT","ACCACTAGG","TCGCTGTAA","CAAGAGAGT","GTGTCTGGA","GATCTGAAT","GCTGATGTC","AGCCTCTAG","GATCTTCGC","AATCCTCGT","AGATATGGA","CGTATAGCG","GCTTGTCCT","ATCCAGCTG","ATCTCGTGA","CCGATGTTC","TCTTAAGTG","ATCAAGCAT","CGACGTGAT","GTATGATCT","AAGTAGGAC","TTCACCTTG","CTGAGATAG","ATGCGTGGA","AGCTTGGTG","TGCCGCTAC","GGAAGAAGC","GGAGTTAGC","TTAGATCGG","CAATTGTCT","CAGTGAGGA","GTCATTCTA","GAGCACATT","GATGTCTAG","GAGTGCATA","CTTATCTCA","AGCCAGGAC","ATAGACCGA","ACATGACTA","CAGCTTACC","GATTGGAAG","CAACGATCG","CACTAGACT","CCACACAGA","CGATTCGAG","AGCCACTTC","GTCTGAGCC","TACTACTGT","TCGTACCTT","CAATCTCCG","CCGTCAGGT","TCCAATCAT","GTGTTGGAA","GTTAGAGAC","AGTGATGCG","TAGCCAGTG","GCCTGCATC","CTGACAGCA","TCGGTATCA","GGTCGGTCT","CGAACAGAG","GCGATATGA","TTCTCCACA","CGCCATTAC","TCTAGTGAC","GTTCAGAAG","ACAGGTATC","TATACCACT","GTCACAGAG","CCGTCCACT","GTACTCTAC","GCACGTAGA","CTCGCTACG","GAGCGACTC","ACATTCCAC","ATGACACAA","CATGCCAGT","TACCATGTA","TCAGCGACC","GGACTCCTT","GTAGACTCT","AGTTGCCTT","CGTGAGACT","CTAATACGC","TCTTAGCGA","TAGTAGTCT","CATAATTGG","CGAAGAGGT","AAGTACAGA","GACTCTGGT","AGCGGTCTA","CCTCCAATC","GTAACAGTC","ATGATAGCT","ACGCTAGTG","GAGACATTG","CCTATTGGT","CCGTAGTTG","TGGTTATAC","TAGCACACG","TCAATCTAG","TGGATAGGT","TCTGTGAAG","ATAGCTTGC","TGAACCAAT","GGTGAGTTC","CCATATGCC","TCAGTGCAA","TCGTGCCAC","TGCAGTTCA","CCACTACCA","GTCCGCTCA","GCATACTCC","CGCAGTGTC","ATCGTAGTG","GCCGTCTTC","GTGTATCTG","ACTCTGCTC","TCGTCCGAT","TCAGAGCGT","GAGTTATAG","TTCCTTGAC","CTCTAGTAA","GACGTAGCA","ACAGCGGTC","TAGCACTAT","GGATACAAT","AATATCAGC","AACGGTAGC","CCAGATCAC","CGATCCAGA","GCTTCACTC","TGGTAGCAG","CATTGACAA","GACGGTGCT","CAGTCCTAA","CCGAGTACT","CTTCTCATC","GCGTGAGCT","GTTGCATGG","TATCTGTCA","GTCTACCAA","CACCAAGAT","CGTGGTACC","GCCTTAGAG","TCGGAACGA","ATTATGCAG","GGTTGCTAT","TGTCATAGC","TCAAGCGTA","TGTATGTAG","CCGATACCG","TGCTTACGG","GTAATCAGC","AGGATCTCA","TTCTGGTGC","GGAACCTAG","AGCAGACAA","AGCACCAGC","CCTCATAAC","TTCCGAGCG","ACCATACTT","TCCTTCGTA","TAGCGAGAA","GATATGGAC","GCGACACAG","TGCGATACT","ACACATCTG","ACTCTAGGA","TAGAGACTA","GTAGCATAC","TTAACGGAG","TAGCGCAGC","CACACCACA","TTGCGAACA","GTGACTCTC","AAGTTGCCA","CTGAGTCCA","CGAGCCGTT","TACGACTTG","GTCAAGATC","ACTAACCGA","TATAGTGCG","GTGGATAAG","CACCTAGCG","ATAACGACA","GCTTGGTTC","CTAGAGGTA","TCAATGGAC","ACAGAAGAG","CTAGAGTCG","GATGTTACA","CACTTCCTT","TACCTCCTC","CTTCACTGT","TCGCTTAAC","TGCTCAGCG","TCCGGAGCT","CTCGCAAGA","CTGTCTAGT","TGCTATGAA","GTGATGTGC","TGAGATCAT","GCAGCTCTT","ATCCAATGA","AGGATTACT","ACGAGAGCA","CATCGAAGC","ATTCGAAGA","GCCTTCCAT","AGTCTGGAA","CTGTTACCA","GAGATACAC","AGGTCCGTC","ATCTGCGTA","AGTCATACT","CCTGCTCCA","CCTGCGTTA","CCACGTTCT","CCTCGGTCA","CAACGTCTT","CAATACCAC","AACTCCATG","TCACCGAGG","CCTATTCAA","TTCGCATCC","CGCCACCAT","ATGCCTTCA","AAGCAATCG","TACAACACC","ACACTAACG","CATATGTCG","CCGGTGGTT","AAGGATACG","GACGCCGTA","TCATGCAGG","ATAGTCAGT","GGTACTTCC","GGTAAGGAT","CCGCATCCT","GCTACAATG","AGTCGCCGA","AGGAATTGG","CTTGATCTA","ATGAACTAG","CTGGAGCGA","CTGCTGCTT","GTGGACTGG","CACCTTCCT","CGTACATCT","CTGGTACAT","GATACACTA","TAAGCCATT","GGAGAATGA","CCATACGAT","TGGAAGATT","GAATTGTTG","GGACTATTC","TCCTGTGGA","AGACTAGTA","GATGTAAGG","CAAGAGGAG","CCAATGCCT","GCTCAGCCA","CAGCAGTAC","AGACATCCA","GTTAGATTG","CACACTGCC","TCTAGCTGG","GTTATCGAT","CTTAGAAGG","TGATGGACA","AAGTTCTCT","CGCAACCTC","GTGTCGAGC","GAGTCGTAC","CCGGATTGC","GGAGCTCAA","CAGGTTGTC","ACCTAGTTA","TTACTAGTC","GGTCCTAAG","GATCGATAC","CACTGGTCC","GAACTGCAA","TAATGTAGC","ACGTTCAAT","GCACGCATT","AATGCTGAT","GCCACGAGT","CTACGAGAA","CATCCAGGA","AGTACGAAT","TGAACGTCA","TAAGTACAC","CTCCTATCT","CAGGATCAA","AACTGCGAC","ACGGACCAT","GAATTCAGT","AGTAATCAG","GCTATGTAA","AGTATGACG","CCTTCCTCA","AATGCGTGC","GCTGTTCGG","AAGCTTGCA","TAGCTGTTG","TGTGTAGAG","CCTAGTTAG","GTATACAGA","GGTTCGCAA","CGGTTGCGA","AACAGATCG","GCATACATG","GACCGTAGT","TGCGTCTTA","ACAATTCGG","CGCATCTAC","CATGTGAAC","ATGCTTCAG","CCAATATAC","TGTTACTGA","TATCGAGCC","ACAGGAACT","GAGCCGTTA","TGCGCACTG","AGATACGTT","ACCGAGTAG","ATATAGCGT","CGTGACCAG","GGTTCTATC","GTCGACATT","TAGTAACGG","GCATTGATC","CGCTTATGA","TCCTTCAAC","TGGAACTAA","AGATGTTGG","GGATAATAC","GCGCATTAC","AATCGCCAT","GAAGTGTGA","GAGTCTTCG","ACGATGGAA","ATCTACATC","ACGACATCT","GGTTACGCA","ACAATAGGT","TATCCTCAG","TACAAGAGG","CGACAGGAA","AACGCTCAA","GCTCTGTGT","TCGCTGATT","TTGAGCTCT","GTATCCTGC","CTCCTGACG","GTTCCAACA","TGAAGACCA","GCGTTCAGA","GACTATTGA","GAACCAGTT","CGTCTGTCC","GGTAAGTGA","GCGCTACCT","TGATCGGAA","TTCCTCGGT","GCCGAACCA","CTGACGGAT","CTCTAAGAG","TCCTTAGGT","GTACCACAA","TGATTATCG","TTACGCTCG","GTGCCATGA","GCGGACGAA","ATCAGAAGC","TGTCGTACA","GTCAGTTGT","ACAAGGTAC","CACGTAGAC","TCTCGTATC","CATCCACCG","CGACAGACC","GTGAGGACG","AGCAAGTCC","ACACGTTGC","ATGCGCTAC","CCAAGCGAG","GTGAACCAC","ACGCGTGAC","ACTACCATC","ATAATGTGG","GTCCTAGTT","GGAGCATCT","AGCAACATT","TAAGGTGAT","GTTGCTCAG","GTGCTGACT","TCGTCATTC","CGGTGTTAC","TGGAGTGGA","CAAGTCGAA","CCTCTCTAG","TATCAGTGC","GAGATTCCT","TCCATCATT","TATGACCGA","ACTAAGTTC","CAACACCTA","GTCCTTCAT","GGTGTTCAT","ACAACCGGA","CACCTACGC","CGACCTAGC","CCTTCGAGC","ATTGACACG","ATGCGGATT","CCGCACTCA","TGACTGAGA","ACAGAGATG","TCGCGTCAT","CTAGTGCTG","ACCATCTAA","TCATCATCT","TCAGACAAG","ATGCCTGTC","TAAGGTCCG","TCGGATGTT","GCTTCTGAA","TCCGTATAC","AGAAGAGTC","GGAGACACA","TTCTGCCGA","ATGCAGTTC","CTGTAGAAG","TGAACGGTT","CCGCAACAC","ATCTCGAAC","AACTTAGCT","CAGCTTCGA","CGACGTACG","TACGAGTGA","CATTCAGTT","GTACGCGAT","CTTCCGGTA","TCTGGAGGA","GCCTAACGG","CCGAAGCGT","TAGCCTTGT","CTGTGGTGG","GCAGATCCG","GCTGGTTCG","AGTGAGAGA","CCGTACGGA","CCACGAAGG","AGCATATGG","ACTGGTGCT","GCAATCACG","CAGATCATT","AGCTGCACT","CCAGGAGTT","GTCTGACGT","GAATCAACC","TCTGATGAA","CCAAGTCGA","TGTGGACAA","GGATTCGTC","AATCAGGAG","CCTCGCGTT","AATACGTCT","ATGGATATC","GGTAGTGTT","AACAACTGG","TATCATGCT","GCGAGTCTA","GCGACCTGT","AATATCGCT","ACCAGCGTT","TCCACCTCA","AGAAGTCCT","GTTCACTCC","GATAGTTCT","AGGAGGTGA","GATGCAGAA","TGTACACGA","GACCAGAGA","ATTAAGACC","TTGCCAGAT","ACCATGTCT","TGTCCATAG","ATATTCGCA","GATATATCC","TGCCTGGTT","CTCAGTGAT","TACCGCGTT","TTGGACTTC","CATACGCAG","GCCAACAAT","GTGCTCGGA","TGCAGTCGG","AGATCTGAC","CATGGACTC","TACATGCAC","AGTGTGCAC","TACACGGTC","ACTGACTAC","CATAGTATG","GAGAATCAG","TCGCCAAGC","CCTGTATCT","AAGAGAGAG","ATAAGACAG","TGCCATCTC","ATCACCGCA","GTTGACGTG","GGTGAGCGT","ACGTGAATC","CATGGTTAC","TCTAGGATG","TCAAGGAGT","CTGGTCGGT","GTCTTCATA","AGGTGCGAG","CTGCGTCAC","ACGACTGCG","CGGAAGACG","CACAATAAC","GTACGTCTA","TACTAGTAG","GATTATGCG","TAATTCGTG","CTGCTTAGG","GTAACGCGA","CATTGTTCA","CCAGTCTCA","AATACCTTG","TGCATACAT","GGATTACGC","CCTTATCCG","CAGATCGAC","GACAGGTTA","ATCCTCCGA","GACATATGT","CTTGGATCA","CAGCTCTTC","AGTGTTCTG","AAGACTGGT","CTCGTGTCC","ACAGTATTG","CCTCAGGTG","CAGTCTAAC","AACCATGGT","ACGTGCTCG","TCAACACTC","CGTTACACC","TATACGTGG","ACCTAGCAC","CCATCACGA","GACTTGATT","CATCCGACA","TCTACATCC","ATCCATTAG","TGCTCCTCC","ACGAATCGC","GACCAACAG","AATGCACTT","TTGGAGAAC","GAGTCAAGG","ACCGGAAGG","CTCTGCGGT","TCTAATACC","TAACATTGG","TAACACGAG","TGAACTTGC","TCCTGAGAC","TACGAACTC","TATCGGAAC","GGTAGACAT","GTCTTATGC","CTCTGCAAG","TATGGTTGG","CTATACTAG","CAATCATAC","GTGCATCAA","AGCTATATG","ATAGCACGG","CTTCTATGA","AGTAATGGT","CTGATCCGA","TCTCGATGC","ACTTCAGTA","GCAGCAGTG","ACTACTCAT","TAGGAGGAT","CCTTGTTGC","ACATTGACA","CTGACGATG","TTGTATCAC","TGAGCTAGA","CACTGCTTA","GTCGAGTAC","GAGTTAACT","ATCACTTCC","GCACATGTT","TTACAGTGT","ATCCGACCA","TCCAGCAGC","CAAGGTGTG","CAACCGGTC","CCGATCAGC","ATTGCCGAC","TGACCTATG","CAAGTCACT","CAGTGCTGC","TCCAGAACG","TTATCGCAC","AATGTGCGT","CGATTGAAC","TGGAGAACC","CTCCACGTC","GCAACCAAC","GGTGATAGG","GTGGTTACC","ACGACGATT","GCCGCCTAA","TTGATGCTG","ACACCACAT","TAGTCGCAT","TGTCAACCT","TGATTCACC","CAGTAATGT","TACCAGCCA","GCGTCGTCT","GTGTTCCAG","AGCGCATGA","CGTAATGAC","TGATTGTGC","TCTATTAGG","ATAGAGCAG","TGATCTCGG","AGTGACGAT","TCATCTGTC","TTGAGACGG","CATATGCGA","TAGGAGCTA","CTCTGTCAA","TCTGAGATA","CAGGTATCG","GAGGTCCTT","TAGCTAAGA","ACCGAGACA","ATCTCTGCT","CCTAGTCTC","CCATGATGT","CGGAACGAG","CCGTTCCAA","TCATCAGAG","TGTATCGTG","AGACTTCGT","GCGTAACAA","GGTTCAGAC","ACTCACGAA","CGTATCGAA","ACTGTAATC","GCCACATGG","GACTCAGTG","TGGTCGCTA","TATGAAGAC","AGTTCGATA","TCGTAGGAA","GAATAAGAG","TCCTCTAGT","GCCGTTGTT","TTGACCTGA","GGTACGAGC","CGGATTCTC","GTAGAAGTT","GTGGAGGTC","TGTAGCAAG","CCGCTATCC","TTATGAGGA","AGTAGAGGA","ACGACAGTC","CGATACTCT","CTGCAAGCC","AGCGTCGTC","CGATAGGTG","TTCGCTGAG","GCTCTCCAA","CCTTAATTC","GCCGCTATC","TAGACCTAC","GCACAGTAA","ACTCCGTCG","CGTGCAAGG","GAGCTCTCA","CGAATCCTG","CAACGCACA","CCAACAACA","GCCAATGAA","CATCAATAG","TATGATGTG","CACGGATAG","ACCACGCTA","TGACAAGTT","AATACTCCG","GTCTCCAGG","TCAGTAAGC","CAAGAACCG","CGCGCACAT","GATCTAGAG","AATTCGGAA","CTTGCGACC","CTCATTAGT","GCCTTGTGA","ACTATCCTG","CAGCGACGT","AAGCCACAC","CTTGGTCAT","TTACACCTT","AACGAGGTG","GCGAACTCG","ATACCGAAG","AGTACTCTC","TACGTTGGA","TAGATCTGT","GTAATATCG","TGAGAATCC","GCTCAATGA","GACGTGGTC","GGAATTGGA","GAGCATACA","TTCAACTAC","ACCGACGGT","GCTAGCTCC","GACTGCGCA","TCCGATAAC","GGTCCTGGT","ATACGAGGT","GGATCAGGT","GAGTGTGCC","CAGAAGTGA","ACGAGCTTC","CTTATTGAG","TCACATACT","TGTAGATCG","GAACAACCA","ACATGGATT","CCTTGCTTG","CTCGAACTG","TGCAGCCTT","AGAGGACGT","GTTGACCAT","ATATGCAGC","CCACTGAAG","ATACTTGCT","AAGACTACC","AACGCCTAC","CTCGACGAT","TCCTATTCC","CAATGCATT","CAAGCGCAT","ATGAGTGTG","GATCGTTGA","CCACATTAG","TACTCGCTG","CAATCAAGT","GATCGCACT","ACCGGAGTA","TGACGGTTG","ACTTCTTGG","AAGGTCTGA","TCTACAGTT","TGATTGCTG","CCGTTAGAC","GACGTTCAG","CGTTCCATT","CGTTGATCC","CGAACAATC","TTCGGAGTC","AGCTCGTCT","TGCCAATGG","CCTACTAGA","CTGGTGACA","AGTAACGTA","AGACGCTAT","TTGCAGTCA","GAGCCATCC","TGTAACAGT","AGTTATCGC","TAATCACGC","CACTACAGG","ACCGCTGTG","GGTTAACAG","GAAGAGCAC","ACTCATTCA","ACCATTCAC","ATCATAGAC","CAACCTGGT","CACCTCGGA","TAGGATTAG","TATTCAACG","TAGGATGCC","GCCTGGAAT","CACACCTGT","GACTAGCAT","GGTAGCATC","TGGACGAGA","AGAGCCGCA","CGTGTGTGG","TGTTAAGCC","AGCGGAACA","AAGCTGGTC","TTGATCGTA","GTAACTCAT","TGTGAGTAT","CTGATGCAC","GCTACCGAG","CGTACACAC","TGCTCACAC","AGTTCAACC","CATTCCGAG","CGTTCGTAC","GCTTAGAAC","CCACCATGC","CTATGGATG","GATTAGACA","CCTCTTGTA","GAACATGAC","GCATGTAAG","GGAGATGAG","GTACCTAAC","CACTTGGAT","ACGTCTATG","ACGCACACT","CCGAATATG","TGCCACCGA","CATCCTCTC","TGAGGTCTC","CCGAGCTGA","TACTTACCA","ACGCAAGAT","GTAAGGTCC","ACCGATCGA","CGTATTCCT","AGTCAGTTG","GCACAACTC","CTCTCGATA","AGGATCATG","CGTGCTTGA","TGGTGGATC","AACTTCTGC","CCTCGACCT","GACCACTCG","TGAGACAGC","GATGCGACG","TGGAATCGT","TTGTCAACC","CGCGTGAGA","ATGGACGTT","TTAGGAAGG","CCTCGAGAG","CACATTCTG","CGCTTCACG","TCTTGGTAG","CTCAGCTGG","GATTCCTCT","AGTCTAAGC","TCACGCGAC","ATAGTGGTT","CTCGACTGC","TGAGTTAAG","TCCAACGTG","AGCTACTCA","GAGACTCGA","GATTCTCGG","GTCGTGTTA","GTAGGACGC","TACCGATTG","TCCTGTCCG","ACAAGTACA","CAGTGCCAT","AAGGTGCTG","GCGAGCAAG","CGTCATGGA","CATCTCGAT","ACCTGCAGA","CACCAGAAG","CATGGTCGA","GCACTGGAT","ACTATTGTC","GCAACTCGC","CCACGGATC","AGATCGAGT","AACACACTC","CTTCGACTG","ACGTCGCTC","TCGATTCAG","CCGATCTCT","AAGGAACAG","ATTCGCTTA","CTGAGGTTA","CTATAGCTC","TCGTGACGT","TTCCAATTC","CTGTGCTCA","CTTAACAGC","GTGCTCTTG","ACAGCATCA","AACCGCTGA","ATTCACCTC","CTAACACTG","GGATGCGAA","GAGATGTAT","TCTATGACA","ACACACGTC","GCGACAACC","GTACGAACG","GATGCTCCT","GGACGAGCA","GACACGCAA","TAAGCACTA","CCTAGCAAT","TGATAGAGG","AACTAACTG","GAACTCGTA","ATACAACCG","GAGGTGAGC","CTCGTTCAC","CCTAAGAAG","TGTCTACAC","TAGGTCAAC","ACCGTACGC","ACACAGAAC","CTGATCAAG","ACCGGTTAC","ATCTTACAG","CAGGAGCCT","GTATCGTCG","CGTGTATTC","TGTCGTGAG","ACAACGAGC","CACGTCATA","AACGTCGAG","AGGTACCAA","ATTCTCTGG","CTGCAGAGC","CAAGCCTCG","GCGCTAGAA","ATGAGGTAT","CTGTCACTT","AGACGGAGG","TGCACGATG","AGCGGTAAG","ATAGTCTCC","AGCCGTTCT","CTCCAGCGT","CACTGTATC","CATCGCTGG","TAACGGATA","GTCGTCGAC","CCTTGACGG","GATCTACTT","GATACCGGA","CGTCGTCAA","TCTCAGGAT","ATTGCGCTA","TAGTACGTA","ACTGCTAGT","CAACTCCAG","CAGTACATC","TCCACGTGC","TAGTTGACG","TGTAGGTTA","ACCGTCACG","AATCGTGTT","GCTTACGTT","CGGTGAGTC","GTTACTACT","TGCATCGGA","CCTGACCTC","TATTACAGC","CTACCTGCG","GGACAGATT","TCACTCGCT","AGTCGATCA","GATCGCGAA","GCTGGTAAC","AGTGTCTCT","TAGACCGCA","AATAGACGC","CTTCTGAGT","AGGAGCAAT","CGCACTGAA","ACTGGTCAG","GGTGCGTAG","CAATGTGCT","TGCGTGCCA","ATCAGGATG","ATAAGTTCG","AGACATATC","ACTTCTAAC","AATTGGTGA","AACTTGTCG","TGGTAACCA","TGCCGAACT","CTGGTAATC","CAGTTGAGT","CCACAAGGT","CCGCTCATG","TGATGACAG","CGCGTACTA","TCTACGCAA","ACGTATGTC","ATGAGCAGG","CACGATAGA","CGACCTGTA","GACACCGAT","CCTGCAGAT","GCTTCTACG","CTTAAGTTG","TACCTATCC","AGAGCGCGA","CCGCAGAAT","CTCAGGTAC","CGCCTGCAA","CGAATGAGT","TCTCATCGG","GTCAACTGA","GTCACTATG","TCGAACGCT","CCAGTACTC","AGGTATTCC","CTAGGTACT","CCAACGGAA","TGCTGCGTC","GTCGCAGGT","CACGGAAGT","GAACCTTCA","CACCTCAAC","TTCCATACC","ATCGAATCG","CAGTCGGTA","TCACGACAA","TCGCAAGCA","AACAATGCA","CGTTAATGG","AGACCAGCT","ACACCGCCA","TTACCTCTC","GTGCGTTCC","CGTCAGCAC","TCAGAGTCA","TTCACTCCT","ATCCACAGT","GGATCAATG","GCGGTAAGT","TCAGGACTG","AGCTCTCCG","TTGTAATGC","TGCCGACTA","GACATAACG","CTAGTCGTC","CCGCAGCTA","ATGTCCTCC","ATTGATTGG","GTATGTATC","TTCCTGCTA","GCGCTTCTC","CCAGCCAAT","GACCGCTTC","TTGCCGTAG","GGACACTGG","AAGCAGCAT","TTCATCCAA","ATCGATCCT","CTAGACATG","CAGCACGTG","GAGCAGGAA","AGAAGTAAC","ATCCTGCCT","CGCACTCTT","AGGATGCGT","TCACACTGC","TCAAGGTCG","CAGCGTAAG","ATCGCCTCT","ATTCCTACG","CTGAGTAGC","GCTCCTAGC","AGTTGTGTA","CTTAGGACT","AAGACGAAG","GACGGACTA","AGTGGAATG","AGACGCCTG","CGCGATGTA","GGTCTCATG","GTCTCTTCA","GGATACCTA","ATGGTTCGA","ATATCCGAT","TGCGTAATC","GCAGCGATA","AACGGAGAT","TACTCGACC","TGATGTGTG","TCACAGGTA","ATCCGTCTC","CTATTCCGT","TTCGTGATG","GCGGTAGTC","CGCGAGTGT","AACGTTCTT","AGCACACCT","ATAATCGAG","ATATGTCCA","ATCATGTTC","GTGCACGAG","AGTCGCGAC","CACATATCA","GAGTCACCA","TTAGTCGGA","CGGAATGCA","TTCATTCGC","CAGAGCACC","AGATCTTCA","ACCTTGAAG","TCATGCTCA","AGTTACAAG","ACGCTCTTA","GATAAGCTG","GCCGTGAAC","GGTAATCTA","ACACTGTGA","AATAACTCC","CTATCTTGA","GGAACTGCT","TGCGTATCT","GTCTTCTCG","CATAAGATC","CTCTCAGTC","GACGTCAAT","GCAGGAGAA","TATAATCGC","CACAACGCT","CCTGTTAGC","AATCCGCTG","TCGCATTCG","TGCGACGTT","ACTCTCACA","TAGACACGT","GCGTATAGG","ACATCGTCC","CTCGTCTTG","GGTTAGATG","CCACGCCAT","TGTGCTAAC","ACGATGACC","ATCAAGAGA","CGGACAAGT","TGACCAAGT","TTAACGTTC","GCCATACAA","GAGTCCAAT","CCATAAGTA","TGTGCCATG","GGTCTTGCA","GTGTCACAC","ACGGTGCCT","CGGTTCTAT","AGGAAGGTG","ATTCCGTAC","TACTGATGA","CTCTACGCA","AGGTCACGT","TTAGCGTCT","GCGATGGTG","CGACCATCA","CTGGACTAA","CTTCGTGCA","CTCCGCATT","TACAGTTAG","GGTTGAAGG","CATTGCAGA","TGACGATGA","CTCATGCCA","ATCAGTCGA","CAGCTAGTT","CGAGTAGCA","AGGTGTACA","TTCCGCCAG","TCCAGCTAT","TTATCCAAG","TATTGCTAC","ATTGGTTCC","CACAGCGAA","GTAAGTGAG","AATGCCTCA","GTCCACAAC","GGAGTACAG","GTCCGTAAG","GCGCTCTAT","GTAGCCTTG","TATGAGACC","GACGCTTGC","CATGACGTT","GTTAATTCG","GAATCGAGA","CCATTACAG","CCGCAATGG","TAGTGCACT","GTAGCTACA","GTGACGTAA","TCGTTCTCC","ATGTGACGA","CCTGTCATT","CATCTCACG","GTACAATGC","TATCTAGGT","CTTGTAACG","AAGGATCGT","AGATGAAGA","CCTGTCGAC","ACGCGACAG","GCGTGATAC","AGGATTGAG","AAGCATTGC","TATTACTCG","TGAGTGACT","GTCAATACA","TCAGCTCAG","CTTCCGTGG","TCGACGTTG","GAGGACTTA","TGGAGAGTG","GAGGTCACG","TGGATTAGC","TAAGTGTAG","CGCATAACT","TGATACCGT","ACGTACTGC","TTCCTAAGG","GTCAGACCG","ATTCATGTG","CATACAACC","TACGACCAT","GCCGAGTCT","GCTGACAGA","GGTCGGATA","GACCGGTAG","GAACTATGG","CCGACTTGG","AACAGCAGT","GACCTTGTG","CCACTTCGC","CGTGTCCGA","ATATCAGCC","CGGAGACTT","ATCGGTGGT","TAGTCAGAC","ATCTAGGTT","TGCAGATGC","CGGTTCGTA","TGCGCTGCA","GTAGAGAGC","GCATGTGGT","TCCAAGTAA","TCCTCGTCG","CATTCGAAT","GACTTCACC","ATAGCCTAA","CCATAATCG","GGTGGAGCT","TACAGGACT","GGATAGTCA","ACTTGATCT","ATGCGCCGT","TAGAGCCAG","TAGAGCGTC","ATTAGCGGT","AACAACCTA","CAACACTCC","AGCCTCGCA","TTATTCGAC","AGATGAGAT","GATTGAGTA","GTGCGAGTA","CTGCGATTC","GACAATGTT","GAAGGATCA","CTGGACACT","GTTGATGCA","TGCAACTCT","CTGCATGTT","AACGCATTG","ATGTGAGAC","TCTGCAACA","CACATGTGC","AGTTAGGTC","GCTAGTGGA","TATTGACTG","CGTGCCTAT","CTTCCTGAT","GGTGTGACC","TCAGGTGCA","CTAACTAAG","GCCTTATCT","CAGCTGGAG","TTACGGACC","ATACCGCTT","ACTTCGCAG","GCAACACCT","AGTACTACA","AGCATTGTT","TCCGATCTG","ATGCTGTCG","AACGAGAAT","GCCATTAAG","TGGTGCCTG","TTAAGTGGT","TAGTGATCC","TATGTACCT","TATACGGAT","CAGCCGCAA","ACGTGTAGT","ACTCGTCTA","CCTAGAGTA","ACAGCGTAT","GTGGTACGG","AACGATGAC","AAGCTGAGG","TCTCCGCGT","AGTCCGTGT","TGTGTCTAC","CTATTAAGG","GGATCGTTC","CTTAATCGT","CCATAGCCA","CCGACTGTT","CTTACATGC","CTAGTATAG","ACCACGGAT","TTGCTCTGC","CGAGCTTAC","ACGGTGTAC","AGTAAGCCA","AGACCACGC","GCTTACTAG","CAACTAATC","TGCCAGACG","AATTGGATC","AATCTCCTA","AGAAGCTGC","CGTCTGCTG","TAACGTGTC","CATGTCCTG","CCTCCTTGT","GATCCGCAC","TCTGCGCTG","TCATATCGC","CAGTATGAT","TGGTGGTAA","TGTGCAGTA","CCGACGTCA","ACAAGAATG","ATTGATCAC","CCAGTTACG","TGTGGTCCT","ATGCTCACC","ATGAGATCC","TTCCAGATT","CGGTCGACA","CTTACCTAG","TACGTTACC","ATGGAGAGT","TTCCAGGAG","ACTCGAGTC","GCGAAGCTC","AGAGCGGAG","GGTAACTAC","AGCACCGTG","GGAATTCAC","TAACCGTGA","TCGGACAGT","AGCGACACC","GAACGCTGT","AAGGAAGTC","CAAGTACGA","CACGCGTAA","TGCCTTCAG","ACTCCTGAG","TTCAGTGCC","GTAACCATA","TGAGCAGAT","CGCTTGTAG","AATGAGTCG","TATGTATGC","AGAGGTGAA","ACACACCGT","TTGATGAGT","TTGTTAGAG","CTACTGTCA","GTGCTAAGC","TCGTAATAG","ACTCCAACT","ATGGAGGAA","TGGTCCTAG","TATCACCTG","AAGTCATGA","AATGCAGCG","GCAATGAGA","TGGACTGCC","GGAAGGTAT","CATTATGTC","AGTCGTCCG","AGCTTCGAT","CAGTTACTG","GATCTGTTC","CCATTCTGC","ACTTAGCTT","ACTCGCTGT","ATCATTACG","GTCGTTAGA","GAGAACAGG","GAATCACAT","CATAGAGAT","TCAGTGTTC","AGCCGGATC","GTCGTTGCG","TGACCTCCT","ACTCCGGTT","CCTCTGCAT","GCACCATCG","GATACTGTG","AATCTGACC","TACTTCCAG","GTATTACTG","GGATGCTCG","GCGGAGATT","GAGTATCGC","GTAGTGGAG","TGGTCTACG","AACTGATTC","CAAGCTGCA","AACCGTGAG","GTGTACCGT","TCACTACGT","ACGTAGTAT","TGTCACATA","TAACTCCGA","CTATCCATC","GCTGAGCAG","CTTGCACAA","CTAGTTCCA","AGAGAGTGG","TCGAATAGA","TTCACTGGA","AATGCTATC","TAGATAGCC","CACAACCAG","GTATGCCTT","TACCTCACT","ATGTCGCCT","ATCTGGTAG","ACTGGACCA"]},"templates":[{"id":"sdr_seq_rna","title":"SDR-seq RNA","source":"examples/cDNA_paired_end_config.json","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":false,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"cb1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTCAGTACGTACGAGTC","TCAGTACGTACGAGTC","CAGTACGTACGAGTC","AGTACGTACGAGTC"],"blocktype":"constantRegion","blockname":"cso","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"cb2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTACTCGCAGTAGTCGACACGTC"],"blocktype":"constantRegion","blockname":"commonseq2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["TCGCCTTA","CTAGTACG","TTCTGCCT","GCTCAGGA"],"blocktype":"barcodeList","blockname":"sb","keepblock":false},{"maxerrors":0,"blockfunction":"UMI","length":8,"blocktype":"randomBarcode","blockname":"umi","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}},{"id":"sdr_seq_gdna","title":"SDR-seq gDNA","source":"examples/gDNA_paired_end_config.json","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":true,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"bc1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTCAGTACGTACGAGTC","TCAGTACGTACGAGTC","CAGTACGTACGAGTC","AGTACGTACGAGTC"],"blocktype":"constantRegion","blockname":"commonseq1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"bc2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTACTCGCAGTAGTC"],"blocktype":"constantRegion","blockname":"commonseq2","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}},{"id":"design_doc","title":"Design-doc example","source":"doc/config_format.md","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":false,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":["CCTTAACAT","AGCGTAGAA","TATAGGTGT","GGCGACTCA"],"blocktype":"barcodeList","blockname":"cb1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GGGTCAGTACGTACGAGTCCC"],"blocktype":"constantRegion","blockname":"con1","keepblock":true},{"maxerrors":0,"blockfunction":"UMI","length":6,"blocktype":"randomBarcode","blockname":"umi","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}}]}
+</script>
+</body>
+</html>

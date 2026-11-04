@@ -43,6 +43,17 @@ urls.Source = "https://github.com/hawkjo/bcwithqc"
 [project.optional-dependencies]
 test = ["pytest"]
 
+[dependency-groups]
+# Browser tests of the config builder (tests/gui). A group rather than an
+# extra, so the tests can be installed without bcwithqc and its dependencies.
+gui-test = [
+    "pytest",
+    "pytest-playwright",
+    "openpyxl",  # writes .xlsx test files
+    "odfpy",  # writes .ods test files
+    "xlwt",  # writes legacy .xls test files
+]
+
 [project.scripts]
 bcwithqc = "bcwithqc.main:main"
 
