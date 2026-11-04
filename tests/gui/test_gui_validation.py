@@ -4,6 +4,9 @@ Each rule must fire exactly at its boundary, and bcwithqc's real configs must
 pass with no errors and no warnings. Rule ids follow plan §08.
 """
 
+import ast
+from pathlib import Path
+
 import pytest
 from gui_support import (
     EXAMPLES_DIR,
@@ -402,3 +405,24 @@ def test_messages_name_no_notes_ids_and_no_line_numbers_in_code(core):
         for issue in issues_for(core, config):
             assert "#" not in issue["message"]
             assert ".py" not in issue["message"]
+
+
+def test_every_temporary_warning_has_a_strict_xfail_tier_f_case(core):
+    """Rule R5: when bcwithqc is fixed, the case passes unexpectedly and the run fails."""
+    registry = core.run("(core) => core.TEMPORARY_WARNINGS")
+    source = (Path(__file__).parent / "test_gui_pipeline_contract.py").read_text(
+        encoding="utf-8"
+    )
+    functions = {
+        node.name: node
+        for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef)
+    }
+    for rule, entry in registry.items():
+        node = functions.get(entry["tier_f"])
+        assert node is not None, f"{rule}: no tier F case named {entry['tier_f']}"
+        decorators = [ast.unparse(decorator) for decorator in node.decorator_list]
+        assert any("xfail" in text and "strict=True" in text for text in decorators), (
+            rule,
+            decorators,
+        )

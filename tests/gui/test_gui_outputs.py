@@ -38,8 +38,8 @@ def test_sdr_seq_rna_outputs(core):
     assert outputs["UB"]["written"] is True
     assert (outputs["FL"]["min"], outputs["FL"]["max"]) == (37, 40)
     assert outputs["alignment_files"] == [
-        {"read": 0, "kind": "none", "parts": []},
-        {"read": 1, "kind": "whole", "parts": []},
+        {"read": 0, "kind": "none", "parts": [], "rest": False},
+        {"read": 1, "kind": "whole", "parts": [], "rest": False},
     ]
 
 
@@ -63,7 +63,8 @@ def test_sending_the_rest_of_read_1_to_alignment(core):
     assert outputs["alignment_files"][0] == {
         "read": 0,
         "kind": "parts",
-        "parts": ["rest of read"],
+        "parts": [],
+        "rest": True,
     }
 
 
@@ -76,11 +77,13 @@ def test_pe_mini_outputs(core):
         "read": 0,
         "kind": "parts",
         "parts": ["con_r1"],
+        "rest": False,
     }
     assert outputs["alignment_files"][1] == {
         "read": 1,
         "kind": "parts",
-        "parts": ["rest of read"],
+        "parts": [],
+        "rest": True,
     }
 
 

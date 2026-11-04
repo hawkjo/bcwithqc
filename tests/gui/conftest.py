@@ -38,6 +38,16 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "bcwithqc: tier F, which runs bcwithqc itself")
 
 
+def pytest_collection_modifyitems(config, items):
+    """Tier F is opt-in: it runs only when -m names the bcwithqc marker."""
+    if "bcwithqc" in (config.option.markexpr or ""):
+        return
+    skip = pytest.mark.skip(reason="tier F runs only with -m bcwithqc")
+    for item in items:
+        if item.get_closest_marker("bcwithqc") is not None:
+            item.add_marker(skip)
+
+
 def pytest_report_header(config):
     """Say why the GUI tests did not run, when they can't."""
     if not PLAYWRIGHT_AVAILABLE:

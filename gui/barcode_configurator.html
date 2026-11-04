@@ -908,6 +908,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * with "."; with blocks on both reads, the two reads' values are joined
    * with "." again, which gives a leading or trailing dot when one read
    * contributes nothing. UB exists only if some block has function UMI.
+   * Each read's file for alignment is "whole" (a read without blocks),
+   * "none" (nothing kept) or "parts": the kept blocks in order, then the rest
+   * of the read if rest is true.
    * @param {Object} model
    * @returns {Object}
    */
@@ -948,10 +951,10 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       model.reads[index].blocks.some((block) => block.blockfunction === 'UMI'));
     const alignment_files = exported_read_indices(model).map((read_index) => {
       const read = model.reads[read_index];
-      if (!read.blocks.length) return { read: read_index, kind: 'whole', parts: [] };
+      if (!read.blocks.length) return { read: read_index, kind: 'whole', parts: [], rest: false };
       const parts = read.blocks.filter((block) => block.keepblock === true).map((block) => block.blockname);
-      if (read.keep_nonbarcode === true) parts.push('rest of read');
-      return { read: read_index, kind: parts.length ? 'parts' : 'none', parts };
+      const rest = read.keep_nonbarcode === true;
+      return { read: read_index, kind: parts.length || rest ? 'parts' : 'none', parts, rest };
     });
     return {
       reads_with_blocks: read_indices,
@@ -2139,7 +2142,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         h('dt', null, 'UR'), h('dd', { id: 'out_ur' }, outputs.UR.value || h('span', { class: 'note' }, 'written empty')),
         h('dt', null, 'FL'), h('dd', { id: 'out_fl' }, outputs.FL.blocks.some((names) => names.length) ? range_text(outputs.FL.min, outputs.FL.max) : h('span', { class: 'note' }, '0 (no constant region)'))),
       h('div', { class: 'files', id: 'out_files' }, h('span', { class: 'hint' }, 'Files for alignment'),
-        outputs.alignment_files.map((file) => h('span', null, READ_LABELS[file.read] + ': ' + (file.kind === 'whole' ? 'whole read' : file.kind === 'none' ? 'no file for alignment (nothing kept)' : file.parts.join(' + ')))))));
+        outputs.alignment_files.map((file) => h('span', null, READ_LABELS[file.read] + ': ' + (file.kind === 'whole' ? 'whole read'
+          : file.kind === 'none' ? 'no file for alignment (nothing kept)'
+            : file.parts.concat(file.rest ? ['rest of read'] : []).join(' + ')))))));
 
     const text = core.config_to_json(state.model);
     rail.append(h('section', { class: 'rail-sec', id: 'json', 'aria-label': 'JSON' },
