@@ -786,10 +786,549 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--fo
     };
   }
 
+  // ------------------------------------------------------------------
+  // Importing barcode tables
+
+  const DELIMITERS = ['\t', ',', ';', ':'];
+
+  /** Split one line on a delimiter, honouring double-quoted fields ("" is a quote). */
+  function split_quoted(text, delimiter) {
+    const cells = [];
+    let cell = '';
+    let quoted = false;
+    let was_quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quoted) {
+        if (ch === '"' && text[i + 1] === '"') {
+          cell += '"';
+          i += 1;
+        } else if (ch === '"') {
+          quoted = false;
+        } else {
+          cell += ch;
+        }
+      } else if (ch === '"' && cell.trim() === '') {
+        quoted = true;
+        was_quoted = true;
+        cell = '';
+      } else if (ch === delimiter) {
+        cells.push(was_quoted ? cell : cell.trim());
+        cell = '';
+        was_quoted = false;
+      } else {
+        cell += ch;
+      }
+    }
+    cells.push(was_quoted ? cell : cell.trim());
+    return cells;
+  }
+
+  /**
+   * The delimiter of a text table: tab, comma, semicolon or colon if one
+   * appears on at least half of the lines (the most frequent wins), else
+   * runs of whitespace if most lines contain some, else none (one column).
+   * @param {string[]} lines Non-blank lines.
+   * @returns {?string} The delimiter, "whitespace", or null.
+   */
+  function detect_delimiter(lines) {
+    let best = null;
+    let best_share = 0;
+    for (const delimiter of DELIMITERS) {
+      const share = lines.filter((line) => line.includes(delimiter)).length / lines.length;
+      if (share > best_share) {
+        best = delimiter;
+        best_share = share;
+      }
+    }
+    if (best_share >= 0.5) return best;
+    const spaced = lines.filter((line) => /\s/.test(line.trim())).length / lines.length;
+    return spaced >= 0.5 ? 'whitespace' : null;
+  }
+
+  /**
+   * Parse pasted or file text into rows of cells, keeping each row's line
+   * number in the source. A byte-order mark is removed, CRLF and CR line
+   * endings are accepted, and blank lines are skipped.
+   * @param {string} text
+   * @returns {{delimiter: ?string, rows: {line: number, cells: string[]}[]}}
+   */
+  function parse_delimited_text(text) {
+    const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+    const lines = [];
+    body.split(/\r\n|\r|\n/).forEach((line, index) => {
+      if (line.replace(INVISIBLE_PATTERN, '') !== '') lines.push({ line: index + 1, text: line });
+    });
+    if (!lines.length) return { delimiter: null, rows: [] };
+    const delimiter = detect_delimiter(lines.map((item) => item.text));
+    const rows = lines.map((item) => {
+      let cells;
+      if (delimiter === null) cells = [item.text.trim()];
+      else if (delimiter === 'whitespace') cells = item.text.trim().split(/\s+/);
+      else cells = split_quoted(item.text, delimiter);
+      return { line: item.line, cells };
+    });
+    return { delimiter, rows };
+  }
+
+  /**
+   * Classify a table cell: "dna" (only A, C, G, T in any case), "dna_junk"
+   * (DNA once invisible characters are removed; imported as is, so the
+   * sequence check flags it), "text", or "empty".
+   * @param {string} cell
+   * @returns {string}
+   */
+  function classify_cell(cell) {
+    const stripped = String(cell).replace(INVISIBLE_PATTERN, '');
+    if (stripped === '') return 'empty';
+    if (DNA_PATTERN.test(String(cell).toUpperCase())) return 'dna';
+    if (DNA_PATTERN.test(stripped.toUpperCase())) return 'dna_junk';
+    return 'text';
+  }
+
+  function cell_at(row, column) {
+    return row.cells[column] === undefined || row.cells[column] === null ? '' : String(row.cells[column]);
+  }
+
+  /**
+   * The columns that hold DNA sequences: every non-empty cell below the
+   * first row is DNA (invisible characters aside). The first row may be a
+   * header.
+   * @param {{line: number, cells: string[]}[]} rows
+   * @returns {number[]} Candidate column indices.
+   */
+  function detect_sequence_column(rows) {
+    const width = rows.reduce((most, row) => Math.max(most, row.cells.length), 0);
+    const candidates = [];
+    for (let column = 0; column < width; column++) {
+      const kinds = rows.map((row) => classify_cell(cell_at(row, column)));
+      const body = rows.length > 1 ? kinds.slice(1) : kinds;
+      const filled = body.filter((kind) => kind !== 'empty');
+      if (filled.length && filled.every((kind) => kind === 'dna' || kind === 'dna_junk') && filled.includes('dna')) {
+        candidates.push(column);
+      }
+    }
+    return candidates;
+  }
+
+  /**
+   * Whether the first row is a header for the sequence column.
+   *
+   * A first cell that isn't DNA is a header. A DNA-like first cell is
+   * suspicious when it is "TAG" or no other entry has its length: with other
+   * columns that start with text, it is a header; in a single column the user
+   * is asked.
+   * @param {{line: number, cells: string[]}[]} rows
+   * @param {number} column
+   * @returns {boolean|string} true, false, or "ask".
+   */
+  function detect_header_row(rows, column) {
+    if (rows.length < 2) return false;
+    const first = cell_at(rows[0], column);
+    const kind = classify_cell(first);
+    if (kind === 'text') return true;
+    if (kind !== 'dna') return false;
+    const body_lengths = new Set(rows.slice(1).map((row) => cell_at(row, column))
+      .filter((cell) => classify_cell(cell) !== 'empty')
+      .map((cell) => cell.replace(INVISIBLE_PATTERN, '').length));
+    const suspicious = first.toUpperCase() === 'TAG' || !body_lengths.has(first.length);
+    if (!suspicious) return false;
+    const other_text = rows[0].cells.some((cell, index) => index !== column && classify_cell(cell) === 'text');
+    if (other_text) return true;
+    const width = rows.reduce((most, row) => Math.max(most, row.cells.length), 0);
+    return width === 1 ? 'ask' : false;
+  }
+
+  /**
+   * Work out an import from table rows, or say what to ask the user.
+   * @param {{line: number, cells: string[]}[]} rows
+   * @param {string} source_name File name (or "pasted text"), for messages.
+   * @param {{column?: number, header?: boolean}} [choices] The user's answers so far.
+   * @returns {Object} {status: "ok", sequences, sources, column, header},
+   *   {status: "choose_column", candidates}, {status: "ask_header", column, first},
+   *   or {status: "error", message}.
+   */
+  function plan_table_import(rows, source_name, choices = {}) {
+    if (!rows.length) return { status: 'error', message: 'There is nothing to import: the input is empty.' };
+    const candidates = detect_sequence_column(rows);
+    if (rows.length === 1 && !candidates.length && rows[0].cells.every((cell) => classify_cell(cell) !== 'dna')) {
+      return { status: 'error', message: 'There is nothing to import: the input has only a header row.' };
+    }
+    if (!candidates.length) return { status: 'error', message: 'No column of DNA sequences (A, C, G, T) was found.' };
+    let column = choices.column;
+    if (column === undefined || column === null) {
+      if (candidates.length > 1) return { status: 'choose_column', candidates };
+      column = candidates[0];
+    }
+    let header = choices.header;
+    if (header === undefined || header === null) {
+      header = detect_header_row(rows, column);
+      if (header === 'ask') return { status: 'ask_header', column, first: cell_at(rows[0], column) };
+    }
+    const sequences = [];
+    const sources = [];
+    rows.slice(header ? 1 : 0).forEach((row) => {
+      const cell = cell_at(row, column);
+      if (classify_cell(cell) === 'empty') return;
+      sequences.push(cell.toUpperCase());
+      sources.push({ name: source_name, line: row.line });
+    });
+    if (!sequences.length) return { status: 'error', message: 'There is nothing to import: the input has only a header row.' };
+    return { status: 'ok', sequences, sources, column, header };
+  }
+
+  /**
+   * Put imported sequences into a block, after or instead of its current ones.
+   * @param {Object} model
+   * @param {number} read_index
+   * @param {string} block_id
+   * @param {{sequences: string[], sources: Object[]}} imported
+   * @param {string} mode "append" or "replace".
+   * @returns {Object} The new model.
+   */
+  function apply_import(model, read_index, block_id, imported, mode) {
+    const result = clone(model);
+    const block = result.reads[read_index].blocks.find((item) => item.id === block_id);
+    const keep = mode === 'append' && Array.isArray(block.sequence);
+    const old_sequences = keep ? block.sequence : [];
+    const old_sources = keep ? (block.sequence_source || old_sequences.map(() => null)) : [];
+    block.sequence = old_sequences.concat(imported.sequences);
+    block.sequence_source = old_sources.concat(imported.sources);
+    return result;
+  }
+
+  // ------------------------------------------------------------------
+  // Validation
+
+  /**
+   * Warnings about what current bcwithqc can't handle. Each is deleted once
+   * bcwithqc is fixed; its tier F case in tests/gui starts passing then. The
+   * notes ids refer to bcwithqc_future_work.html and never appear in messages.
+   */
+  const TEMPORARY_WARNINGS = {
+    W05: { bcwithqc: 'misc.fix_unknown_read_orientation', notes: '#orientation-cap', tier_f: 'test_w05_orientation_cap' },
+    W08: { bcwithqc: 'misc.determine_bc_and_paired_fastq_idxs', notes: '#barcode-file-guess', tier_f: 'test_w08_barcode_file_guess' },
+    W11: { bcwithqc: 'bc_aligner.CustomBCAligner.find_norm_score_and_key_boundaries', notes: '#one-block-crash', tier_f: 'test_w11_one_block_read' },
+    W12: { bcwithqc: 'bc_aligner.CustomBCAligner.find_norm_score_and_key_boundaries', notes: '#r2-only-crash', tier_f: 'test_w12_barcodes_on_read_2_only' },
+  };
+  const FREE_TABLE_WARNING_BYTES = 256 * 1024 * 1024;
+  const MAX_LINKER_COMBINATIONS = 64;
+  const BLOCKNAME_PATTERN = /^[A-Za-z0-9_.-]{1,64}$/;
+
+  function most_common(values) {
+    const counts = new Map();
+    for (const value of values) counts.set(value, (counts.get(value) || 0) + 1);
+    let best = null;
+    let best_count = 0;
+    for (const [value, count] of counts) {
+      if (count > best_count) {
+        best = value;
+        best_count = count;
+      }
+    }
+    return best;
+  }
+
+  function length_summary(sequences) {
+    const counts = new Map();
+    for (const item of sequences) counts.set(item.length, (counts.get(item.length) || 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])
+      .map(([length, count]) => length + ' nt ×' + count.toLocaleString('en-US')).join(' · ');
+  }
+
+  function describe_bad_characters(sequence) {
+    const bad = [];
+    for (const ch of sequence) {
+      if ('ACGT'.includes(ch)) continue;
+      const code = ch.codePointAt(0);
+      const label = ch.replace(INVISIBLE_PATTERN, '') === '' || code < 0x20
+        ? 'an invisible U+' + code.toString(16).toUpperCase().padStart(4, '0')
+        : '"' + ch + '"';
+      if (!bad.includes(label)) bad.push(label);
+    }
+    return bad.join(', ');
+  }
+
+  function format_bytes(bytes) {
+    if (bytes >= 1024 ** 3) return (bytes / 1024 ** 3).toFixed(1) + ' GiB';
+    return Math.round(bytes / 1024 ** 2).toLocaleString('en-US') + ' MiB';
+  }
+
+  /**
+   * Bytes of one FREE decoder table, as freebarcodes allocates it:
+   * (4^length + 1) entries of the smallest unsigned type that holds the
+   * number of barcodes plus one.
+   * @param {number} barcode_count
+   * @param {number} length
+   * @returns {number}
+   */
+  function free_table_bytes(barcode_count, length) {
+    const needed = barcode_count + 1;
+    const entry_bytes = needed <= 2 ** 8 ? 1 : needed <= 2 ** 16 ? 2 : needed <= 2 ** 32 ? 4 : 8;
+    return (4 ** length + 1) * entry_bytes;
+  }
+
+  /**
+   * The status of each sequence in a list or constant region, for the
+   * highlights: "invalid", "empty", "duplicate", "length" (its length differs
+   * from most entries), or "".
+   * @param {Object} block
+   * @returns {string[]}
+   */
+  function sequence_row_statuses(block) {
+    if (!Array.isArray(block.sequence)) return [];
+    const counts = new Map();
+    for (const item of block.sequence) counts.set(item, (counts.get(item) || 0) + 1);
+    const strings = block.sequence.filter((item) => typeof item === 'string' && item !== '');
+    const common = most_common(strings.map((item) => item.length));
+    return block.sequence.map((item) => {
+      if (typeof item !== 'string') return 'invalid';
+      if (item === '') return 'empty';
+      if (!DNA_PATTERN.test(item)) return 'invalid';
+      if (counts.get(item) > 1) return 'duplicate';
+      if (block.blocktype === 'barcodeList' && item.length !== common) return 'length';
+      return '';
+    });
+  }
+
+  /**
+   * Indices of a list's sequences in display order. In A→Z mode, problem
+   * rows come first (errors, then length differences), each group sorted
+   * A→Z, so both copies of a duplicate sit together. In entered order, the
+   * entered order. Constant regions always show their entered order.
+   * @param {Object} block
+   * @returns {number[]}
+   */
+  function display_order(block) {
+    if (!Array.isArray(block.sequence)) return [];
+    const indices = block.sequence.map((_, index) => index);
+    if (block.blocktype !== 'barcodeList' || block.sort !== 'az') return indices;
+    const statuses = sequence_row_statuses(block);
+    const rank = { invalid: 0, empty: 0, duplicate: 0, length: 1, '': 2 };
+    const text = (index) => String(block.sequence[index]);
+    return indices.sort((a, b) => rank[statuses[a]] - rank[statuses[b]] || (text(a) < text(b) ? -1 : text(a) > text(b) ? 1 : a - b));
+  }
+
+  /**
+   * Check a model against the app's rules. Errors disable Download;
+   * warnings don't. Only the reads the file will contain are checked, so a
+   * hidden Read 2 never blocks a single-end download.
+   * @param {Object} model
+   * @returns {{rule: string, level: string, temporary: boolean, read: ?number, block_id: ?string, rows: ?number[], message: string}[]}
+   */
+  function validate_config(model) {
+    const issues = [];
+    const add = (rule, level, message, where = {}) => issues.push({
+      rule, level, temporary: rule in TEMPORARY_WARNINGS, read: null, block_id: null, rows: null, message, ...where,
+    });
+
+    if (model.single_end === null || model.single_end === undefined) {
+      add('E01', 'error', 'Choose single-end or paired-end reads.');
+    } else if (typeof model.single_end !== 'boolean') {
+      add('E11', 'error', 'Single- or paired-end must be true or false; the file has ' + describe_raw(model.single_end) + '.');
+    }
+    if (typeof model.unknown_read_orientation !== 'boolean') {
+      add('E11', 'error', 'The orientation setting must be true or false; the file has ' + describe_raw(model.unknown_read_orientation) + '.');
+    }
+
+    const read_indices = exported_read_indices(model);
+    const block_count = read_indices.reduce((total, index) => total + model.reads[index].blocks.length, 0);
+    if (!block_count) {
+      add('E14', 'error', model.single_end === true
+        ? 'The config has no blocks. Add at least one block to Read 1.'
+        : 'The config has no blocks. Add at least one block to Read 1 or Read 2.');
+    }
+
+    for (const read_index of read_indices) {
+      const read = model.reads[read_index];
+      const label = READ_LABELS[read_index];
+      const decoders = decoder_for_each_list(read.blocks);
+      if (typeof read.keep_nonbarcode !== 'boolean') {
+        add('E11', 'error', label + ': "send rest of read" must be true or false; the file has ' + describe_raw(read.keep_nonbarcode) + '.', { read: read_index });
+      }
+
+      const seen_names = new Map();
+      read.blocks.forEach((block, index) => {
+        const name = block_label(block, index);
+        const where = { read: read_index, block_id: block.id };
+
+        if (typeof block.blockname !== 'string' || block.blockname === '') {
+          add('E08', 'error', label + ', block ' + (index + 1) + ': the block needs a name.', where);
+        } else if (!BLOCKNAME_PATTERN.test(block.blockname)) {
+          add('E08', 'error', name + ': names may use only letters, digits, "_", "." and "-", up to 64 characters.', where);
+        } else {
+          const key = block.blockname.toLowerCase();
+          if (seen_names.has(key)) {
+            add('E08', 'error', seen_names.get(key) + ' and ' + name + ': block names in a read must differ, ignoring case.', where);
+          } else {
+            seen_names.set(key, name);
+          }
+        }
+
+        if (!BLOCK_TYPES.includes(block.blocktype)) {
+          add('E11', 'error', name + ' has an unknown type, ' + describe_raw(block.blocktype) + '.', where);
+          return;
+        }
+        if (!BLOCK_FUNCTIONS.includes(block.blockfunction)) {
+          add('E11', 'error', name + ' has an unknown function, ' + describe_raw(block.blockfunction) + '.', where);
+        }
+        if (typeof block.keepblock !== 'boolean') {
+          add('E11', 'error', name + ': "keep for alignment" must be true or false; the file has ' + describe_raw(block.keepblock) + '.', where);
+        }
+        if (block.linkgroup !== null && block.linkgroup !== undefined && !Number.isInteger(block.linkgroup)) {
+          add('E11', 'error', name + ': the link group must be a whole number; the file has ' + describe_raw(block.linkgroup) + '.', where);
+        }
+        const maxerrors_ok = Number.isInteger(block.maxerrors);
+        if (!maxerrors_ok) {
+          add('E11', 'error', name + ': allowed errors must be a whole number; the file has ' + describe_raw(block.maxerrors) + '.', where);
+        }
+
+        if (block.blocktype === 'randomBarcode') {
+          if (!Number.isInteger(block.length)) {
+            add('E11', 'error', name + ': the length must be a whole number; the file has ' + describe_raw(block.length) + '.', where);
+          } else if (block.length < 1) {
+            add('E07', 'error', name + ': the length must be at least 1.', where);
+          } else if (maxerrors_ok && (block.maxerrors < 0 || block.maxerrors > Math.floor(block.length / 2))) {
+            add('E06', 'error', name + ': allowed errors must be from 0 to ' + Math.floor(block.length / 2) + ' (half the length, rounded down).', where);
+          }
+          if (block.blockfunction === 'barcode') {
+            add('W06', 'warning', name + ' is a random block set to barcode, so its bases go into CB without error correction.', where);
+          }
+          return;
+        }
+
+        if (!Array.isArray(block.sequence)) {
+          add('E11', 'error', name + ': the sequences must be a list; the file has ' + describe_raw(block.sequence) + '.', where);
+          return;
+        }
+        if (!block.sequence.length) {
+          add('E03', 'error', name + ' has no sequences.', where);
+          return;
+        }
+        const statuses = sequence_row_statuses(block);
+        const sources = block.sequence_source || [];
+        block.sequence.forEach((item, row) => {
+          const source = sources[row];
+          const place = source ? ' (line ' + source.line + ' of ' + source.name + ')' : '';
+          if (typeof item !== 'string') {
+            add('E11', 'error', name + ': every sequence must be text; the file has ' + describe_raw(item) + place + '.', { ...where, rows: [row] });
+          } else if (statuses[row] === 'empty') {
+            add('E03', 'error', name + ': an entry is empty' + place + '.', { ...where, rows: [row] });
+          } else if (statuses[row] === 'invalid') {
+            add('E03', 'error', name + ': "' + item.replace(INVISIBLE_PATTERN, '') + '"' + place + ' contains ' + describe_bad_characters(item) + '; only A, C, G and T are allowed.', { ...where, rows: [row] });
+          }
+        });
+        const positions = new Map();
+        block.sequence.forEach((item, row) => {
+          if (typeof item !== 'string' || item === '') return;
+          if (!positions.has(item)) positions.set(item, []);
+          positions.get(item).push(row);
+        });
+        for (const [item, rows] of positions) {
+          if (rows.length > 1) {
+            add('E04', 'error', name + ': ' + item + ' appears ' + (rows.length === 2 ? 'twice' : rows.length + ' times') + '.', { ...where, rows });
+          }
+        }
+        const good = block.sequence.filter((item) => typeof item === 'string' && DNA_PATTERN.test(item));
+        if (good.length && maxerrors_ok) {
+          const shortest = Math.min(...good.map((item) => item.length));
+          const cap = Math.floor(shortest / 2);
+          if (block.maxerrors < 0 || block.maxerrors > cap) {
+            add('E06', 'error', name + ': allowed errors must be from 0 to ' + cap + ' (half the shortest sequence, rounded down).', where);
+          }
+        }
+        if (block.blockfunction === 'UMI') {
+          add('W02', 'warning', block.blocktype === 'barcodeList'
+            ? name + ' is a barcode list set to UMI. bcwithqc treats it as a barcode (it goes into CB), and it also switches on UMI correction.'
+            : name + ' is a constant region set to UMI. bcwithqc only counts its length in FL, and it also switches on UMI correction.', where);
+        }
+        if (block.blocktype === 'barcodeList' && good.length) {
+          const lengths = new Set(good.map((item) => item.length));
+          const length_rows = statuses.map((status, row) => (status === 'length' ? row : -1)).filter((row) => row >= 0);
+          if (decoders[index] === 'FREE') {
+            if (lengths.size > 1) {
+              add('E05', 'error', name + ' is decoded with FREE, so its barcodes must all have the same length. It has ' + length_summary(good) + '.', { ...where, rows: length_rows });
+            } else {
+              const bytes = free_table_bytes(good.length, good[0].length);
+              if (bytes >= FREE_TABLE_WARNING_BYTES) {
+                add('W04', 'warning', name + ': the FREE decoder\'s table takes ' + format_bytes(bytes) + ', and each bcwithqc process builds its own copy (--threads N means N + 1 copies).', where);
+              }
+            }
+          } else if (lengths.size > 1) {
+            const first = export_sequence_order(block).find((item) => typeof item === 'string' && DNA_PATTERN.test(item));
+            add('W10', 'warning', name + ' has barcodes of different lengths (' + length_summary(good) + '). bcwithqc sizes its slot from the first one written (' + first.length + ' nt), so boundaries recover only if a constant region follows.', { ...where, rows: length_rows });
+          }
+        }
+      });
+
+      const groups = new Map();
+      read.blocks.forEach((block) => {
+        if (block.linkgroup === null || block.linkgroup === undefined) return;
+        if (!groups.has(block.linkgroup)) groups.set(block.linkgroup, []);
+        groups.get(block.linkgroup).push(block);
+      });
+      for (const members of groups.values()) {
+        if (members.length === 1) {
+          add('E12', 'error', members[0].blockname + ' is the only block in its link group. Link it with another block or remove the link.', { read: read_index, block_id: members[0].id });
+        }
+      }
+
+      if (read.blocks.length === 1) {
+        add('W11', 'warning', label + ' has a single block. Current bcwithqc crashes on a read structure with only one block.', { read: read_index });
+      }
+      const combinations = read.blocks.filter((block) => block.blocktype === 'constantRegion' && Array.isArray(block.sequence))
+        .reduce((total, block) => total * Math.max(1, block.sequence.length), 1);
+      if (combinations > MAX_LINKER_COMBINATIONS) {
+        add('W09', 'warning', label + ': bcwithqc tries ' + combinations.toLocaleString('en-US') + ' linker combinations per read (one per choice of constant-region variants), which slows preprocessing.', { read: read_index });
+      }
+      for (const type of ['barcodeList', 'constantRegion']) {
+        const of_type = read.blocks.filter((block) => block.blocktype === type);
+        const first_discarded = of_type.findIndex((block) => block.blockfunction === 'discard');
+        if (first_discarded < 0) continue;
+        const later_kept = of_type.slice(first_discarded + 1).find((block) => block.blockfunction !== 'discard');
+        if (!later_kept) continue;
+        const discarded = of_type[first_discarded];
+        add('W01', 'warning', type === 'barcodeList'
+          ? later_kept.blockname + ' comes after ' + discarded.blockname + ', which is set to discard. bcwithqc then reports ' + discarded.blockname + '\'s barcode as ' + later_kept.blockname + '\'s.'
+          : later_kept.blockname + ' comes after ' + discarded.blockname + ', which is set to discard. bcwithqc then counts ' + discarded.blockname + '\'s length in FL instead of ' + later_kept.blockname + '\'s.',
+        { read: read_index, block_id: later_kept.id });
+      }
+    }
+
+    if (model.single_end === false) {
+      const [read_1, read_2] = model.reads;
+      if (!read_1.blocks.length && read_2.blocks.length) {
+        add('W12', 'warning', 'Read 1 has no blocks but Read 2 does. Current bcwithqc crashes on this.', { read: 0 });
+      }
+      if (read_1.blocks.length && !read_2.blocks.length && !read_1.blocks.some((block) => block.blocktype === 'constantRegion')) {
+        add('W08', 'warning', 'With barcodes on Read 1 only and no constant region, current bcwithqc does not follow the file order: it guesses which file holds the barcodes from the first 500 reads, and picks the second file whenever its reads are at least as long as the Read 1 structure.', { read: 0 });
+      }
+      if (model.unknown_read_orientation === true) {
+        const has_constant = model.reads.some((read) => read.blocks.some((block) => block.blocktype === 'constantRegion'));
+        add('W05', 'warning', 'With orientation on, current bcwithqc stops with an error after 20,010 read pairs.' + (has_constant ? '' : ' Without a constant region, the setting also has no effect.'));
+      }
+    }
+    const has_barcode = read_indices.some((index) => model.reads[index].blocks.some((block) =>
+      block.blockfunction !== 'discard' && (block.blocktype === 'barcodeList' || (block.blocktype === 'randomBarcode' && block.blockfunction === 'barcode'))));
+    if (block_count && !has_barcode) add('W07', 'warning', 'No block is a barcode, so CB will be empty.');
+    return issues;
+  }
+
   window.barcode_core = {
     BLOCK_TYPES,
     BLOCK_FUNCTIONS,
     READ_KEYS,
+    TEMPORARY_WARNINGS,
+    parse_delimited_text,
+    classify_cell,
+    detect_sequence_column,
+    detect_header_row,
+    plan_table_import,
+    apply_import,
+    free_table_bytes,
+    sequence_row_statuses,
+    display_order,
+    validate_config,
     python_json_dumps,
     python_json_string,
     new_model,

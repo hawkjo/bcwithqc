@@ -132,3 +132,84 @@ def write_old_gui_config(path: Path) -> None:
     """Write old_gui_config() the way barcodinggui saves: gzip level 9, json.dump(indent=4), no final newline."""
     with gzip.open(path, "wt", compresslevel=9, encoding="utf8") as handle:
         json.dump(old_gui_config(), handle, indent=4)
+
+
+# Small hand-built configs. Layout letters: L barcode list, C constant region, R random block.
+SAMPLE_BARCODES = ["CCTTAACAT", "AGCGTAGAA", "TATAGGTGT", "GGCGACTCA"]
+SAMPLE_CONSTANT = "GGGTCAGTACGTACGAGTCCC"
+
+
+def barcode_list(name, sequences=None, maxerrors=1, function="barcode", keep=False):
+    """Return a barcodeList block in bcwithqc's key order."""
+    return {
+        "maxerrors": maxerrors,
+        "blockfunction": function,
+        "sequence": list(SAMPLE_BARCODES if sequences is None else sequences),
+        "blocktype": "barcodeList",
+        "blockname": name,
+        "keepblock": keep,
+    }
+
+
+def constant_region(name, sequences=None, maxerrors=1, function="barcode", keep=False):
+    """Return a constantRegion block in bcwithqc's key order."""
+    return {
+        "maxerrors": maxerrors,
+        "blockfunction": function,
+        "sequence": list([SAMPLE_CONSTANT] if sequences is None else sequences),
+        "blocktype": "constantRegion",
+        "blockname": name,
+        "keepblock": keep,
+    }
+
+
+def random_block(name, length=8, maxerrors=0, function="UMI", keep=False):
+    """Return a randomBarcode block in bcwithqc's key order."""
+    return {
+        "maxerrors": maxerrors,
+        "blockfunction": function,
+        "length": length,
+        "blocktype": "randomBarcode",
+        "blockname": name,
+        "keepblock": keep,
+    }
+
+
+def make_config(
+    read_1,
+    read_2=None,
+    single_end=None,
+    orientation=False,
+    keep_r1=False,
+    keep_r2=True,
+):
+    """Return a config: single-end unless read_2 is given (a list, possibly empty)."""
+    if single_end is None:
+        single_end = read_2 is None
+    config = {
+        "unknown_read_orientation": orientation,
+        "single_end_reads": single_end,
+        "barcode_struct_r1": {"keep_nonbarcode": keep_r1, "blocks": list(read_1)},
+    }
+    if read_2 is not None:
+        config["barcode_struct_r2"] = {
+            "keep_nonbarcode": keep_r2,
+            "blocks": list(read_2),
+        }
+    return config
+
+
+def layout_blocks(layout):
+    """Return blocks for a layout string such as "LRCL", named L1, R1, C1, L2, ..."""
+    counts = {"L": 0, "C": 0, "R": 0}
+    blocks = []
+    for letter in layout:
+        counts[letter] += 1
+        name = f"{letter}{counts[letter]}"
+        if letter == "L":
+            blocks.append(barcode_list(name))
+        elif letter == "C":
+            blocks.append(constant_region(name))
+        else:
+            blocks.append(random_block(name))
+    return blocks
