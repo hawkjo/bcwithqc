@@ -107,7 +107,8 @@ def test_umi_on_read_1_only_gives_a_trailing_dot_when_read_2_has_blocks(core):
 def test_no_umi_block_means_no_ub_and_an_empty_ur(core):
     outputs = describe(core, example_text("gDNA_paired_end_config.json"))["outputs"]
     assert outputs["UB"]["written"] is False
-    assert outputs["UR"]["value"] == ""
+    # Decision D9: without a UMI block, UR is not written either (bcwithqc today writes it empty).
+    assert outputs["UR"]["written"] is False
     assert (outputs["FL"]["min"], outputs["FL"]["max"]) == (29, 32)
 
 

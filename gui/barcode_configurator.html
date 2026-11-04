@@ -81,8 +81,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
 .seg.need { box-shadow: 0 0 0 2px var(--err); }
 label.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-.info { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted);
-  font-size: 11px; font-weight: 700; cursor: help; font-style: normal; }
+.info { display: inline-grid; place-items: center; width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted);
+  background: transparent; font-size: 11px; font-weight: 700; line-height: 1; cursor: pointer; font-family: var(--font-ui); }
+.info[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.help-wrap { position: relative; display: inline-flex; vertical-align: middle; }
+.help { position: absolute; left: -8px; top: calc(100% + 6px); z-index: 30; width: min(340px, calc(100vw - 48px)); background: var(--surface); color: var(--fg);
+  border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.14); padding: 8px 12px; font-size: 13px; line-height: 1.45;
+  font-weight: 400; text-transform: none; letter-spacing: 0; }
+.check-help { display: inline-flex; align-items: center; gap: 8px; }
+.field-head { display: flex; align-items: center; gap: 6px; }
+.field-head label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .hint { color: var(--muted); font-size: 13px; }
 
 /* Diagram */
@@ -121,7 +129,7 @@ label.check { display: inline-flex; align-items: center; gap: 8px; cursor: point
 .block-head .spacer { margin-left: auto; }
 .fields { display: grid; gap: 8px 16px; grid-template-columns: minmax(200px, 2fr) repeat(auto-fit, minmax(120px, 1fr)); align-items: end; }
 .field { display: grid; gap: 4px; min-width: 0; }
-.field > span { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.field > span { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; min-height: 18px; display: flex; align-items: center; }
 .field input, .field select { border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; background: var(--surface); width: 100%; min-width: 0; }
 .field input.mono { font-family: var(--font-mono); }
 .field.invalid input { border-color: var(--err); }
@@ -368,7 +376,17 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       single_end: null,
       unknown_read_orientation: false,
       reads: [{ keep_nonbarcode: false, blocks: [] }, { keep_nonbarcode: true, blocks: [] }],
+      keep_unknown_keys: true,
     };
+  }
+
+  /** Copy keys bcwithqc doesn't use onto the end of an exported object, when the model keeps them. */
+  function append_extra(target, source, model) {
+    if (model.keep_unknown_keys !== true || !source || !is_plain_object(source.extra)) return target;
+    for (const [key, value] of Object.entries(source.extra)) {
+      if (!(key in target)) target[key] = value;
+    }
+    return target;
   }
 
   /** The next free block id in a model ("b1", "b2", ...). */
@@ -554,7 +572,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     return sequence;
   }
 
-  function block_to_object(block, group_numbers) {
+  function block_to_object(block, group_numbers, model) {
     const out = { maxerrors: block.maxerrors, blockfunction: block.blockfunction };
     if (block.sequence !== undefined) out.sequence = export_sequence_order(block);
     if (block.length !== undefined) out.length = block.length;
@@ -562,7 +580,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     out.blockname = block.blockname;
     out.keepblock = block.keepblock;
     if (block.linkgroup !== null && block.linkgroup !== undefined) out.linkgroup = group_numbers.get(block.linkgroup);
-    return out;
+    return append_extra(out, block, model);
   }
 
   /**
@@ -581,7 +599,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   /**
-   * The config object bcwithqc reads, in bcwithqc's key order.
+   * The config object bcwithqc reads, in bcwithqc's key order. Keys from an
+   * opened file that bcwithqc doesn't use follow at the end of their section
+   * while model.keep_unknown_keys is true.
    *
    * Single-end configs get no barcode_struct_r2 and write
    * unknown_read_orientation as false, which bcwithqc requires today; the
@@ -598,12 +618,12 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     for (const read_index of exported_read_indices(model)) {
       const read = model.reads[read_index];
       const numbers = linkgroup_numbers(read.blocks);
-      out[READ_KEYS[read_index]] = {
+      out[READ_KEYS[read_index]] = append_extra({
         keep_nonbarcode: read.keep_nonbarcode,
-        blocks: read.blocks.map((block) => block_to_object(block, numbers)),
-      };
+        blocks: read.blocks.map((block) => block_to_object(block, numbers, model)),
+      }, read, model);
     }
-    return out;
+    return append_extra(out, model, model);
   }
 
   /**
@@ -659,9 +679,16 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     let needs_mode_choice = false;
     let added_read_2 = false;
 
-    for (const key of unknown_keys(data, TOP_KEYS)) {
-      notice('warning', 'The setting "' + key + '" is not used by bcwithqc and was left out.');
-    }
+    const unknown_found = [];
+    const keep_extra = (target, source, keys, where) => {
+      if (!keys.length) return;
+      target.extra = {};
+      for (const key of keys) {
+        target.extra[key] = source[key];
+        unknown_found.push('"' + key + '"' + where);
+      }
+    };
+    keep_extra(model, data, unknown_keys(data, TOP_KEYS), '');
 
     if (!legacy) {
       model.single_end = data.single_end_reads;
@@ -705,9 +732,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         notice('warning', '"' + read_key + '" is not a section and was ignored.');
         return;
       }
-      for (const key of unknown_keys(struct, READ_STRUCT_KEYS)) {
-        notice('warning', 'The setting "' + key + '" in ' + READ_LABELS[read_index] + ' is not used by bcwithqc and was left out.');
-      }
+      keep_extra(read, struct, unknown_keys(struct, READ_STRUCT_KEYS), ' in ' + READ_LABELS[read_index]);
       if ('keep_nonbarcode' in struct) {
         read.keep_nonbarcode = struct.keep_nonbarcode;
       } else {
@@ -758,9 +783,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         block.linkgroup = 'linkgroup' in raw ? raw.linkgroup : null;
         if (block.blocktype === 'barcodeList') block.sort = 'entered';
         if ('name' in raw) dropped_names.push(block);
-        for (const key of unknown_keys(raw, BLOCK_KEYS)) {
-          notice('warning', 'The key "' + key + '" in block ' + block_label(block, position) + ' is not used by bcwithqc and was left out.');
-        }
+        keep_extra(block, raw, unknown_keys(raw, BLOCK_KEYS), ' in block ' + block_label(block, position));
         if (legacy && typeof block.blockname === 'string' && /\s/.test(block.blockname)) {
           const new_name = block.blockname.trim().replace(/\s+/g, '_');
           renamed.push(block.blockname + ' → ' + new_name);
@@ -777,6 +800,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     if (added_read_2) model.reads[1] = { keep_nonbarcode: true, blocks: [] };
     if (!legacy && model.single_end === true && 'barcode_struct_r2' in data) {
       notice('info', 'This single-end config also describes Read 2. Read 2 is kept, but it is not written while single-end is selected.');
+    }
+    if (unknown_found.length) {
+      notice('unknown_keys', 'bcwithqc doesn\'t use ' + unknown_found.join(', ') + '. They stay in the file unless you choose to leave them out.');
     }
     if (keepblock_added) notice('info', '"Keep for alignment" was not set in this file, so it is off for every block.');
     if (dropped_names.length) {
@@ -855,6 +881,24 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     });
   }
 
+  /**
+   * The decoder current bcwithqc gives each list (misc.build_bc_decoders):
+   * every list but the read's last uses Levenshtein, and the last one uses
+   * FREE when it is the last block or a random block follows it. Only the
+   * temporary warning W14 uses this; delete both when bcwithqc is fixed.
+   * @param {Object[]} blocks One read's blocks.
+   * @returns {Array<?string>}
+   */
+  function bcwithqc_decoders_today(blocks) {
+    const last_list = blocks.map((block) => block.blocktype).lastIndexOf('barcodeList');
+    return blocks.map((block, index) => {
+      if (block.blocktype !== 'barcodeList') return null;
+      if (index !== last_list) return 'Levenshtein';
+      const next = blocks[index + 1];
+      return !next || next.blocktype === 'randomBarcode' ? 'FREE' : 'Levenshtein';
+    });
+  }
+
   function valid_sequences(block) {
     return Array.isArray(block.sequence) ? block.sequence.filter((item) => typeof item === 'string') : [];
   }
@@ -907,7 +951,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * UMI, and FL the constant regions not set to discard. Pieces are joined
    * with "."; with blocks on both reads, the two reads' values are joined
    * with "." again, which gives a leading or trailing dot when one read
-   * contributes nothing. UB exists only if some block has function UMI.
+   * contributes nothing. UB and UR exist only if some block has function UMI
+   * (current bcwithqc still writes UR, empty: TEMPORARY_OUTPUT_NOTES).
    * Each read's file for alignment is "whole" (a read without blocks),
    * "none" (nothing kept) or "parts": the kept blocks in order, then the rest
    * of the read if rest is true.
@@ -960,7 +1005,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       reads_with_blocks: read_indices,
       CB: { pieces: tags.CB, value: join_reads(tags.CB) },
       CR: { pieces: tags.CR, value: join_reads(tags.CR) },
-      UR: { pieces: tags.UR, value: join_reads(tags.UR) },
+      UR: { pieces: tags.UR, value: join_reads(tags.UR), written: has_umi_block },
       UB: { written: has_umi_block },
       FL: {
         blocks: fl_blocks,
@@ -1219,10 +1264,21 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * notes ids refer to bcwithqc_future_work.html and never appear in messages.
    */
   const TEMPORARY_WARNINGS = {
+    W01: { bcwithqc: 'bc_parser.process_bc_rec', notes: '#discard-slip', tier_f: 'test_w01_discarded_list_shifts_later_barcodes' },
     W05: { bcwithqc: 'misc.fix_unknown_read_orientation', notes: '#orientation-cap', tier_f: 'test_w05_orientation_cap' },
     W08: { bcwithqc: 'misc.determine_bc_and_paired_fastq_idxs', notes: '#barcode-file-guess', tier_f: 'test_w08_barcode_file_guess' },
     W11: { bcwithqc: 'bc_aligner.CustomBCAligner.find_norm_score_and_key_boundaries', notes: '#one-block-crash', tier_f: 'test_w11_one_block_read' },
     W12: { bcwithqc: 'bc_aligner.CustomBCAligner.find_norm_score_and_key_boundaries', notes: '#r2-only-crash', tier_f: 'test_w12_barcodes_on_read_2_only' },
+    W14: { bcwithqc: 'misc.DistanceThresh', notes: '#decoder-picks-farthest', tier_f: 'test_w14_levenshtein_picks_the_farthest_barcode' },
+  };
+
+  /**
+   * Notes in the Outputs panel about what current bcwithqc writes differently
+   * from the panel's description. Same lifecycle as TEMPORARY_WARNINGS.
+   */
+  const TEMPORARY_OUTPUT_NOTES = {
+    ur_without_umi: { bcwithqc: 'bc_parser.process_bc_rec', notes: '#no-umi-outputs', tier_f: 'test_no_umi_block_writes_no_ur_tag' },
+    empty_alignment_file: { bcwithqc: 'bc_parser.process_bc_rec', notes: '#empty-alignment-files', tier_f: 'test_read_that_keeps_nothing_gets_no_alignment_file' },
   };
   const FREE_TABLE_WARNING_BYTES = 256 * 1024 * 1024;
   const MAX_LINKER_COMBINATIONS = 64;
@@ -1361,6 +1417,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       }
 
       const seen_names = new Map();
+      const today = bcwithqc_decoders_today(read.blocks);
       read.blocks.forEach((block, index) => {
         const name = block_label(block, index);
         const where = { read: read_index, block_id: block.id };
@@ -1455,6 +1512,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
             ? name + ' is a barcode list set to UMI. bcwithqc treats it as a barcode (it goes into CB), and it also switches on UMI correction.'
             : name + ' is a constant region set to UMI. bcwithqc only counts its length in FL, and it also switches on UMI correction.', where);
         }
+        if (today[index] === 'Levenshtein' && maxerrors_ok && block.maxerrors >= 2) {
+          add('W14', 'warning', name + ': with 2 or more allowed errors, current bcwithqc assigns the farthest matching barcode instead of the nearest. 0 or 1 allowed errors are unaffected.', where);
+        }
         if (block.blocktype === 'barcodeList' && good.length) {
           const lengths = new Set(good.map((item) => item.length));
           const length_rows = statuses.map((status, row) => (status === 'length' ? row : -1)).filter((row) => row >= 0);
@@ -1532,6 +1592,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     BLOCK_FUNCTIONS,
     READ_KEYS,
     TEMPORARY_WARNINGS,
+    TEMPORARY_OUTPUT_NOTES,
+    bcwithqc_decoders_today,
     parse_delimited_text,
     classify_cell,
     detect_sequence_column,
@@ -1585,7 +1647,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   const TYPE_CLASSES = { barcodeList: 'list', constantRegion: 'const', randomBarcode: 'rand' };
   const ROW_STATUS_TEXT = { invalid: 'not A, C, G or T', empty: 'empty', duplicate: 'duplicate', length: 'length differs' };
   const CONTIGUITY_NOTE = 'Blocks start at base 1 and must be contiguous. Anything after the last block is the rest of the read.';
-  const ORIENTATION_HELP = 'Each molecule may be oriented either way. bcwithqc supports this for paired-end reads only today; single-end configs are written with it off.';
+  const ORIENTATION_HELP = 'Each molecule may be oriented either way, so the barcodes of a read pair may be in either file. bcwithqc decides per pair by matching the constant regions, and swaps the two reads where needed. Single-end reads are not supported yet: single-end configs are written with this off.';
+  const NAME_HELP = 'Use letters, digits, "_", "." and "-", up to 64 characters. Names in a read must differ, also when case is ignored: CB1 and cb1 clash. bcwithqc uses the names in its QC files.';
 
   const state = {
     model: core.new_model(),
@@ -1601,6 +1664,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     json_open: false,
     base_name: 'barcode_config',
     open_menu: null,
+    open_help: null,
     drag_id: null,
     templates: [],
   };
@@ -1756,7 +1820,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       h('header', null,
         h('span', null, state.notices_title + ': ' + plural(state.notices.length, 'change') + ' on opening'),
         h('button', { type: 'button', class: 'btn small', 'aria-label': 'Dismiss', onclick: () => { state.notices = []; render(); } }, '✕')),
-      h('ul', null, state.notices.map((notice) => h('li', { class: notice.level }, notice.text))));
+      h('ul', null, state.notices.map((notice) => h('li', { class: notice.level === 'unknown_keys' ? 'warning' : notice.level }, notice.text,
+        notice.level === 'unknown_keys' ? h('label', { class: 'check', style: 'margin-left:8px' },
+          h('input', { type: 'checkbox', id: 'keep_unknown_keys', checked: state.model.keep_unknown_keys === true,
+            onchange: (event) => update_model((m) => { m.keep_unknown_keys = event.target.checked; }) }),
+          'Keep them in the file') : null))));
   }
 
   function render_main(all_issues) {
@@ -1769,10 +1837,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const mode = h('div', { class: 'seg' + (model.single_end === null ? ' need' : ''), role: 'group', 'aria-label': 'Read layout' },
       h('button', { type: 'button', 'aria-pressed': String(model.single_end === false), onclick: () => update_model((m) => { m.single_end = false; }) }, 'Paired-end'),
       h('button', { type: 'button', 'aria-pressed': String(model.single_end === true), onclick: () => update_model((m) => { m.single_end = true; }) }, 'Single-end'));
-    const orientation = h('label', { class: 'check' },
-      h('input', { type: 'checkbox', checked: model.unknown_read_orientation === true, onchange: (event) => update_model((m) => { m.unknown_read_orientation = event.target.checked; }) }),
-      'Molecules may be oriented either way',
-      h('i', { class: 'info', title: ORIENTATION_HELP, 'aria-label': ORIENTATION_HELP, tabindex: '0' }, 'i'));
+    const orientation = h('span', { class: 'check-help' },
+      h('label', { class: 'check' },
+        h('input', { type: 'checkbox', checked: model.unknown_read_orientation === true, onchange: (event) => update_model((m) => { m.unknown_read_orientation = event.target.checked; }) }),
+        'Molecules may be oriented either way'),
+      help_button('orientation', 'About molecule orientation', ORIENTATION_HELP));
     main.append(h('div', { class: 'row' }, mode, orientation,
       model.single_end === null ? h('span', { class: 'hint' }, 'Choose paired-end or single-end reads.') : null));
 
@@ -1913,8 +1982,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const own = all_issues.filter((issue) => issue.block_id === block.id);
     const field_invalid = (rule) => own.some((issue) => issue.rule === rule);
     const fields = h('div', { class: 'fields' },
-      h('label', { class: 'field' + (field_invalid('E08') ? ' invalid' : '') }, h('span', null, 'Name'),
-        h('input', { type: 'text', value: String(block.blockname), 'data-focus': 'name', spellcheck: 'false', maxlength: '200',
+      h('div', { class: 'field' + (field_invalid('E08') ? ' invalid' : '') },
+        h('span', { class: 'field-head' }, h('label', { for: 'block_name' }, 'Name'), help_button('name', 'Rules for block names', NAME_HELP)),
+        h('input', { type: 'text', id: 'block_name', value: String(block.blockname), 'data-focus': 'name', spellcheck: 'false', maxlength: '200',
           oninput: (event) => update_block((b) => { b.blockname = event.target.value; }) })),
       h('label', { class: 'field' }, h('span', null, 'Type'),
         h('select', { 'data-focus': 'type', onchange: (event) => update_block((b, model) => change_type(b, event.target.value, model)) },
@@ -2116,6 +2186,19 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       menu);
   }
 
+  /**
+   * A small "i" button that shows help text below it. Clicking it again,
+   * pressing Escape or clicking elsewhere closes it. It sits outside any
+   * label, so clicking it never toggles a checkbox.
+   */
+  function help_button(id, label, text) {
+    const open = state.open_help === id;
+    return h('span', { class: 'help-wrap' },
+      h('button', { type: 'button', class: 'info', 'aria-label': label, 'aria-expanded': String(open), 'aria-controls': 'help_' + id,
+        onclick: (event) => { event.stopPropagation(); state.open_help = open ? null : id; render(); } }, 'i'),
+      h('span', { class: 'help', id: 'help_' + id, role: 'note', hidden: !open, onclick: (event) => event.stopPropagation() }, text));
+  }
+
   function render_rail(all_issues) {
     const rail = $('rail');
     rail.replaceChildren();
@@ -2139,11 +2222,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         h('dt', null, 'CB'), h('dd', { id: 'out_cb' }, outputs.CB.value || empty.cloneNode(true)),
         h('dt', null, 'CR'), h('dd', { id: 'out_cr' }, outputs.CR.value ? h('span', { class: 'note' }, 'raw bases of the same blocks') : empty.cloneNode(true)),
         h('dt', null, 'UB'), h('dd', { id: 'out_ub' }, outputs.UB.written ? h('span', { class: 'note' }, 'UR, corrected') : h('span', { class: 'note' }, 'not written (no UMI block)')),
-        h('dt', null, 'UR'), h('dd', { id: 'out_ur' }, outputs.UR.value || h('span', { class: 'note' }, 'written empty')),
+        h('dt', null, 'UR'), h('dd', { id: 'out_ur' }, outputs.UR.written
+          ? (outputs.UR.value || h('span', { class: 'note' }, 'empty'))
+          : h('span', { class: 'note' }, 'not written (no UMI block); current bcwithqc writes it empty')),
         h('dt', null, 'FL'), h('dd', { id: 'out_fl' }, outputs.FL.blocks.some((names) => names.length) ? range_text(outputs.FL.min, outputs.FL.max) : h('span', { class: 'note' }, '0 (no constant region)'))),
       h('div', { class: 'files', id: 'out_files' }, h('span', { class: 'hint' }, 'Files for alignment'),
         outputs.alignment_files.map((file) => h('span', null, READ_LABELS[file.read] + ': ' + (file.kind === 'whole' ? 'whole read'
-          : file.kind === 'none' ? 'no file for alignment (nothing kept)'
+          : file.kind === 'none' ? 'no file for alignment (nothing kept); current bcwithqc writes a file of empty reads'
             : file.parts.concat(file.rest ? ['rest of read'] : []).join(' + ')))))));
 
     const text = core.config_to_json(state.model);
@@ -2506,8 +2591,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     $('download_gz_button').addEventListener('click', () => { state.open_menu = null; render_top_menus(); download(true); });
 
     document.addEventListener('click', () => {
-      if (state.open_menu) {
+      if (state.open_menu || state.open_help) {
         state.open_menu = null;
+        state.open_help = null;
         render();
       }
     });
@@ -2519,8 +2605,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'o') {
         event.preventDefault();
         $('open_input').click();
-      } else if (event.key === 'Escape' && state.open_menu) {
+      } else if (event.key === 'Escape' && (state.open_menu || state.open_help)) {
         state.open_menu = null;
+        state.open_help = null;
         render();
       } else if ((event.key === 'Delete' || event.key === 'Backspace') && !in_field && state.rows.size && !$('dialog').open) {
         event.preventDefault();

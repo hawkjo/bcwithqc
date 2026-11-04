@@ -12,6 +12,7 @@ to change in the GUI (usually: delete a temporary warning).
 """
 
 import copy
+import itertools
 import json
 import os
 import random
@@ -278,6 +279,10 @@ def run_end_to_end(core, config, folder, env, nreads=400):
             read_index: item[2] for read_index, item in simulated[index].items()
         }
         want = expected_tags(outputs, values_by_read)
+        if not outputs["UR"]["written"]:
+            del want[
+                "UR"
+            ]  # bcwithqc writes it empty today: test_no_umi_block_writes_no_ur_tag
         assert {tag: tags.get(tag) for tag in want} == want, name
         assert ("UB" in tags) is outputs["UB"]["written"], name
     assert seen == set(simulated), "every simulated read reaches the BAM"
@@ -535,10 +540,7 @@ def test_w11_one_block_read(core, tmp_path, bcwithqc_env):
     reason="bcwithqc #r2-only-crash: Read 1 without blocks crashes the aligner",
 )
 def test_w12_barcodes_on_read_2_only(core, tmp_path, bcwithqc_env):
-    """Counts as fixed when the non-empty CB pieces equal the truth (decision D13, default).
-
-    The leading dot itself is pinned separately (notes #cb-leading-dot).
-    """
+    """Counts as fixed only when everything matches, the exact CB string included (decision D13)."""
     config = make_config(
         [],
         [
@@ -547,16 +549,7 @@ def test_w12_barcodes_on_read_2_only(core, tmp_path, bcwithqc_env):
             random_block("umi_r2", length=6),
         ],
     )
-    exported = gui_export(core, config)
-    reads = simulate(json.loads(exported["text"]), tmp_path, bcwithqc_env, nreads=200)
-    output, result = preprocess(exported["text"], tmp_path, reads, bcwithqc_env)
-    assert result.returncode == 0, result.stderr[-2000:]
-    assert count(tmp_path, output, bcwithqc_env).returncode == 0
-    names = {name.split("_")[0]: name for name, _ in read_fastq(fastq_files(reads)[1])}
-    blocks = json.loads(exported["text"])["barcode_struct_r2"]["blocks"]
-    for name, tags in bam_tags(output / "with_bc_umi.sorted.bam"):
-        values, _ = truth(names[name.split("_")[0]], blocks)
-        assert [piece for piece in tags["CB"].split(".") if piece] == [values["bc_r2"]]
+    run_end_to_end(core, config, tmp_path, bcwithqc_env)
 
 
 @pytest.mark.xfail(
@@ -624,3 +617,209 @@ def test_sample_constant_is_the_examples_constant():
     ]
     assert blocks[1]["sequence"] == [SAMPLE_CONSTANT]
     assert blocks[0]["sequence"] == SAMPLE_BARCODES
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="bcwithqc #decoder-picks-farthest: DistanceThresh negates pywfa's positive distance",
+)
+def test_w14_levenshtein_picks_the_farthest_barcode():
+    from bcwithqc.bc_decoders import BCDecoder
+
+    nearest, farther = "ACGTACGTA", "ACGTTGCTA"
+    read = "ACGTTCGTA"  # 1 edit from the first, 2 from the second
+    assert BCDecoder([nearest, farther], 2).decode(read) == nearest
+
+
+# ---------------------------------------------------------------------------
+# Outputs that bcwithqc writes differently from the panel today
+# (TEMPORARY_OUTPUT_NOTES in the page).
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="bcwithqc #no-umi-outputs: UR is written empty without a UMI block",
+)
+def test_no_umi_block_writes_no_ur_tag(core, tmp_path, bcwithqc_env):
+    config = make_config(
+        [
+            barcode_list("cb1"),
+            constant_region("con1"),
+            barcode_list("cb2", SAMPLE_BARCODES_8),
+        ],
+        keep_r1=True,
+    )
+    exported = gui_export(core, config)
+    assert exported["outputs"]["UR"]["written"] is False
+    reads = simulate(json.loads(exported["text"]), tmp_path, bcwithqc_env, nreads=200)
+    output, result = preprocess(exported["text"], tmp_path, reads, bcwithqc_env)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert count(tmp_path, output, bcwithqc_env).returncode == 0
+    records = bam_tags(output / "with_bc_umi.sorted.bam")
+    assert records
+    assert not [name for name, tags in records if "UR" in tags]
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="bcwithqc #empty-alignment-files: a read that keeps nothing still gets a file",
+)
+def test_read_that_keeps_nothing_gets_no_alignment_file(core, tmp_path, bcwithqc_env):
+    config = make_config(
+        [barcode_list("cb1"), constant_region("con1"), random_block("umi", length=6)],
+        [],
+    )
+    exported = gui_export(core, config)
+    assert exported["outputs"]["alignment_files"][0]["kind"] == "none"
+    reads = simulate(json.loads(exported["text"]), tmp_path, bcwithqc_env, nreads=100)
+    output, result = preprocess(exported["text"], tmp_path, reads, bcwithqc_env)
+    assert result.returncode == 0, result.stderr[-2000:]
+    first_prefix = fastq_files(reads)[0].name.removesuffix(".txt.gz")
+    assert not (output / f"sans_bc_{first_prefix}.fq").exists()
+
+
+# ---------------------------------------------------------------------------
+# D12: mistakes bcwithqc accepts silently today. Each should be rejected once
+# bcwithqc validates configs on load (notes #config-validation).
+
+SILENTLY_ACCEPTED = {
+    "unknown block type with a length": lambda b: b[3].update(blocktype="umiBlock"),
+    "unknown block function": lambda b: b[3].update(blockfunction="umi"),
+    "text maxerrors on a random block": lambda b: b[3].update(maxerrors="1"),
+    "zero-length random block that is not last": lambda b: b.insert(
+        1, random_block("gap", length=0)
+    ),
+}
+
+
+@pytest.mark.xfail(
+    strict=True, reason="bcwithqc #config-validation: configs are not checked on load"
+)
+@pytest.mark.parametrize("case", sorted(SILENTLY_ACCEPTED))
+def test_bcwithqc_rejects_what_the_gui_rejects(
+    core, tmp_path, bcwithqc_env, f3_reads, case
+):
+    broken = f3_config(SILENTLY_ACCEPTED[case])
+    assert [
+        issue
+        for issue in gui_export(core, broken)["issues"]
+        if issue["level"] == "error"
+    ]
+    _, result = preprocess(
+        json.dumps(broken, indent=4) + "\n", tmp_path, f3_reads, bcwithqc_env
+    )
+    assert result.returncode != 0
+
+
+# ---------------------------------------------------------------------------
+# D14: further cases
+
+
+def all_layouts(longest):
+    """Every layout of 1 to `longest` blocks, as strings of L, C and R."""
+    return [
+        "".join(letters)
+        for length in range(1, longest + 1)
+        for letters in itertools.product("LCR", repeat=length)
+    ]
+
+
+def bcwithqc_lags_the_rule(layout):
+    """Derived from bcwithqc's code: a list other than the read's last one is followed by a random block."""
+    last_list = layout.rfind("L")
+    return any(
+        letter == "L" and index != last_list and layout[index + 1 : index + 2] == "R"
+        for index, letter in enumerate(layout)
+    )
+
+
+EVERY_LAYOUT = [
+    pytest.param(
+        layout,
+        marks=pytest.mark.xfail(strict=True, reason="bcwithqc #decoder-selection"),
+    )
+    if bcwithqc_lags_the_rule(layout)
+    else layout
+    for layout in all_layouts(5)
+]
+
+
+def test_every_layout_list_has_363_entries():
+    assert len(all_layouts(5)) == 3 + 9 + 27 + 81 + 243
+
+
+@pytest.mark.parametrize("layout", EVERY_LAYOUT)
+def test_decoders_agree_for_every_layout_up_to_five_blocks(core, layout):
+    blocks = layout_blocks(layout)
+    gui = [label for label in core.call("decoder_for_each_list", blocks) if label]
+    assert gui == bcwithqc_decoder_labels(blocks)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="bcwithqc #discard-slip: a later list reports the discarded list's barcode",
+)
+def test_w01_discarded_list_shifts_later_barcodes(core, tmp_path, bcwithqc_env):
+    config = make_config(
+        [
+            barcode_list("cb1", function="discard"),
+            constant_region("con1", keep=True),
+            barcode_list("cb2", SAMPLE_BARCODES_8),
+            random_block("umi", length=6),
+        ],
+        keep_r1=True,
+    )
+    run_end_to_end(core, config, tmp_path, bcwithqc_env)
+
+
+def test_mate_swapped_pairs_are_decoded_with_orientation_on(
+    core, tmp_path, bcwithqc_env
+):
+    """Below the 20,010-pair cap, orientation on finds the barcodes in either file."""
+    config = example("cDNA_paired_end_config.json")
+    config["unknown_read_orientation"] = True
+    exported = gui_export(core, config)
+    plain = json.loads(exported["text"])
+    plain["unknown_read_orientation"] = False
+    reads = simulate(plain, tmp_path, bcwithqc_env, nreads=600)
+    first, second = (read_fastq(path) for path in fastq_files(reads))
+    swapped = tmp_path / "swapped"
+    swapped.mkdir()
+    out_first, out_second = [], []
+    for index, (record_1, record_2) in enumerate(zip(first, second)):
+        pair = (record_2, record_1) if index % 3 == 0 else (record_1, record_2)
+        out_first.append(pair[0])
+        out_second.append(pair[1])
+    import gzip
+
+    for name, records in (
+        ("swapped_1.txt.gz", out_first),
+        ("swapped_2.txt.gz", out_second),
+    ):
+        with gzip.open(swapped / name, "wt") as handle:
+            for read_name, sequence in records:
+                handle.write(f"@{read_name}\n{sequence}\n+\n{'E' * len(sequence)}\n")
+    output, result = preprocess(exported["text"], tmp_path, swapped, bcwithqc_env)
+    assert result.returncode == 0, result.stderr[-2000:]
+    (tags_file,) = output.glob("rec_names_and_tags1_*.txt")
+    blocks = plain["barcode_struct_r1"]["blocks"]
+    truth_by_name = {name: truth(name, blocks)[0] for name, _ in first}
+    lines = tags_file.read_text().splitlines()
+    assert len(lines) == len(first)
+    for line in lines:
+        name, *fields = line.split("\t")
+        tags = dict(field.split(":", 2)[::2] for field in fields)
+        values = truth_by_name[name]
+        assert tags["CB"] == ".".join(values[key] for key in ("cb1", "cb2", "sb"))
+
+
+def test_slash_in_a_block_name_makes_count_fail(core, tmp_path, bcwithqc_env, f3_reads):
+    """E08 blocks "/" in names (decision D7) because bcwithqc fails on it."""
+    broken = f3_config(lambda b: b[0].update(blockname="cb/1"))
+    assert "E08" in [issue["rule"] for issue in gui_export(core, broken)["issues"]]
+    output, result = preprocess(
+        json.dumps(broken, indent=4) + "\n", tmp_path, f3_reads, bcwithqc_env
+    )
+    if result.returncode == 0:
+        result = count(tmp_path, output, bcwithqc_env)
+    assert result.returncode != 0

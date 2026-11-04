@@ -409,16 +409,27 @@ def test_nested_values_match_python_json_dumps(core):
     assert core.call("python_json_dumps", value) == json.dumps(value, indent=4)
 
 
-def test_unknown_keys_are_left_out_with_a_notice(core):
+def test_unknown_keys_are_kept_by_default_and_can_be_left_out(core):
     config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
     with_extras = copy.deepcopy(config)
     with_extras["config_version"] = 1
+    with_extras["barcode_struct_r1"]["note"] = "plate 3"
     with_extras["barcode_struct_r1"]["blocks"][0]["keepBlock"] = True
-    result = open_and_export(core, json.dumps(with_extras))
-    assert result["text"] == canonical_text(config)
-    notices = " | ".join(notice["text"] for notice in result["notices"])
-    assert '"config_version"' in notices
-    assert '"keepBlock"' in notices
+    result = core.run(
+        """(core, arg) => {
+            const opened = core.config_from_json(arg);
+            const kept = core.config_to_json(opened.model);
+            opened.model.keep_unknown_keys = false;
+            return {kept, left_out: core.config_to_json(opened.model), notices: opened.notices};
+        }""",
+        json.dumps(with_extras),
+    )
+    # Kept keys follow the known ones in their section, which is where they were.
+    assert result["kept"] == canonical_text(with_extras)
+    assert result["left_out"] == canonical_text(config)
+    (notice,) = [n for n in result["notices"] if n["level"] == "unknown_keys"]
+    for key in ('"config_version"', '"note" in Read 1', '"keepBlock" in block cb1'):
+        assert key in notice["text"]
 
 
 def test_lowercase_sequences_are_written_in_uppercase(core):

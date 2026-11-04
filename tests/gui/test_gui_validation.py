@@ -389,7 +389,7 @@ def test_hidden_read_2_never_blocks_download(core):
 
 def test_every_temporary_warning_is_flagged_temporary(core):
     registry = core.run("(core) => core.TEMPORARY_WARNINGS")
-    assert sorted(registry) == ["W05", "W08", "W11", "W12"]
+    assert sorted(registry) == ["W01", "W05", "W08", "W11", "W12", "W14"]
     for entry in registry.values():
         assert set(entry) == {"bcwithqc", "notes", "tier_f"}
 
@@ -409,7 +409,9 @@ def test_messages_name_no_notes_ids_and_no_line_numbers_in_code(core):
 
 def test_every_temporary_warning_has_a_strict_xfail_tier_f_case(core):
     """Rule R5: when bcwithqc is fixed, the case passes unexpectedly and the run fails."""
-    registry = core.run("(core) => core.TEMPORARY_WARNINGS")
+    registry = core.run(
+        "(core) => ({...core.TEMPORARY_WARNINGS, ...core.TEMPORARY_OUTPUT_NOTES})"
+    )
     source = (Path(__file__).parent / "test_gui_pipeline_contract.py").read_text(
         encoding="utf-8"
     )
@@ -426,3 +428,38 @@ def test_every_temporary_warning_has_a_strict_xfail_tier_f_case(core):
             rule,
             decorators,
         )
+
+
+@pytest.mark.parametrize(
+    ("layout", "maxerrors", "fires"),
+    [
+        # A list followed by a constant: Levenshtein in bcwithqc today.
+        ([barcode_list("cb1"), constant_region("con1")], 2, True),
+        ([barcode_list("cb1"), constant_region("con1")], 1, False),
+        # The read's last list before a random block: FREE in bcwithqc, unaffected.
+        ([constant_region("con1"), barcode_list("cb1"), random_block("umi")], 2, False),
+        # A first list before a random block: FREE in the GUI's rule, Levenshtein in bcwithqc.
+        (
+            [
+                barcode_list("cb1"),
+                random_block("umi"),
+                barcode_list("cb2", maxerrors=1),
+            ],
+            2,
+            True,
+        ),
+    ],
+)
+def test_w14_fires_on_lists_bcwithqc_decodes_with_levenshtein(
+    core, layout, maxerrors, fires
+):
+    blocks = [dict(block) for block in layout]
+    for block in blocks:
+        if block["blockname"] == "cb1":
+            block["maxerrors"] = maxerrors
+    issues = issues_for(core, make_config(blocks))
+    w14 = [issue for issue in issues if issue["rule"] == "W14"]
+    assert bool(w14) is fires
+    if fires:
+        assert w14[0]["temporary"] is True
+        assert "farthest" in w14[0]["message"]

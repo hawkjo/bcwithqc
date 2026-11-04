@@ -561,3 +561,55 @@ def test_closing_after_an_edit_prompts(app):
     app.close(run_before_unload=True)
     app.wait_for_timeout(500)
     assert dialogs == ["beforeunload"]
+
+
+# ---------------------------------------------------------------------------
+# Help and notices
+
+
+def test_orientation_help_opens_without_toggling_the_checkbox(app):
+    checkbox = app.get_by_label("Molecules may be oriented either way")
+    help_button = app.get_by_role("button", name="About molecule orientation")
+    help_button.click()
+    assert app.locator("#help_orientation").is_visible()
+    assert (
+        "Each molecule may be oriented either way"
+        in app.locator("#help_orientation").inner_text()
+    )
+    assert not checkbox.is_checked()
+    help_button.click()
+    assert app.locator("#help_orientation").is_hidden()
+    help_button.click()
+    app.keyboard.press("Escape")
+    assert app.locator("#help_orientation").is_hidden()
+
+
+def test_name_help_lists_the_rules(app):
+    open_template(app, "Design-doc example")
+    app.get_by_role("button", name="Rules for block names").click()
+    text = app.locator("#help_name").inner_text()
+    assert (
+        "letters, digits" in text and "64 characters" in text and "CB1 and cb1" in text
+    )
+    app.locator("h1").click()
+    assert app.locator("#help_name").is_hidden()
+
+
+def test_unknown_keys_can_be_kept_or_left_out(app, tmp_path):
+    config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
+    config["config_version"] = 2
+    path = tmp_path / "with_extra.json"
+    path.write_text(json.dumps(config, indent=4))
+    app.set_input_files("#open_input", str(path))
+    wait_ready(app)
+    keep = app.get_by_label("Keep them in the file")
+    assert keep.is_checked()
+    assert json.loads(download_text(app))["config_version"] == 2
+    keep.uncheck()
+    assert "config_version" not in json.loads(download_text(app))
+
+
+def test_outputs_without_a_umi_block_say_ub_and_ur_are_not_written(app):
+    open_template(app, "SDR-seq gDNA")
+    assert app.locator("#out_ub").inner_text() == "not written (no UMI block)"
+    assert app.locator("#out_ur").inner_text().startswith("not written (no UMI block)")
