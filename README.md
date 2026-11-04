@@ -16,7 +16,7 @@ pip install git+https://github.com/hawkjo/bcwithqc.git
 ```
 This typically takes a few minutes. 
 
-bcwithqc does not align reads itself. Install an aligner separately; the examples and tests use the [STAR aligner](https://github.com/alexdobin/STAR) (CI uses STAR 2.7.10b).
+bcwithqc does not align reads itself. Install an aligner separately; the examples and tests use the [STAR aligner](https://github.com/alexdobin/STAR) (CI uses STAR 2.7.10b). To run the test suite, see [Running the tests](#running-the-tests).
 
 ## Usage
 
@@ -146,6 +146,39 @@ QC metrics contains:
 - `reads.tsv`  
   Detailed read-level QC: one row per read/read pair, including the total read status and the status of each barcode block.
 
+## Running the tests
 
+The tests use pytest. From the repository root, create a Python 3.10 or 3.11 environment with the `test` extra:
+```
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[test]"
+```
+With [uv](https://docs.astral.sh/uv/): `uv venv -p 3.11 .venv`, `source .venv/bin/activate`, then `uv pip install -e ".[test]"`.
 
+The pipeline tests also run the STAR aligner (bcwithqc itself never does), so STAR must be on your `PATH`. CI uses STAR 2.7.10b. To get the same version under `~/opt`:
+```
+mkdir -p ~/opt
+curl -L https://github.com/alexdobin/STAR/archive/2.7.10b.tar.gz | tar -xzf - -C ~/opt
+```
+- Linux: build it as CI does, `make -C ~/opt/STAR-2.7.10b/source STAR`; the program is then in `~/opt/STAR-2.7.10b/source`.
+- macOS: use the included binary in `~/opt/STAR-2.7.10b/bin/MacOSX_x86_64` (it runs under Rosetta on Apple Silicon). Homebrew's `rna-star` (2.7.11b) fails with the test genome indexes.
 
+Add that directory to `PATH` in your shell profile and open a new terminal, for example on macOS:
+```
+echo 'export PATH="$HOME/opt/STAR-2.7.10b/bin/MacOSX_x86_64:$PATH"' >> ~/.zshrc
+```
+Adding it by hand after activating the environment does not last: re-activating a virtual environment restores the `PATH` it saved when it was first activated.
+
+Then, with the environment activated:
+```
+pytest
+```
+The full suite takes about 7 minutes. Other ways to run it:
+- one file: `pytest tests/test_15_count_matrix_umis.py`
+- stop at the first failure: `pytest -x`
+- as CI does: `pytest --capture=tee-sys -vv`
+
+Run `pytest` with the environment activated rather than as `.venv/bin/pytest`: the pipeline tests start `python -m bcwithqc` in a subprocess, which has to find the environment's Python.
+
+On macOS, expect 8 failures, all `test_file_contents` in `test_05` and `test_06`. The stored outputs they compare against were made on Linux, and STAR's macOS build assigns gene tags (`GX`) to different reads from identical alignments. CI runs these comparisons on Linux. To leave them out locally, run `pytest -k "not test_file_contents"`. `test_00_cpu_avx512_compatibility` is skipped where `/proc/cpuinfo` is missing (macOS).
