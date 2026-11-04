@@ -5,38 +5,221 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Barcode configurator · bcwithqc</title>
 <style>
-/* Styles. Block colours follow barcodinggui: barcode list green, constant region orange, random blue. */
+/* Styles. One card for the read and its selected block, one side rail for checks, outputs and JSON.
+   Colour appears only on blocks (barcodinggui's: list green, constant orange, random blue) and on problems
+   (red errors, amber warnings). Spacing follows an 8-px rhythm. */
 :root {
   --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef0f4; --fg: #1a2130; --muted: #5b6577; --line: #d8dde5;
-  --accent: #3446a8; --accent-soft: #e4e8fb;
-  --list: #2f8a4a; --list-bg: #e5f3e9; --const: #c2650f; --const-bg: #fcebd9; --rand: #2f6fc4; --rand-bg: #e3ecfa;
-  --rest: #8a93a3; --rest-bg: #eef0f3;
-  --err: #b42318; --err-bg: #fde8e6; --warn: #8a6100; --warn-bg: #fff3cf;
+  --accent: #3446a8; --accent-fg: #ffffff; --accent-soft: #e4e8fb;
+  --list: #2f8a4a; --list-bg: #e5f3e9; --const: #b45c0c; --const-bg: #fcebd9; --rand: #2f6fc4; --rand-bg: #e3ecfa;
+  --rest: #6f7888; --rest-bg: #eef0f3;
+  --err: #b42318; --err-bg: #fde8e6; --warn: #8a6100; --warn-bg: #fff3cf; --ok: #26734a;
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #10141a; --surface: #171c24; --surface-2: #1f2631; --fg: #e6e9ef; --muted: #9ca6b7; --line: #2c3544;
-    --accent: #9cadff; --accent-soft: #252c4c;
+    --bg: #10141a; --surface: #171c24; --surface-2: #1f2631; --fg: #e6e9ef; --muted: #a0aabb; --line: #2c3544;
+    --accent: #9cadff; --accent-fg: #10141a; --accent-soft: #252c4c;
     --list: #6cc287; --list-bg: #18301f; --const: #f0a25c; --const-bg: #382614; --rand: #7fadf0; --rand-bg: #172a45;
-    --rest: #8790a0; --rest-bg: #1d232c;
-    --err: #ff8a80; --err-bg: #3a1714; --warn: #e8c35a; --warn-bg: #352a0b;
+    --rest: #98a1b0; --rest-bg: #1d232c;
+    --err: #ff8a80; --err-bg: #3a1714; --warn: #e8c35a; --warn-bg: #352a0b; --ok: #74c992;
+    color-scheme: dark;
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
-.mono, code { font-family: var(--font-mono); }
-#app { max-width: 1280px; margin: 0 auto; padding: 16px; }
-.banner { border: 1px solid var(--err); background: var(--err-bg); color: var(--err); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14.5px; line-height: 1.5; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.mono, code, pre { font-family: var(--font-mono); }
+.num { font-variant-numeric: tabular-nums; }
+[hidden] { display: none !important; }
+#app { max-width: 1320px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+.banner { border: 1px solid var(--err); background: var(--err-bg); color: var(--err); border-radius: 8px; padding: 8px 16px; }
+
+/* Top bar */
+.topbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.topbar h1 { font-size: 17px; margin: 0 auto 0 0; font-weight: 700; letter-spacing: -0.01em; }
+.btn { border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.outline { border-color: var(--line); background: var(--surface); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); font-weight: 650; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--accent); }
+.btn.small { padding: 2px 8px; font-size: 13px; }
+.btn.danger { color: var(--err); }
+.split { display: inline-flex; }
+.split .btn.primary:first-child { border-radius: 8px 0 0 8px; }
+.split .btn.primary.caret { border-radius: 0 8px 8px 0; border-left: 1px solid color-mix(in srgb, var(--accent-fg) 35%, transparent); padding-inline: 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.menu-wrap { position: relative; display: inline-block; }
+.menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 200px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.14); padding: 4px; display: grid; }
+.menu.left { right: auto; left: 0; }
+.menu button { text-align: left; border: 0; background: transparent; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+.menu button:hover, .menu button:focus-visible { background: var(--surface-2); }
+
+/* Layout */
+.layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1040px) { .layout { grid-template-columns: minmax(0, 1fr) 340px; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 16px; min-width: 0; }
+.rail { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.rail-sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; display: grid; gap: 8px; min-width: 0; }
+.rail-sec h2 { margin: 0; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.rail-sec h2 span { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--fg); }
+.notices { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 8px 16px; display: grid; gap: 4px; }
+.notices header { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 650; }
+.notices ul { margin: 0; padding-left: 20px; }
+.notices li.warning::marker { color: var(--warn); }
+
+/* Settings */
+.row { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
+.seg.need { box-shadow: 0 0 0 2px var(--err); }
+label.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.info { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted);
+  font-size: 11px; font-weight: 700; cursor: help; font-style: normal; }
+.hint { color: var(--muted); font-size: 13px; }
+
+/* Diagram */
+.track { display: flex; gap: 4px; min-height: 76px; }
+.blk { flex: 1 1 0; min-width: 96px; border-radius: 8px; border: 1px solid transparent; padding: 6px 8px; display: grid; gap: 2px; align-content: start;
+  cursor: pointer; font-size: 12px; line-height: 1.35; overflow: hidden; text-align: left; background: var(--surface-2); }
+.blk b { font-size: 13px; overflow-wrap: anywhere; }
+.blk span { color: var(--muted); overflow-wrap: anywhere; }
+.blk.list { background: var(--list-bg); border-color: color-mix(in srgb, var(--list) 40%, transparent); }
+.blk.list b { color: var(--list); }
+.blk.const { background: var(--const-bg); border-color: color-mix(in srgb, var(--const) 40%, transparent); }
+.blk.const b { color: var(--const); }
+.blk.rand { background: var(--rand-bg); border-color: color-mix(in srgb, var(--rand) 40%, transparent); }
+.blk.rand b { color: var(--rand); }
+.blk.unknown { border-style: dashed; border-color: var(--err); }
+.blk.rest { background: var(--rest-bg); cursor: default; border-style: dashed; border-color: var(--line); }
+.blk.rest.kept { border-style: solid; border-color: var(--rest); }
+.blk.rest b { color: var(--rest); }
+.blk[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+.blk.has-error { box-shadow: inset 0 -3px 0 var(--err); }
+.blk.has-warning { box-shadow: inset 0 -3px 0 var(--warn); }
+.blk.drop-before { box-shadow: -4px 0 0 var(--accent); }
+.tag { display: inline-flex; align-items: center; gap: 2px; border-radius: 999px; padding: 0 8px; font-family: var(--font-mono); font-size: 11.5px;
+  background: var(--accent-soft); color: var(--accent); width: fit-content; }
+.caption { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.caption .facts { margin-right: auto; }
+
+/* Block card */
+.block-card { border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 16px; }
+.block-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.block-head .name { font-size: 16px; font-weight: 700; margin-right: 4px; overflow-wrap: anywhere; }
+.badge { display: inline-flex; align-items: center; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 650; background: var(--surface-2); color: var(--muted); }
+.badge.list { background: var(--list-bg); color: var(--list); }
+.badge.const { background: var(--const-bg); color: var(--const); }
+.badge.rand { background: var(--rand-bg); color: var(--rand); }
+.block-head .spacer { margin-left: auto; }
+.fields { display: grid; gap: 8px 16px; grid-template-columns: minmax(200px, 2fr) repeat(auto-fit, minmax(120px, 1fr)); align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > span { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.field input, .field select { border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; background: var(--surface); width: 100%; min-width: 0; }
+.field input.mono { font-family: var(--font-mono); }
+.field.invalid input { border-color: var(--err); }
+.links { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.links select { border: 1px solid var(--line); border-radius: 7px; padding: 3px 6px; background: var(--surface); }
+.tag button { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 0 2px; font-size: 12px; }
+
+/* Sequence table */
+.list-head { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 12px; }
+.list-head .count { font-weight: 700; }
+.list-head .lens { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+.list-head .spacer { margin-left: auto; }
+.table-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+table.seqs { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.seqs td { padding: 4px 8px; border-bottom: 1px solid var(--line); }
+table.seqs td.seq { font-family: var(--font-mono); overflow-wrap: anywhere; }
+table.seqs td.len { width: 56px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+table.seqs td.st { width: 140px; color: var(--muted); font-size: 12px; }
+table.seqs tr { cursor: pointer; user-select: none; }
+table.seqs tr.err td { background: var(--err-bg); }
+table.seqs tr.err td.st { color: var(--err); }
+table.seqs tr.warn td { background: var(--warn-bg); }
+table.seqs tr.warn td.st { color: var(--warn); }
+table.seqs tr[aria-selected="true"] td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+table.seqs tr[aria-selected="true"] td { background: var(--accent-soft); }
+table.seqs input { width: 100%; font-family: var(--font-mono); border: 1px solid var(--accent); border-radius: 4px; padding: 1px 4px; }
+.add-row { display: flex; gap: 8px; }
+.add-row input { flex: 1; border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; font-family: var(--font-mono); background: var(--surface); }
+.selbar { display: flex; align-items: center; gap: 12px; background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 4px 8px 4px 12px; font-weight: 650; font-size: 13px; }
+.selbar .btn { margin-left: auto; }
+.empty-list { color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+/* Rail content */
+.issue { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 13px; border: 0; background: transparent;
+  text-align: left; padding: 4px 4px; border-radius: 6px; cursor: pointer; width: 100%; }
+.issue:hover { background: var(--surface-2); }
+.chip { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 11.5px; font-weight: 650; border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.chip.err { color: var(--err); background: var(--err-bg); }
+.chip.warn { color: var(--warn); background: var(--warn-bg); }
+.chip.warn.temporary { background: transparent; box-shadow: inset 0 0 0 1px var(--warn); border: 0; }
+.ok-text { color: var(--ok); font-size: 13px; }
+dl.kv { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 4px 8px; margin: 0; font-size: 13px; }
+dl.kv dt { font-family: var(--font-mono); font-weight: 650; color: var(--muted); }
+dl.kv dd { margin: 0; font-family: var(--font-mono); overflow-wrap: anywhere; }
+dl.kv dd .note { font-family: var(--font-ui); color: var(--muted); }
+.files { font-size: 13px; display: grid; gap: 2px; }
+pre.json { margin: 0; max-height: 360px; overflow: auto; background: var(--surface-2); border-radius: 8px; padding: 8px 12px; font-size: 12px; }
+.json-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+
+/* Dialogs */
+dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; background: var(--surface); color: var(--fg); width: min(560px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+.dlg { padding: 16px; display: grid; gap: 12px; }
+.dlg h2 { margin: 0; font-size: 16px; }
+.dlg .choices { display: grid; gap: 4px; }
+.dlg .choices label { display: flex; gap: 8px; align-items: baseline; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.dlg .choices label:hover { background: var(--surface-2); }
+.dlg .preview { color: var(--muted); font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+.dlg textarea { width: 100%; min-height: 180px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-family: var(--font-mono); font-size: 13px; background: var(--surface); }
+.dlg .actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.dlg .error { color: var(--err); }
+@media (max-width: 640px) {
+  #app { padding: 16px; }
+  .fields { grid-template-columns: minmax(0, 1fr); }
+  .track { flex-wrap: wrap; }
+  .blk { min-width: calc(50% - 4px); }
+}
 </style>
 </head>
 <body>
 <div id="app" data-busy="true">
   <noscript><div class="banner">The barcode configurator needs JavaScript.</div></noscript>
-  <div id="feature_banner" class="banner" hidden></div>
-  <h1 style="font-size:20px;margin:0 0 8px">Barcode configurator</h1>
+  <div id="feature_banner" class="banner" role="alert" hidden></div>
+  <header class="topbar">
+    <h1>Barcode configurator</h1>
+    <button type="button" class="btn" id="open_button" title="Open a .json or .json.gz config (Ctrl/Cmd+O)">Open…</button>
+    <div class="menu-wrap">
+      <button type="button" class="btn" id="templates_button" aria-haspopup="menu" aria-expanded="false">Templates ▾</button>
+      <div class="menu" id="templates_menu" role="menu" hidden></div>
+    </div>
+    <div class="menu-wrap split">
+      <button type="button" class="btn primary" id="download_button">Download .json</button>
+      <button type="button" class="btn primary caret" id="download_menu_button" aria-label="More download formats" aria-haspopup="menu" aria-expanded="false">▾</button>
+      <div class="menu" id="download_menu" role="menu" hidden>
+        <button type="button" role="menuitem" id="download_gz_button">Download .json.gz</button>
+      </div>
+    </div>
+    <input type="file" id="open_input" accept=".json,.gz,application/json,application/gzip" hidden>
+    <input type="file" id="import_input" accept=".csv,.tsv,.tab,.txt,.xlsx,.xls,.ods" hidden>
+  </header>
   <p id="loading">Loading…</p>
+  <div id="error_banner" class="banner" role="alert" hidden></div>
+  <section id="notices" class="notices" aria-label="Changes made on opening" hidden></section>
+  <div class="layout" id="layout" hidden>
+    <main class="card" id="main"></main>
+    <aside class="rail" id="rail"></aside>
+  </div>
+  <dialog id="dialog"></dialog>
 </div>
 
 <script id="barcode_core">
@@ -1386,26 +1569,892 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--fo
 
 <script id="barcode_ui">
 /**
- * User interface: state, rendering and event handlers. It keeps one model
- * and re-renders from it after every change.
+ * User interface: one state object, rendered after every change. All config
+ * logic lives in window.barcode_core; this script only keeps state, draws it,
+ * and turns clicks and keys into core calls.
  */
 (function () {
   'use strict';
+
+  const core = window.barcode_core;
+  const READ_LABELS = ['Read 1', 'Read 2'];
+  const TYPE_LABELS = { barcodeList: 'Barcode list', constantRegion: 'Constant region', randomBarcode: 'Random' };
+  const TYPE_CLASSES = { barcodeList: 'list', constantRegion: 'const', randomBarcode: 'rand' };
+  const ROW_STATUS_TEXT = { invalid: 'not A, C, G or T', empty: 'empty', duplicate: 'duplicate', length: 'length differs' };
+  const CONTIGUITY_NOTE = 'Blocks start at base 1 and must be contiguous. Anything after the last block is the rest of the read.';
+  const ORIENTATION_HELP = 'Each molecule may be oriented either way. bcwithqc supports this for paired-end reads only today; single-end configs are written with it off.';
+
+  const state = {
+    model: core.new_model(),
+    read: 0,
+    block_id: null,
+    rows: new Set(),
+    anchor: null,
+    editing_row: null,
+    notices: [],
+    notices_title: '',
+    error: '',
+    dirty: false,
+    json_open: false,
+    base_name: 'barcode_config',
+    open_menu: null,
+    drag_id: null,
+    templates: [],
+  };
+
+  // ----------------------------------------------------------------
+  // DOM helpers
+
+  /** Create an element: h('button', {class: 'btn', onclick: f}, 'Text'). */
+  function h(tag, props, ...children) {
+    const element = document.createElement(tag);
+    for (const [key, value] of Object.entries(props || {})) {
+      if (value === null || value === undefined || value === false) continue;
+      if (key === 'class') element.className = value;
+      else if (key === 'text') element.textContent = value;
+      else if (key === 'dataset') Object.assign(element.dataset, value);
+      else if (key.startsWith('on')) element.addEventListener(key.slice(2), value);
+      else if (key === 'value' || key === 'checked' || key === 'disabled' || key === 'selected') element[key] = value;
+      else element.setAttribute(key, value === true ? '' : value);
+    }
+    for (const child of children.flat(Infinity)) {
+      if (child === null || child === undefined || child === false) continue;
+      element.append(child instanceof Node ? child : document.createTextNode(String(child)));
+    }
+    return element;
+  }
+
+  const $ = (id) => document.getElementById(id);
+
+  function set_busy(busy) {
+    $('app').dataset.busy = busy ? 'true' : 'false';
+  }
+
+  function plural(count, singular, plural_form) {
+    return count.toLocaleString('en-US') + ' ' + (count === 1 ? singular : plural_form || singular + 's');
+  }
+
+  function capture_focus() {
+    const active = document.activeElement;
+    if (!active || !active.dataset || !active.dataset.focus) return null;
+    const saved = { key: active.dataset.focus };
+    try {
+      saved.start = active.selectionStart;
+      saved.end = active.selectionEnd;
+    } catch (error) {
+      // Not a text field.
+    }
+    return saved;
+  }
+
+  function restore_focus(saved) {
+    if (!saved) return;
+    const element = document.querySelector('[data-focus="' + saved.key + '"]');
+    if (!element) return;
+    element.focus();
+    if (saved.start !== undefined && saved.start !== null && element.setSelectionRange) {
+      try {
+        element.setSelectionRange(saved.start, saved.end);
+      } catch (error) {
+        // Number inputs don't support selection ranges.
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // Model access and changes
+
+  function current_read() {
+    return state.model.reads[state.read];
+  }
+
+  function selected_block() {
+    return current_read().blocks.find((block) => block.id === state.block_id) || null;
+  }
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  /** Replace the model after an edit, mark it unsaved and redraw. */
+  function commit(model) {
+    state.model = model;
+    state.dirty = true;
+    render();
+  }
+
+  /** Apply a change to the selected block. */
+  function update_block(change) {
+    const model = clone(state.model);
+    const block = model.reads[state.read].blocks.find((item) => item.id === state.block_id);
+    if (!block) return;
+    change(block, model);
+    commit(model);
+  }
+
+  function update_model(change) {
+    const model = clone(state.model);
+    change(model);
+    commit(model);
+  }
+
+  function select_block(block_id) {
+    state.block_id = block_id;
+    state.rows = new Set();
+    state.anchor = null;
+    state.editing_row = null;
+  }
+
+  function load_model(model, notices, title, base_name) {
+    state.model = model;
+    state.read = 0;
+    state.notices = notices;
+    state.notices_title = title;
+    state.error = '';
+    state.dirty = false;
+    state.base_name = base_name;
+    select_block(model.reads[0].blocks.length ? model.reads[0].blocks[0].id : null);
+    render();
+  }
+
+  function issues() {
+    return core.validate_config(state.model);
+  }
+
+  function has_errors() {
+    return issues().some((issue) => issue.level === 'error');
+  }
+
+  // ----------------------------------------------------------------
+  // Rendering
+
+  function render() {
+    const focus = capture_focus();
+    const all_issues = issues();
+    render_notices();
+    render_main(all_issues);
+    render_rail(all_issues);
+    render_top_menus();
+    const blocked = all_issues.some((issue) => issue.level === 'error');
+    $('download_button').disabled = blocked;
+    $('download_gz_button').disabled = blocked;
+    $('download_button').title = blocked ? 'Fix the errors in Checks first' : 'Download the config (Ctrl/Cmd+S)';
+    $('error_banner').hidden = !state.error;
+    $('error_banner').textContent = state.error;
+    restore_focus(focus);
+  }
+
+  function render_notices() {
+    const box = $('notices');
+    box.replaceChildren();
+    box.hidden = !state.notices.length;
+    if (!state.notices.length) return;
+    box.append(
+      h('header', null,
+        h('span', null, state.notices_title + ': ' + plural(state.notices.length, 'change') + ' on opening'),
+        h('button', { type: 'button', class: 'btn small', 'aria-label': 'Dismiss', onclick: () => { state.notices = []; render(); } }, '✕')),
+      h('ul', null, state.notices.map((notice) => h('li', { class: notice.level }, notice.text))));
+  }
+
+  function render_main(all_issues) {
+    const main = $('main');
+    main.replaceChildren();
+    const model = state.model;
+    const single = model.single_end === true;
+    if (single && state.read === 1) state.read = 0;
+
+    const mode = h('div', { class: 'seg' + (model.single_end === null ? ' need' : ''), role: 'group', 'aria-label': 'Read layout' },
+      h('button', { type: 'button', 'aria-pressed': String(model.single_end === false), onclick: () => update_model((m) => { m.single_end = false; }) }, 'Paired-end'),
+      h('button', { type: 'button', 'aria-pressed': String(model.single_end === true), onclick: () => update_model((m) => { m.single_end = true; }) }, 'Single-end'));
+    const orientation = h('label', { class: 'check' },
+      h('input', { type: 'checkbox', checked: model.unknown_read_orientation === true, onchange: (event) => update_model((m) => { m.unknown_read_orientation = event.target.checked; }) }),
+      'Molecules may be oriented either way',
+      h('i', { class: 'info', title: ORIENTATION_HELP, 'aria-label': ORIENTATION_HELP, tabindex: '0' }, 'i'));
+    main.append(h('div', { class: 'row' }, mode, orientation,
+      model.single_end === null ? h('span', { class: 'hint' }, 'Choose paired-end or single-end reads.') : null));
+
+    if (!single) {
+      main.append(h('div', { class: 'row' }, h('div', { class: 'seg', role: 'tablist', 'aria-label': 'Reads' },
+        [0, 1].map((index) => h('button', {
+          type: 'button', role: 'tab', 'aria-selected': String(state.read === index),
+          onclick: () => { state.read = index; select_block(null); render(); },
+        }, READ_LABELS[index] + ' · ' + (index === 0 ? 'first file' : 'second file'))))));
+    }
+
+    const read = current_read();
+    main.append(render_diagram(read, all_issues));
+
+    const structure = core.describe_structure(read.blocks);
+    const facts = structure
+      ? [range_text(structure.min_length, structure.max_length) + ' nt',
+        plural(structure.linker_combinations, 'linker combination'),
+        'reads must be ≥ ' + structure.min_read_length.toLocaleString('en-US') + ' nt',
+        CONTIGUITY_NOTE].join(' · ')
+      : CONTIGUITY_NOTE;
+    main.append(h('div', { class: 'caption' },
+      h('span', { class: 'facts', id: 'structure_caption' }, facts),
+      menu_button('add_block', '+ Add block ▾', 'btn outline small', [
+        ['Barcode list', () => add_block('barcodeList')],
+        ['Constant region', () => add_block('constantRegion')],
+        ['Random (UMI)', () => add_block('randomBarcode')],
+      ])));
+    main.append(h('label', { class: 'check' },
+      h('input', { type: 'checkbox', id: 'keep_nonbarcode', checked: read.keep_nonbarcode === true, onchange: (event) => update_model((m) => { m.reads[state.read].keep_nonbarcode = event.target.checked; }) }),
+      'Send the rest of ' + READ_LABELS[state.read] + ' to alignment'));
+
+    const block = selected_block();
+    if (block) main.append(render_block_card(block, read, all_issues));
+  }
+
+  function range_text(low, high) {
+    return low === high ? low.toLocaleString('en-US') : low.toLocaleString('en-US') + '–' + high.toLocaleString('en-US');
+  }
+
+  function sequence_lengths(block) {
+    return Array.isArray(block.sequence) ? block.sequence.filter((item) => typeof item === 'string' && item !== '').map((item) => item.length) : [];
+  }
+
+  /** The lines a block shows in the diagram, under its name. */
+  function block_detail(block) {
+    if (block.blocktype === 'randomBarcode') return ['random', block.length + ' nt'];
+    if (!core.BLOCK_TYPES.includes(block.blocktype)) return ['unknown type'];
+    const lengths = sequence_lengths(block);
+    const span = lengths.length ? range_text(Math.min(...lengths), Math.max(...lengths)) + ' nt' : 'no sequences';
+    return [plural(block.sequence.length, block.blocktype === 'barcodeList' ? 'barcode' : 'variant'), span];
+  }
+
+  function render_diagram(read, all_issues) {
+    const track = h('div', { class: 'track', role: 'group', 'aria-label': READ_LABELS[state.read] + ' blocks' });
+    const decoders = core.decoder_for_each_list(read.blocks);
+    const groups = core.linkgroup_numbers(read.blocks);
+    read.blocks.forEach((block, index) => {
+      const own = all_issues.filter((issue) => issue.block_id === block.id);
+      const level = own.some((issue) => issue.level === 'error') ? ' has-error' : own.length ? ' has-warning' : '';
+      const lengths = sequence_lengths(block);
+      const grow = block.blocktype === 'randomBarcode' ? Number(block.length) || 4 : (lengths.length ? Math.max(...lengths) : 8);
+      const extra = [];
+      if (decoders[index]) {
+        const short = decoders[index] === 'FREE' ? 'FREE' : 'Lev';
+        extra.push(h('span', { class: 'dec', title: decoders[index] + ' decoder, up to ' + block.maxerrors + ' error' + (block.maxerrors === 1 ? '' : 's') }, short + ' ≤ ' + block.maxerrors));
+      } else if (block.blocktype === 'constantRegion') {
+        extra.push(h('span', null, '≤ ' + block.maxerrors + ' error' + (block.maxerrors === 1 ? '' : 's')));
+      }
+      if (block.blockfunction !== 'barcode' && block.blocktype !== 'constantRegion') extra.push(h('span', null, block.blockfunction));
+      if (block.keepblock === true) extra.push(h('span', null, 'kept'));
+      if (block.linkgroup !== null && block.linkgroup !== undefined) extra.push(h('span', { class: 'tag' }, 'link ' + (groups.get(block.linkgroup) + 1)));
+      track.append(h('button', {
+        type: 'button',
+        class: 'blk ' + (TYPE_CLASSES[block.blocktype] || 'unknown') + level,
+        style: 'flex-grow:' + Math.max(4, Math.min(grow, 40)),
+        'aria-pressed': String(block.id === state.block_id),
+        'aria-label': 'Block ' + block.blockname,
+        dataset: { block: block.id },
+        draggable: 'true',
+        onclick: () => { select_block(block.id); render(); },
+        ondragstart: (event) => { state.drag_id = block.id; event.dataTransfer.setData('text/plain', block.id); event.dataTransfer.effectAllowed = 'move'; },
+        ondragover: (event) => { event.preventDefault(); event.currentTarget.classList.add('drop-before'); },
+        ondragleave: (event) => event.currentTarget.classList.remove('drop-before'),
+        ondrop: (event) => { event.preventDefault(); drop_block_before(index); },
+      }, h('b', null, block.blockname), block_detail(block).map((line) => h('span', null, line)), extra));
+    });
+    if (!read.blocks.length) {
+      track.append(h('div', { class: 'blk rest kept', style: 'flex-grow:1' },
+        h('b', null, 'no blocks'),
+        h('span', null, state.read === 1 ? 'The whole read goes to its file for alignment.' : 'Add a block with + Add block.')));
+    } else {
+      const kept = read.keep_nonbarcode === true;
+      track.append(h('div', {
+        class: 'blk rest' + (kept ? ' kept' : ''), style: 'flex-grow:12',
+        ondragover: (event) => event.preventDefault(),
+        ondrop: (event) => { event.preventDefault(); drop_block_before(read.blocks.length); },
+      }, h('b', null, 'rest of read'), h('span', null, kept ? 'sent to alignment' : 'not kept')));
+    }
+    return track;
+  }
+
+  function drop_block_before(target_index) {
+    const read = current_read();
+    const from = read.blocks.findIndex((block) => block.id === state.drag_id);
+    state.drag_id = null;
+    if (from < 0) return;
+    const to = from < target_index ? target_index - 1 : target_index;
+    if (to === from) {
+      render();
+      return;
+    }
+    commit(core.move_block(state.model, state.read, from, to));
+  }
+
+  function decoder_reason(blocks, index) {
+    const next = blocks[index + 1];
+    if (!next) return 'last block';
+    if (next.blocktype === 'randomBarcode') return 'a random block follows';
+    if (next.blocktype === 'constantRegion') return 'a constant follows';
+    return 'another list follows';
+  }
+
+  function render_block_card(block, read, all_issues) {
+    const index = read.blocks.findIndex((item) => item.id === block.id);
+    const decoders = core.decoder_for_each_list(read.blocks);
+    const card = h('section', { class: 'block-card', 'aria-label': 'Selected block' });
+    const head = h('div', { class: 'block-head' },
+      h('span', { class: 'name' }, block.blockname),
+      h('span', { class: 'badge ' + (TYPE_CLASSES[block.blocktype] || '') }, TYPE_LABELS[block.blocktype] || 'Unknown type'),
+      decoders[index] ? h('span', { class: 'badge', id: 'decoder_badge' }, decoders[index] + ' ≤ ' + block.maxerrors + ' · ' + decoder_reason(read.blocks, index)) : null,
+      h('span', { class: 'spacer' }),
+      h('button', { type: 'button', class: 'btn small outline', 'aria-label': 'Move left', disabled: index === 0, onclick: () => commit(core.move_block(state.model, state.read, index, index - 1)) }, '◀'),
+      h('button', { type: 'button', class: 'btn small outline', 'aria-label': 'Move right', disabled: index === read.blocks.length - 1, onclick: () => commit(core.move_block(state.model, state.read, index, index + 1)) }, '▶'),
+      h('button', { type: 'button', class: 'btn small danger', onclick: () => { const model = core.remove_block(state.model, state.read, block.id); select_block(null); commit(model); } }, 'Delete block'));
+    card.append(head);
+
+    const own = all_issues.filter((issue) => issue.block_id === block.id);
+    const field_invalid = (rule) => own.some((issue) => issue.rule === rule);
+    const fields = h('div', { class: 'fields' },
+      h('label', { class: 'field' + (field_invalid('E08') ? ' invalid' : '') }, h('span', null, 'Name'),
+        h('input', { type: 'text', value: String(block.blockname), 'data-focus': 'name', spellcheck: 'false', maxlength: '200',
+          oninput: (event) => update_block((b) => { b.blockname = event.target.value; }) })),
+      h('label', { class: 'field' }, h('span', null, 'Type'),
+        h('select', { 'data-focus': 'type', onchange: (event) => update_block((b, model) => change_type(b, event.target.value, model)) },
+          Object.entries(TYPE_LABELS).map(([value, label]) => h('option', { value, selected: block.blocktype === value }, label)),
+          core.BLOCK_TYPES.includes(block.blocktype) ? null : h('option', { value: '', selected: true, disabled: true }, 'Unknown: ' + block.blocktype))),
+      h('label', { class: 'field' }, h('span', null, 'Function'),
+        h('select', { 'data-focus': 'function', onchange: (event) => update_block((b) => { b.blockfunction = event.target.value; }) },
+          core.BLOCK_FUNCTIONS.map((value) => h('option', { value, selected: block.blockfunction === value }, value)),
+          core.BLOCK_FUNCTIONS.includes(block.blockfunction) ? null : h('option', { value: '', selected: true, disabled: true }, 'Unknown: ' + block.blockfunction))),
+      h('label', { class: 'field' + (field_invalid('E06') ? ' invalid' : '') }, h('span', null, 'Allowed errors'),
+        h('input', { type: 'number', min: '0', step: '1', value: String(block.maxerrors), 'data-focus': 'maxerrors',
+          oninput: (event) => update_block((b) => { b.maxerrors = integer_or_raw(event.target.value); }) })),
+      block.blocktype === 'randomBarcode'
+        ? h('label', { class: 'field' + (field_invalid('E07') ? ' invalid' : '') }, h('span', null, 'Length (nt)'),
+          h('input', { type: 'number', min: '1', step: '1', value: String(block.length), 'data-focus': 'length',
+            oninput: (event) => update_block((b) => { b.length = integer_or_raw(event.target.value); }) }))
+        : null);
+    card.append(fields);
+
+    const group_members = block.linkgroup === null || block.linkgroup === undefined ? [] : read.blocks.filter((item) => item.id !== block.id && item.linkgroup === block.linkgroup);
+    const candidates = read.blocks.filter((item) => item.id !== block.id && !group_members.includes(item));
+    card.append(h('div', { class: 'links' },
+      h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: block.keepblock === true, 'data-focus': 'keepblock', onchange: (event) => update_block((b) => { b.keepblock = event.target.checked; }) }), 'Keep for alignment'),
+      h('span', { class: 'hint' }, 'Linked with'),
+      group_members.length ? group_members.map((member) => h('span', { class: 'tag' }, member.blockname,
+        h('button', { type: 'button', 'aria-label': 'Unlink ' + member.blockname, onclick: () => commit(core.remove_link(state.model, state.read, member.id)) }, '✕'))) : h('span', { class: 'hint' }, 'none'),
+      candidates.length ? h('select', { 'aria-label': 'Add link with', 'data-focus': 'add_link',
+        onchange: (event) => { if (event.target.value) commit(core.add_link(state.model, state.read, block.id, event.target.value)); } },
+      h('option', { value: '', selected: true }, '+ Add link with…'),
+      candidates.map((item) => h('option', { value: item.id }, item.blockname))) : null));
+
+    if (block.blocktype === 'barcodeList' || block.blocktype === 'constantRegion') card.append(render_sequences(block));
+    return card;
+  }
+
+  function integer_or_raw(text) {
+    const number = Number(text);
+    return text.trim() !== '' && Number.isFinite(number) ? number : text;
+  }
+
+  function change_type(block, new_type, model) {
+    if (!core.BLOCK_TYPES.includes(new_type) || new_type === block.blocktype) return;
+    const old_type = block.blocktype;
+    if (new_type === 'randomBarcode') {
+      const lengths = sequence_lengths(block);
+      block.length = lengths.length ? lengths[0] : 8;
+      delete block.sequence;
+      delete block.sequence_source;
+      delete block.sort;
+    } else {
+      if (!Array.isArray(block.sequence)) {
+        block.sequence = [];
+        block.sequence_source = [];
+      }
+      delete block.length;
+      if (new_type === 'barcodeList') block.sort = 'az';
+      else delete block.sort;
+    }
+    block.blocktype = new_type;
+    // A default name follows the type (bc1 becomes con1); a name the user chose stays.
+    if (/^(bc|con|umi)[0-9]+$/.test(block.blockname) && old_type !== new_type) {
+      block.blockname = '';
+      block.blockname = core.default_block_name(model, new_type);
+    }
+  }
+
+  function render_sequences(block) {
+    const wrap = h('div', { class: 'sequences', style: 'display:grid;gap:8px' });
+    const lengths = sequence_lengths(block);
+    const counts = new Map();
+    for (const length of lengths) counts.set(length, (counts.get(length) || 0) + 1);
+    const length_text = counts.size > 1
+      ? [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]).map(([length, count]) => length + ' nt ×' + count.toLocaleString('en-US')).join(' · ')
+      : counts.size === 1 ? lengths[0] + ' nt' : '';
+    const is_list = block.blocktype === 'barcodeList';
+    wrap.append(h('div', { class: 'list-head' },
+      h('span', { class: 'count num', id: 'sequence_count' }, plural(block.sequence.length, is_list ? 'barcode' : 'variant')),
+      h('span', { class: 'lens', id: 'sequence_lengths' }, length_text),
+      h('span', { class: 'spacer' }),
+      is_list ? h('div', { class: 'seg', role: 'group', 'aria-label': 'Order' },
+        h('button', { type: 'button', 'aria-pressed': String(block.sort === 'az'), onclick: () => update_block((b) => { b.sort = 'az'; }) }, 'A→Z'),
+        h('button', { type: 'button', 'aria-pressed': String(block.sort === 'entered'), onclick: () => update_block((b) => { b.sort = 'entered'; }) }, 'Entered')) : h('span', { class: 'hint' }, 'variants keep their order'),
+      menu_button('add_sequences', is_list ? 'Add barcodes ▾' : 'Add variants ▾', 'btn outline small', [
+        ['Import file…', () => $('import_input').click()],
+        ['Paste…', () => open_paste_dialog()],
+      ]),
+      menu_button('list_more', '⋯', 'btn small', [
+        ['Clear list', () => update_block((b) => { b.sequence = []; b.sequence_source = []; state.rows = new Set(); })],
+      ], 'More list actions')));
+
+    if (!block.sequence.length) {
+      wrap.append(h('div', { class: 'empty-list' }, 'No sequences yet. Type one below, paste a list, or import a file.'));
+    } else {
+      const statuses = core.sequence_row_statuses(block);
+      const order = core.display_order(block);
+      const blocks = current_read().blocks;
+      const decoder = core.decoder_for_each_list(blocks)[blocks.indexOf(block)];
+      const length_level = decoder === 'FREE' ? 'err' : 'warn';
+      const body = h('tbody');
+      for (const row of order) {
+        const status = statuses[row];
+        const level = status === 'length' ? length_level : status ? 'err' : '';
+        const value = block.sequence[row];
+        const cell = state.editing_row === row
+          ? h('td', { class: 'seq' }, h('input', { type: 'text', value: String(value), 'data-focus': 'edit_row', spellcheck: 'false', 'aria-label': 'Edit sequence',
+            onkeydown: (event) => {
+              if (event.key === 'Enter') { event.preventDefault(); finish_edit(row, event.target.value); }
+              if (event.key === 'Escape') { state.editing_row = null; render(); }
+            },
+            onblur: (event) => { if (state.editing_row === row) finish_edit(row, event.target.value); } }))
+          : h('td', { class: 'seq' }, String(value).replace(/[^\x20-\x7e]/g, '·'));
+        body.append(h('tr', {
+          class: level, 'aria-selected': String(state.rows.has(row)), dataset: { row: String(row) },
+          onclick: (event) => select_row(row, event, order),
+          ondblclick: () => { state.editing_row = row; render(); },
+        }, cell, h('td', { class: 'len' }, typeof value === 'string' ? value.length : ''), h('td', { class: 'st' }, ROW_STATUS_TEXT[status] || '')));
+      }
+      wrap.append(h('div', { class: 'table-wrap' }, h('table', { class: 'seqs', 'aria-label': 'Sequences' }, body)));
+    }
+    wrap.append(h('div', { class: 'selbar', id: 'selection_bar', role: 'status', hidden: !state.rows.size },
+      h('span', { id: 'selection_count' }, plural(state.rows.size, 'row') + ' selected'),
+      h('button', { type: 'button', class: 'btn primary small', onclick: delete_selected_rows }, 'Delete selected')));
+    wrap.append(h('div', { class: 'add-row' },
+      h('input', { type: 'text', placeholder: is_list ? 'Type a barcode and press Enter' : 'Type a variant and press Enter', 'aria-label': 'Add a sequence', 'data-focus': 'add_sequence', spellcheck: 'false',
+        onkeydown: (event) => {
+          if (event.key !== 'Enter') return;
+          const value = event.target.value.trim().toUpperCase();
+          if (!value) return;
+          update_block((b) => { b.sequence.push(value); (b.sequence_source = b.sequence_source || []).push(null); });
+        } })));
+    return wrap;
+  }
+
+  function finish_edit(row, text) {
+    state.editing_row = null;
+    const value = text.trim().toUpperCase();
+    update_block((block) => {
+      block.sequence[row] = value;
+      if (block.sequence_source) block.sequence_source[row] = null;
+    });
+  }
+
+  function select_row(row, event, order) {
+    if (event.shiftKey && state.anchor !== null) {
+      const from = order.indexOf(state.anchor);
+      const to = order.indexOf(row);
+      state.rows = new Set(order.slice(Math.min(from, to), Math.max(from, to) + 1));
+    } else if (event.metaKey || event.ctrlKey) {
+      if (state.rows.has(row)) state.rows.delete(row);
+      else state.rows.add(row);
+      state.anchor = row;
+    } else {
+      state.rows = new Set([row]);
+      state.anchor = row;
+    }
+    refresh_selection();
+  }
+
+  /**
+   * Show the row selection without redrawing the table, so the rows a user
+   * clicks stay the same elements (a double-click must hit one element).
+   */
+  function refresh_selection() {
+    for (const tr of document.querySelectorAll('table.seqs tr[data-row]')) {
+      tr.setAttribute('aria-selected', String(state.rows.has(Number(tr.dataset.row))));
+    }
+    const bar = $('selection_bar');
+    if (!bar) return;
+    bar.hidden = !state.rows.size;
+    $('selection_count').textContent = plural(state.rows.size, 'row') + ' selected';
+  }
+
+  function delete_selected_rows() {
+    const doomed = state.rows;
+    state.rows = new Set();
+    state.anchor = null;
+    update_block((block) => {
+      const keep = block.sequence.map((_, index) => !doomed.has(index));
+      block.sequence = block.sequence.filter((_, index) => keep[index]);
+      if (block.sequence_source) block.sequence_source = block.sequence_source.filter((_, index) => keep[index]);
+    });
+  }
+
+  function add_block(blocktype) {
+    const read = current_read();
+    const position = state.block_id ? read.blocks.findIndex((block) => block.id === state.block_id) + 1 : read.blocks.length;
+    const result = core.add_block(state.model, state.read, blocktype, position);
+    select_block(result.block_id);
+    commit(result.model);
+  }
+
+  function menu_button(id, label, classes, items, aria_label) {
+    const open = state.open_menu === id;
+    const menu = h('div', { class: 'menu', role: 'menu', id: id + '_menu', hidden: !open },
+      items.map(([text, action]) => h('button', { type: 'button', role: 'menuitem', onclick: () => { state.open_menu = null; render(); action(); } }, text)));
+    return h('div', { class: 'menu-wrap' },
+      h('button', { type: 'button', class: classes, id: id + '_button', 'aria-haspopup': 'menu', 'aria-expanded': String(open), 'aria-label': aria_label || null,
+        onclick: (event) => { event.stopPropagation(); state.open_menu = open ? null : id; render(); } }, label),
+      menu);
+  }
+
+  function render_rail(all_issues) {
+    const rail = $('rail');
+    rail.replaceChildren();
+    const all = all_issues.slice().sort((a, b) => (a.level === b.level ? 0 : a.level === 'error' ? -1 : 1));
+    const errors = all.filter((issue) => issue.level === 'error').length;
+    const warnings = all.length - errors;
+    const summary = [errors ? plural(errors, 'error') : null, warnings ? plural(warnings, 'warning') : null].filter(Boolean).join(' · ');
+    rail.append(h('section', { class: 'rail-sec', id: 'checks', 'aria-label': 'Checks' },
+      h('h2', null, 'Checks', h('span', { id: 'checks_summary' }, summary)),
+      all.length
+        ? all.map((issue) => h('button', { type: 'button', class: 'issue', dataset: { rule: issue.rule }, onclick: () => focus_issue(issue) },
+          h('span', { class: 'chip ' + (issue.level === 'error' ? 'err' : 'warn') + (issue.temporary ? ' temporary' : ''), title: issue.temporary ? 'About a current bcwithqc limitation; goes away once bcwithqc is fixed' : '' }, issue.rule),
+          h('span', null, issue.message)))
+        : h('div', { class: 'ok-text' }, 'No problems found.')));
+
+    const outputs = core.describe_outputs(state.model);
+    const empty = h('span', { class: 'note' }, 'empty');
+    rail.append(h('section', { class: 'rail-sec', id: 'outputs', 'aria-label': 'Outputs' },
+      h('h2', null, 'Outputs'),
+      h('dl', { class: 'kv' },
+        h('dt', null, 'CB'), h('dd', { id: 'out_cb' }, outputs.CB.value || empty.cloneNode(true)),
+        h('dt', null, 'CR'), h('dd', { id: 'out_cr' }, outputs.CR.value ? h('span', { class: 'note' }, 'raw bases of the same blocks') : empty.cloneNode(true)),
+        h('dt', null, 'UB'), h('dd', { id: 'out_ub' }, outputs.UB.written ? h('span', { class: 'note' }, 'UR, corrected') : h('span', { class: 'note' }, 'not written (no UMI block)')),
+        h('dt', null, 'UR'), h('dd', { id: 'out_ur' }, outputs.UR.value || h('span', { class: 'note' }, 'written empty')),
+        h('dt', null, 'FL'), h('dd', { id: 'out_fl' }, outputs.FL.blocks.some((names) => names.length) ? range_text(outputs.FL.min, outputs.FL.max) : h('span', { class: 'note' }, '0 (no constant region)'))),
+      h('div', { class: 'files', id: 'out_files' }, h('span', { class: 'hint' }, 'Files for alignment'),
+        outputs.alignment_files.map((file) => h('span', null, READ_LABELS[file.read] + ': ' + (file.kind === 'whole' ? 'whole read' : file.kind === 'none' ? 'no file for alignment (nothing kept)' : file.parts.join(' + ')))))));
+
+    const text = core.config_to_json(state.model);
+    rail.append(h('section', { class: 'rail-sec', id: 'json', 'aria-label': 'JSON' },
+      h('div', { class: 'json-head' }, h('h2', null, 'JSON'),
+        h('span', null,
+          state.json_open ? h('button', { type: 'button', class: 'btn small outline', onclick: () => copy_json(text) }, 'Copy') : null,
+          h('button', { type: 'button', class: 'btn small', 'aria-expanded': String(state.json_open), onclick: () => { state.json_open = !state.json_open; render(); } }, state.json_open ? '▾ hide' : '▸ show'))),
+      state.json_open ? h('pre', { class: 'json', id: 'json_preview', tabindex: '0' }, text) : null));
+  }
+
+  function copy_json(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => select_preview());
+    } else {
+      select_preview();
+    }
+  }
+
+  function select_preview() {
+    const preview = $('json_preview');
+    if (!preview) return;
+    const range = document.createRange();
+    range.selectNodeContents(preview);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function focus_issue(issue) {
+    if (issue.read !== null && issue.read !== undefined) state.read = issue.read;
+    if (issue.block_id) {
+      select_block(issue.block_id);
+      if (issue.rows) state.rows = new Set(issue.rows);
+    }
+    render();
+    const first = issue.rows && issue.rows.length ? document.querySelector('tr[data-row="' + issue.rows[0] + '"]') : null;
+    if (first) first.scrollIntoView({ block: 'nearest' });
+  }
+
+  // ----------------------------------------------------------------
+  // Dialogs
+
+  /** Show a modal built by build(close); resolves with the value passed to close. */
+  function show_dialog(build) {
+    return new Promise((resolve) => {
+      const dialog = $('dialog');
+      const close = (value) => {
+        dialog.close();
+        dialog.replaceChildren();
+        resolve(value);
+      };
+      dialog.replaceChildren(build(close));
+      dialog.oncancel = (event) => { event.preventDefault(); close(null); };
+      dialog.showModal();
+    });
+  }
+
+  function message_dialog(title, text) {
+    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, title), h('p', null, text),
+      h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn primary', onclick: () => close(true) }, 'OK'))));
+  }
+
+  function confirm_discard() {
+    if (!state.dirty) return Promise.resolve(true);
+    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Discard unsaved changes?'),
+      h('p', null, 'The current config has changes that have not been downloaded.'),
+      h('div', { class: 'actions' },
+        h('button', { type: 'button', class: 'btn outline', autofocus: true, onclick: () => close(false) }, 'Keep editing'),
+        h('button', { type: 'button', class: 'btn primary', onclick: () => close(true) }, 'Discard changes'))));
+  }
+
+  function ask_legacy_mode(name) {
+    return show_dialog((close) => {
+      const paired = h('input', { type: 'radio', name: 'legacy_mode', value: 'paired', checked: true });
+      const single = h('input', { type: 'radio', name: 'legacy_mode', value: 'single' });
+      return h('div', { class: 'dlg' }, h('h2', null, 'Single- or paired-end?'),
+        h('p', null, name + ' is in an older format that doesn\'t say whether the reads are single- or paired-end.'),
+        h('div', { class: 'choices' },
+          h('label', null, paired, 'Paired-end, barcodes on one read'),
+          h('label', null, single, 'Single-end')),
+        h('div', { class: 'actions' },
+          h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'),
+          h('button', { type: 'button', class: 'btn primary', onclick: () => close(single.checked ? 'single' : 'paired') }, 'Open')));
+    });
+  }
+
+  function column_preview(rows, column) {
+    return rows.slice(0, 4).map((row) => row.cells[column] === undefined ? '' : String(row.cells[column])).join(', ');
+  }
+
+  function ask_column(rows, candidates) {
+    return show_dialog((close) => {
+      const ok = h('button', { type: 'button', class: 'btn primary', disabled: true }, 'Import');
+      const radios = candidates.map((column) => h('input', { type: 'radio', name: 'import_column', value: String(column), onchange: () => { ok.disabled = false; } }));
+      ok.addEventListener('click', () => {
+        const chosen = radios.find((radio) => radio.checked);
+        close(chosen ? Number(chosen.value) : null);
+      });
+      return h('div', { class: 'dlg' }, h('h2', null, 'Which column holds the sequences?'),
+        h('p', null, 'More than one column contains only DNA. Choose one; nothing is picked for you.'),
+        h('div', { class: 'choices' }, candidates.map((column, index) => h('label', null, radios[index],
+          h('span', null, 'Column ' + (column + 1)), h('span', { class: 'preview' }, column_preview(rows, column))))),
+        h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'), ok));
+    });
+  }
+
+  function ask_header(first) {
+    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Is "' + first + '" a header or a barcode?'),
+      h('p', null, 'The first entry looks like it could be a column header.'),
+      h('div', { class: 'actions' },
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close(false) }, 'A barcode'),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close(true) }, 'A header'))));
+  }
+
+  function ask_append_or_replace(existing, incoming) {
+    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Add to the list or replace it?'),
+      h('p', null, 'The list already has ' + plural(existing, 'sequence') + '; the import has ' + plural(incoming, 'sequence') + '.'),
+      h('div', { class: 'actions' },
+        h('button', { type: 'button', class: 'btn outline', autofocus: true, onclick: () => close(null) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close('append') }, 'Add to the existing ' + existing.toLocaleString('en-US')),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close('replace') }, 'Replace them'))));
+  }
+
+  function ask_sheet_and_column(bytes, sheets) {
+    return show_dialog((close) => {
+      const ok = h('button', { type: 'button', class: 'btn primary', disabled: true }, 'Import');
+      const columns = h('div', { class: 'choices' });
+      let rows = [];
+      const sheet_select = h('select', { 'aria-label': 'Sheet', onchange: () => {
+        rows = sheet_select.value ? core.read_spreadsheet_rows(bytes, sheet_select.value) : [];
+        ok.disabled = true;
+        const width = rows.reduce((most, row) => Math.max(most, row.cells.length), 0);
+        columns.replaceChildren(...Array.from({ length: width }, (_, column) => h('label', null,
+          h('input', { type: 'radio', name: 'sheet_column', value: String(column), onchange: () => { ok.disabled = false; } }),
+          h('span', null, 'Column ' + (column + 1)), h('span', { class: 'preview' }, column_preview(rows, column)))));
+      } }, h('option', { value: '', selected: true, disabled: true }, 'Choose a sheet…'), sheets.map((sheet) => h('option', { value: sheet }, sheet)));
+      ok.addEventListener('click', () => {
+        const chosen = columns.querySelector('input:checked');
+        close(chosen ? { sheet: sheet_select.value, column: Number(chosen.value) } : null);
+      });
+      return h('div', { class: 'dlg' }, h('h2', null, 'Choose the sheet and the column'),
+        h('p', null, 'This workbook has ' + sheets.length + ' sheets. Choose the sheet, then the column that holds the sequences.'),
+        h('label', { class: 'field' }, h('span', null, 'Sheet'), sheet_select), columns,
+        h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'), ok));
+    });
+  }
+
+  function open_paste_dialog() {
+    return show_dialog((close) => {
+      const status = h('p', { class: 'hint', 'aria-live': 'polite' }, 'Paste a list or a table copied from a spreadsheet.');
+      const area = h('textarea', { 'aria-label': 'Pasted sequences', spellcheck: 'false', oninput: () => {
+        const plan = core.plan_table_import(core.parse_delimited_text(area.value).rows, 'pasted text');
+        status.textContent = plan.status === 'ok' ? plural(plan.sequences.length, 'sequence') + ' found.'
+          : plan.status === 'choose_column' ? 'Several DNA columns; you will be asked which one.'
+            : plan.status === 'ask_header' ? 'You will be asked whether the first entry is a header.' : plan.message;
+      } });
+      return h('div', { class: 'dlg' }, h('h2', null, 'Paste sequences'), area, status,
+        h('div', { class: 'actions' },
+          h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'),
+          h('button', { type: 'button', class: 'btn primary', onclick: () => close(area.value) }, 'Import')));
+    }).then((text) => {
+      if (text === null || text === undefined) return null;
+      return run_import(core.parse_delimited_text(text).rows, 'pasted text', {}, 'line');
+    });
+  }
+
+  // ----------------------------------------------------------------
+  // Files
+
+  function is_spreadsheet(name, bytes) {
+    if (/\.(xlsx|xls|ods)$/i.test(name)) return true;
+    const zip = bytes[0] === 0x50 && bytes[1] === 0x4b;
+    const ole = bytes[0] === 0xd0 && bytes[1] === 0xcf && bytes[2] === 0x11 && bytes[3] === 0xe0;
+    return zip || ole;
+  }
+
+  async function import_file(file) {
+    set_busy(true);
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (is_spreadsheet(file.name, bytes)) {
+        const sheets = core.list_spreadsheet_sheets(bytes);
+        let sheet = sheets[0];
+        let choices = {};
+        if (sheets.length > 1) {
+          const choice = await ask_sheet_and_column(bytes, sheets);
+          if (!choice) return;
+          sheet = choice.sheet;
+          choices = { column: choice.column };
+        }
+        const name = sheets.length > 1 ? file.name + ', sheet ' + sheet : file.name;
+        await run_import(core.read_spreadsheet_rows(bytes, sheet), name, choices, 'row');
+      } else {
+        const text = new TextDecoder('utf-8').decode(bytes);
+        await run_import(core.parse_delimited_text(text).rows, file.name, {}, 'line');
+      }
+    } catch (error) {
+      await message_dialog('Nothing imported', 'Could not read ' + file.name + ': ' + error.message);
+    } finally {
+      set_busy(false);
+    }
+  }
+
+  async function run_import(rows, source_name, initial_choices, unit) {
+    let choices = { ...initial_choices };
+    for (;;) {
+      const plan = core.plan_table_import(rows, source_name, choices, unit);
+      if (plan.status === 'error') {
+        await message_dialog('Nothing imported', plan.message);
+        return;
+      }
+      if (plan.status === 'choose_column') {
+        const column = await ask_column(rows, plan.candidates);
+        if (column === null) return;
+        choices = { ...choices, column };
+        continue;
+      }
+      if (plan.status === 'ask_header') {
+        const header = await ask_header(plan.first);
+        if (header === null) return;
+        choices = { ...choices, header };
+        continue;
+      }
+      const block = selected_block();
+      if (!block) return;
+      let mode = 'replace';
+      if (Array.isArray(block.sequence) && block.sequence.length) {
+        mode = await ask_append_or_replace(block.sequence.length, plan.sequences.length);
+        if (!mode) return;
+      }
+      state.rows = new Set();
+      commit(core.apply_import(state.model, state.read, block.id, plan, mode));
+      return;
+    }
+  }
+
+  function base_name_of(file_name) {
+    return file_name.replace(/\.gz$/i, '').replace(/\.json$/i, '') || 'barcode_config';
+  }
+
+  async function open_config_file(file) {
+    if (!(await confirm_discard())) return;
+    set_busy(true);
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const text = await core.read_config_bytes(bytes);
+      let opened = core.config_from_json(text);
+      if (!opened.ok) {
+        state.error = 'Could not open ' + file.name + ': ' + opened.error;
+        render();
+        return;
+      }
+      if (opened.needs_mode_choice) {
+        const answer = await ask_legacy_mode(file.name);
+        if (!answer) return;
+        opened = core.config_from_json(text, { legacy_mode: answer });
+      }
+      load_model(opened.model, opened.notices, 'Opened ' + file.name, base_name_of(file.name));
+    } catch (error) {
+      state.error = 'Could not open ' + file.name + ': ' + error.message;
+      render();
+    } finally {
+      set_busy(false);
+    }
+  }
+
+  async function load_template(template) {
+    if (!(await confirm_discard())) return;
+    const opened = core.config_from_json(template.config);
+    load_model(opened.model, opened.notices, template.title, template.id);
+  }
+
+  async function new_config() {
+    if (!(await confirm_discard())) return;
+    load_model(core.new_model(), [], '', 'barcode_config');
+  }
+
+  async function download(gzipped) {
+    if (has_errors()) return;
+    set_busy(true);
+    try {
+      const text = core.config_to_json(state.model);
+      const data = gzipped ? await core.gzip_text(text) : text;
+      const blob = new Blob([data], { type: gzipped ? 'application/gzip' : 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = h('a', { download: state.base_name + (gzipped ? '.json.gz' : '.json') });
+      link.href = url;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      state.dirty = false;
+    } finally {
+      set_busy(false);
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // Start-up
 
   /** Features the page needs; a banner names the minimum browsers if one is missing. */
   function missing_features() {
     const missing = [];
     if (typeof CompressionStream === 'undefined' || typeof DecompressionStream === 'undefined') missing.push('gzip streams');
+    if (typeof HTMLDialogElement === 'undefined') missing.push('dialogs');
     return missing;
   }
 
   /** The templates, with shared barcode lists expanded. */
   function load_templates() {
-    const element = document.getElementById('template_data');
-    const data = JSON.parse(element.textContent);
+    const data = JSON.parse($('template_data').textContent);
     return data.templates.map((template) => {
-      const config = JSON.parse(JSON.stringify(template.config));
-      for (const key of ['barcode_struct_r1', 'barcode_struct_r2']) {
+      const config = clone(template.config);
+      for (const key of core.READ_KEYS) {
         if (!config[key]) continue;
         for (const block of config[key].blocks) {
           if (block.sequence && !Array.isArray(block.sequence)) block.sequence = data.lists[block.sequence.$list].slice();
@@ -1418,13 +2467,78 @@ body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--fo
   function init() {
     const missing = missing_features();
     if (missing.length) {
-      const banner = document.getElementById('feature_banner');
-      banner.hidden = false;
-      banner.textContent = 'This browser lacks ' + missing.join(' and ') + '. Use Chrome or Edge 80+, Firefox 113+ or Safari 16.4+.';
+      $('feature_banner').hidden = false;
+      $('feature_banner').textContent = 'This browser lacks ' + missing.join(' and ') + '. Use Chrome or Edge 80+, Firefox 113+ or Safari 16.4+.';
     }
-    window.barcode_templates = load_templates();
-    document.getElementById('loading').hidden = true;
-    document.getElementById('app').dataset.busy = 'false';
+    state.templates = load_templates();
+    window.barcode_templates = state.templates;
+
+    $('open_button').addEventListener('click', () => $('open_input').click());
+    $('open_input').addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (file) open_config_file(file);
+    });
+    $('import_input').addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (file) import_file(file);
+    });
+    $('templates_button').addEventListener('click', (event) => {
+      event.stopPropagation();
+      state.open_menu = state.open_menu === 'templates' ? null : 'templates';
+      render_top_menus();
+    });
+    $('templates_menu').replaceChildren(
+      h('button', { type: 'button', role: 'menuitem', onclick: () => { state.open_menu = null; render_top_menus(); new_config(); } }, 'New empty config'),
+      ...state.templates.map((template) => h('button', { type: 'button', role: 'menuitem', onclick: () => { state.open_menu = null; render_top_menus(); load_template(template); } }, template.title)));
+    $('download_button').addEventListener('click', () => download(false));
+    $('download_menu_button').addEventListener('click', (event) => {
+      event.stopPropagation();
+      state.open_menu = state.open_menu === 'download' ? null : 'download';
+      render_top_menus();
+    });
+    $('download_gz_button').addEventListener('click', () => { state.open_menu = null; render_top_menus(); download(true); });
+
+    document.addEventListener('click', () => {
+      if (state.open_menu) {
+        state.open_menu = null;
+        render();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      const in_field = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName);
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        download(false);
+      } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'o') {
+        event.preventDefault();
+        $('open_input').click();
+      } else if (event.key === 'Escape' && state.open_menu) {
+        state.open_menu = null;
+        render();
+      } else if ((event.key === 'Delete' || event.key === 'Backspace') && !in_field && state.rows.size && !$('dialog').open) {
+        event.preventDefault();
+        delete_selected_rows();
+      }
+    });
+    window.addEventListener('beforeunload', (event) => {
+      if (!state.dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
+
+    $('loading').hidden = true;
+    $('layout').hidden = false;
+    render();
+    set_busy(false);
+  }
+
+  function render_top_menus() {
+    $('templates_menu').hidden = state.open_menu !== 'templates';
+    $('templates_button').setAttribute('aria-expanded', String(state.open_menu === 'templates'));
+    $('download_menu').hidden = state.open_menu !== 'download';
+    $('download_menu_button').setAttribute('aria-expanded', String(state.open_menu === 'download'));
   }
 
   document.addEventListener('DOMContentLoaded', init);
