@@ -49,3 +49,32 @@ jobs:
       - name: Run tests
         run: |
           pytest --capture=tee-sys -vv
+
+  gui:
+    # The config builder (gui/barcode_configurator.html) in three browser engines,
+    # then tier F: bcwithqc itself run against what the GUI writes. No STAR needed.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install bcwithqc and the GUI test tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+          pip install --group gui-test
+
+      - name: Install the browsers
+        run: python -m playwright install --with-deps chromium firefox webkit
+
+      - name: GUI tests (Chromium, Firefox, WebKit)
+        run: pytest tests/gui -v
+
+      - name: Tier F (bcwithqc against the GUI)
+        run: pytest tests/gui -m bcwithqc -v
