@@ -259,11 +259,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   const DNA_PATTERN = /^[ACGT]+$/;
   const BLOCK_KEYS = ['maxerrors', 'blockfunction', 'sequence', 'length', 'blocktype', 'blockname', 'keepblock', 'linkgroup', 'name'];
   const READ_STRUCT_KEYS = ['keep_nonbarcode', 'blocks'];
-  const TOP_KEYS = ['bcwithqc_version', 'unknown_read_orientation', 'single_end_reads', 'barcode_struct_r1', 'barcode_struct_r2'];
-  // The bcwithqc version this page writes configs for, recorded first in every
-  // downloaded config (decision D15). A test keeps it equal to
-  // bcwithqc/__init__.py.
-  const BCWITHQC_VERSION = '0.4.1';
+  const TOP_KEYS = ['generated_with', 'unknown_read_orientation', 'single_end_reads', 'barcode_struct_r1', 'barcode_struct_r2'];
+  // The tool and version this page writes configs for, recorded first in every
+  // downloaded config as "generated_with" (decision D15). gui/update_page.py
+  // writes this line from pyproject.toml; a test fails while they differ.
+  const GENERATED_WITH = Object.freeze({ name: 'bcwithqc', version: '0.4.1' });
   // Characters that are easy to paste by accident and invisible on screen: no-break
   // space, soft hyphen, zero-width and direction marks, line and paragraph
   // separators, word joiners and the byte-order mark. Built from code points so
@@ -618,7 +618,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   /**
-   * The config object bcwithqc reads: "bcwithqc_version" first, then
+   * The config object bcwithqc reads: "generated_with" first, then
    * bcwithqc's keys in its order. Keys from an opened file that bcwithqc
    * doesn't use follow at the end of their section while
    * model.keep_unknown_keys is true.
@@ -632,7 +632,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   function config_to_object(model) {
     const single_end = model.single_end === true;
     const out = {
-      bcwithqc_version: BCWITHQC_VERSION,
+      generated_with: { name: GENERATED_WITH.name, version: GENERATED_WITH.version },
       unknown_read_orientation: single_end ? false : model.unknown_read_orientation,
       single_end_reads: model.single_end,
     };
@@ -678,7 +678,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * can't represent are kept as they are, so validation reports them (E11).
    * Every barcode list opens in entered order. Keys bcwithqc doesn't use are
    * kept on the model and listed in unknown_keys; the caller decides through
-   * model.keep_unknown_keys whether they are written. A "bcwithqc_version"
+   * model.keep_unknown_keys whether they are written. A "generated_with"
    * in the file is reported in a notice; saving writes the page's own.
    * @param {string|Object} input File text or parsed JSON.
    * @param {{legacy_mode?: string, file_name?: string}} [options]
@@ -714,11 +714,18 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     };
     keep_extra(model, data, unknown_keys(data, TOP_KEYS), '');
 
-    if ('bcwithqc_version' in data) {
-      const written = typeof data.bcwithqc_version === 'string' ? data.bcwithqc_version : JSON.stringify(data.bcwithqc_version);
-      notice('info', data.bcwithqc_version === BCWITHQC_VERSION
-        ? 'This file was made for bcwithqc ' + written + ', the version this page writes for.'
-        : 'This file was made for bcwithqc ' + written + '. The file you download will say ' + BCWITHQC_VERSION + ', the version this page writes for.');
+    if ('generated_with' in data) {
+      const written = data.generated_with;
+      const current = GENERATED_WITH.name + ' ' + GENERATED_WITH.version;
+      const readable = is_plain_object(written) && typeof written.name === 'string' && typeof written.version === 'string';
+      if (readable && written.name === GENERATED_WITH.name && written.version === GENERATED_WITH.version) {
+        notice('info', 'This file was made for ' + current + ', the version this page writes for.');
+      } else {
+        const made_for = readable
+          ? 'This file was made for ' + written.name + ' ' + written.version + '.'
+          : 'This file\'s "generated_with" (' + JSON.stringify(written) + ') doesn\'t give a name and a version.';
+        notice('info', made_for + ' The file you download will say ' + current + ', the version this page writes for.');
+      }
     }
 
     if (!legacy) {
@@ -1619,7 +1626,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   window.barcode_core = {
-    BCWITHQC_VERSION,
+    GENERATED_WITH,
     BLOCK_TYPES,
     BLOCK_FUNCTIONS,
     READ_KEYS,

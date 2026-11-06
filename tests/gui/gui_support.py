@@ -2,15 +2,19 @@
 
 Expected values are computed here in Python, independently of the page's
 JavaScript: a config's canonical text is Python's own json.dumps output, and
-the bcwithqc version it records is read from bcwithqc/__init__.py.
+the name and version it records are read from pyproject.toml.
 """
 
 import copy
-import functools
 import gzip
 import json
 import re
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES_DIR = REPO_ROOT / "examples"
@@ -38,30 +42,41 @@ def read_config(path: Path) -> dict:
     return json.loads(read_bytes_text(path))
 
 
-@functools.cache
-def bcwithqc_version() -> str:
-    """Return bcwithqc's version as bcwithqc/__init__.py sets it.
+def generated_with() -> dict:
+    """Return the name and version pyproject.toml gives, which the page must stamp.
 
-    Read on first use rather than at import, so a problem here fails the
-    tests that need the version instead of stopping pytest's collection.
+    The version is [project] version or, when it is dynamic, the __version__
+    in the file [tool.hatch.version] points to. Read when called, not at
+    import, so a problem here fails the tests that need it instead of
+    stopping pytest's collection.
     """
-    text = (REPO_ROOT / "bcwithqc" / "__init__.py").read_text(encoding="utf-8")
-    match = re.search(
-        r"^__version__\s*=\s*['\"]([^'\"]+)['\"]", text, flags=re.MULTILINE
+    pyproject = tomllib.loads(
+        (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     )
-    assert match is not None, "bcwithqc/__init__.py sets no __version__"
-    return match.group(1)
+    project = pyproject["project"]
+    version = project.get("version")
+    if version is None:
+        version_file = REPO_ROOT / pyproject["tool"]["hatch"]["version"]["path"]
+        match = re.search(
+            r"^__version__\s*=\s*['\"]([^'\"]+)['\"]",
+            version_file.read_text(encoding="utf-8"),
+            flags=re.MULTILINE,
+        )
+        assert match is not None, f"{version_file} sets no __version__"
+        version = match.group(1)
+    return {"name": project["name"], "version": version}
 
 
 def canonical_text(config: dict) -> str:
     """Return the exact text the GUI must write for a config.
 
-    That is json.dumps(indent=4) plus a newline, with "bcwithqc_version" as
-    the first key, set to bcwithqc's version whatever the config says.
+    That is json.dumps(indent=4) plus a newline, with "generated_with" as the
+    first key, set to pyproject.toml's name and version whatever the config
+    says.
     """
-    written = {"bcwithqc_version": bcwithqc_version()}
+    written = {"generated_with": generated_with()}
     written.update(
-        (key, value) for key, value in config.items() if key != "bcwithqc_version"
+        (key, value) for key, value in config.items() if key != "generated_with"
     )
     return json.dumps(written, indent=4) + "\n"
 

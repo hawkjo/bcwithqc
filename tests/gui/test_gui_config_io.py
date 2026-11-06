@@ -19,10 +19,10 @@ from gui_support import (
     OLD_GUI_BARCODES,
     OLD_GUI_SAMPLE_BARCODES,
     REPO_ROOT,
-    bcwithqc_version,
     canonical_text,
     design_doc_example,
     example_config_names,
+    generated_with,
     read_bytes_text,
     read_config,
     with_sorted_lists,
@@ -54,8 +54,12 @@ def test_example_exports_its_canonical_text_in_entered_order(core, example):
     config = read_config(EXAMPLES_DIR / example)
     result = open_and_export(core, (EXAMPLES_DIR / example).read_text(encoding="utf-8"))
     assert result["text"] == canonical_text(without_names(config))
-    # The examples carry no bcwithqc_version, so nothing may report one.
-    assert not [n for n in result["notices"] if "made for bcwithqc" in n["text"]]
+    # The examples carry no generated_with, so no notice may mention one.
+    assert not [
+        n
+        for n in result["notices"]
+        if "made for" in n["text"] or "generated_with" in n["text"]
+    ]
 
 
 @pytest.mark.parametrize("example", example_config_names())
@@ -297,7 +301,7 @@ def test_design_doc_template_is_read_from_the_doc():
 
 def load_update_script():
     spec = importlib.util.spec_from_file_location(
-        "update_template_data", REPO_ROOT / "gui" / "update_template_data.py"
+        "update_page", REPO_ROOT / "gui" / "update_page.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -305,11 +309,34 @@ def load_update_script():
 
 
 def test_page_template_data_is_current():
-    """Fails when a template source changed; run gui/update_template_data.py to refresh the page."""
+    """Fails when a template source changed; run gui/update_page.py to refresh the page."""
     page = GUI_PATH.read_text(encoding="utf-8")
     match = load_update_script().DATA_BLOCK.search(page)
     assert match is not None
     assert json.loads(match.group(2)) == load_update_script().template_data()
+
+
+def test_page_stamp_is_current():
+    """Fails after a version bump or a rename; run gui/update_page.py to restamp the page."""
+    script = load_update_script()
+    match = script.STAMP_LINE.search(GUI_PATH.read_text(encoding="utf-8"))
+    assert match is not None
+    assert match.group(0) == script.stamp_line(script.generated_with()), (
+        "pyproject.toml's name or version changed: run python gui/update_page.py"
+    )
+
+
+def test_update_script_restamps_a_stale_page(tmp_path, monkeypatch):
+    script = load_update_script()
+    page = GUI_PATH.read_text(encoding="utf-8")
+    old_stamp = script.stamp_line({"name": "old_name", "version": "0.0.1"})
+    stale = script.STAMP_LINE.sub(lambda match: old_stamp, page)
+    assert stale != page
+    stale_copy = tmp_path / GUI_PATH.name
+    stale_copy.write_text(stale, encoding="utf-8")
+    monkeypatch.setattr(script, "PAGE", stale_copy)
+    script.main()
+    assert stale_copy.read_text(encoding="utf-8") == page
 
 
 def test_json_gz_download_decompresses_to_the_canonical_text(core):
@@ -477,49 +504,72 @@ def test_kept_keys_named_like_numbers_or_proto_are_still_written_last(core):
     assert result["text"] == canonical_text(kept)
 
 
-def test_the_page_writes_for_the_bcwithqc_in_this_repo(core):
-    assert core.run("(core) => core.BCWITHQC_VERSION") == bcwithqc_version(), (
-        "bcwithqc's version changed: set BCWITHQC_VERSION in "
-        "gui/barcode_configurator.html to match bcwithqc/__init__.py"
+def test_the_page_stamps_the_name_and_version_in_pyproject(core):
+    assert core.run("(core) => core.GENERATED_WITH") == generated_with(), (
+        "pyproject.toml's name or version changed: run python gui/update_page.py"
     )
 
 
-def test_every_download_starts_with_the_bcwithqc_version(core):
-    """D15: the first key records the bcwithqc version the config was made for."""
+def test_every_download_starts_with_generated_with(core):
+    """D15: the first key records the tool and version the config was made for."""
     config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
     text = open_and_export(core, json.dumps(config))["text"]
-    assert text.splitlines()[:2] == [
+    stamp = generated_with()
+    assert text.splitlines()[:5] == [
         "{",
-        f'    "bcwithqc_version": "{bcwithqc_version()}",',
+        '    "generated_with": {',
+        f'        "name": "{stamp["name"]}",',
+        f'        "version": "{stamp["version"]}"',
+        "    },",
     ]
     empty = core.run("(core) => core.config_to_json(core.new_model())")
-    assert next(iter(json.loads(empty))) == "bcwithqc_version"
+    assert next(iter(json.loads(empty))) == "generated_with"
 
 
 @pytest.mark.parametrize(
-    ("version", "shown"), [("0.3.0", "0.3.0"), (0.4, "0.4"), (None, "null")]
+    ("written", "first_sentence"),
+    [
+        (
+            {"name": "bcwithqc", "version": "0.3.0"},
+            "This file was made for bcwithqc 0.3.0.",
+        ),
+        (
+            {"name": "renamed_tool", "version": "1.0"},
+            "This file was made for renamed_tool 1.0.",
+        ),
+        (
+            "0.4.1",
+            'This file\'s "generated_with" ("0.4.1") doesn\'t give a name and a version.',
+        ),
+        (
+            None,
+            "This file's \"generated_with\" (null) doesn't give a name and a version.",
+        ),
+    ],
 )
-def test_an_opened_version_is_reported_and_replaced_by_the_pages_own(
-    core, version, shown
+def test_an_opened_stamp_is_reported_and_replaced_by_the_pages_own(
+    core, written, first_sentence
 ):
     config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
-    result = open_and_export(core, json.dumps({"bcwithqc_version": version, **config}))
+    result = open_and_export(core, json.dumps({"generated_with": written, **config}))
     assert result["text"] == canonical_text(config)
+    stamp = generated_with()
     expected = (
-        f"This file was made for bcwithqc {shown}. The file you download will say "
-        f"{bcwithqc_version()}, the version this page writes for."
+        f"{first_sentence} The file you download will say "
+        f"{stamp['name']} {stamp['version']}, the version this page writes for."
     )
     assert result["notices"] == [{"level": "info", "text": expected}]
 
 
-def test_a_downloaded_config_reopens_unchanged_and_reports_its_version(core):
+def test_a_downloaded_config_reopens_unchanged_and_reports_its_stamp(core):
     config = without_names(read_config(EXAMPLES_DIR / "pe_mini_config.json"))
     first = open_and_export(core, json.dumps(config))
-    assert first["notices"] == [], "a file without bcwithqc_version gets no notice"
+    assert first["notices"] == [], "a file without generated_with gets no notice"
     second = open_and_export(core, first["text"])
     assert second["text"] == first["text"]
+    stamp = generated_with()
     expected = (
-        f"This file was made for bcwithqc {bcwithqc_version()}, "
+        f"This file was made for {stamp['name']} {stamp['version']}, "
         "the version this page writes for."
     )
     assert second["notices"] == [{"level": "info", "text": expected}]

@@ -52,6 +52,7 @@ gui-test = [
     "openpyxl",  # writes .xlsx test files
     "odfpy",  # writes .ods test files
     "xlwt",  # writes legacy .xls test files
+    "tomli; python_version < '3.11'",  # reads pyproject.toml on Python 3.10
 ]
 
 [project.scripts]

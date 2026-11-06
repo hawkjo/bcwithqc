@@ -16,6 +16,7 @@ from gui_support import (
     SAMPLE_CONSTANT,
     canonical_text,
     design_doc_example,
+    generated_with,
     read_config,
     without_names,
 )
@@ -666,7 +667,9 @@ def test_a_downloaded_config_reopens_without_questions(app, tmp_path):
     app.set_input_files("#open_input", str(path))
     wait_ready(app)
     assert app.locator("#error_banner").is_hidden()
-    assert "made for bcwithqc" in app.locator("#notices").inner_text()
+    stamp = generated_with()
+    made_for = f"made for {stamp['name']} {stamp['version']}"
+    assert made_for in app.locator("#notices").inner_text()
     assert download_text(app) == example("gDNA_paired_end_config.json")
 
 

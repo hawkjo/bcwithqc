@@ -20,8 +20,9 @@ In order:
    unmodified, for spreadsheet import. It must stay the last script.
 
 The written config is exactly Python's `json.dumps(config, indent=4)` plus a
-newline, in ASCII. Its first key, `bcwithqc_version`, records the bcwithqc
-version the page writes for; bcwithqc's own keys follow in bcwithqc's order.
+newline, in ASCII. Its first key, `generated_with`, records the name and
+version of the tool the page writes for, as `pyproject.toml` gives them;
+bcwithqc's own keys follow in bcwithqc's order.
 
 ## Running the tests
 
@@ -41,14 +42,33 @@ from.
 **Templates.** The templates are copies of `examples/cDNA_paired_end_config.json`,
 `examples/gDNA_paired_end_config.json` and the example in
 `doc/config_format.md`, without per-sequence names. After changing a source, or
-the list in `update_template_data.py`, run `python gui/update_template_data.py`.
-A test fails while the page's copy is out of date.
+the list in `update_page.py`, run `python gui/update_page.py`. A test fails
+while the page's copy is out of date.
 
-**bcwithqc version.** The `bcwithqc_version` the page writes is
-`BCWITHQC_VERSION` in the core script. When bcwithqc's version changes, set it
-to match; a test fails until it equals `bcwithqc/__init__.py`. Bump bcwithqc's
-version whenever the config format changes, so each config says which format
-it follows.
+**Version bumps.** The `generated_with` stamp comes from `GENERATED_WITH` in
+the core script, which `python gui/update_page.py` writes from
+`pyproject.toml`: the name from `[project] name`, the version from
+`[project] version` or the file `[tool.hatch.version]` points to. After a
+bump, run the script and commit the page with the bump; a test fails, in CI
+too, until you do. Bump the version whenever the config format changes, so
+each config says which format it follows.
+
+**Renaming the project.** The rename itself is a find-and-replace across the
+repo. For the config builder:
+
+1. Change `[project] name` in `pyproject.toml` (and `[tool.hatch.version]`
+   `path`, if the package folder moves), then run `python gui/update_page.py`.
+   New configs then carry the new name. Configs written before the rename
+   keep the old one, and the page reports it when it opens them.
+2. Replace the old name in the messages of the core and UI scripts, and in
+   this file.
+3. Tier F runs the package by name (`python -m bcwithqc`, imports from
+   `bcwithqc.*`): update `tests/gui/test_gui_pipeline_contract.py`.
+4. GitHub redirects a renamed repository, but not its GitHub Pages site: the
+   page moves to `https://<owner>.github.io/<new name>/gui/barcode_configurator.html`
+   and the old address stops working. Update the link in the main README and
+   `PAGES_ROOT` in `tests/gui/test_gui_docs.py`. A custom domain for Pages,
+   set up before the rename, keeps the address stable.
 
 **SheetJS.** To update, replace the contents of the `vendor_sheetjs` script
 with the new `xlsx.full.min.js`, unmodified, and update the size, sha256 and
