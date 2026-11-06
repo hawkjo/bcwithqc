@@ -20,7 +20,8 @@ In order:
    unmodified, for spreadsheet import. It must stay the last script.
 
 The written config is exactly Python's `json.dumps(config, indent=4)` plus a
-newline, in ASCII and in bcwithqc's key order.
+newline, in ASCII. Its first key, `bcwithqc_version`, records the bcwithqc
+version the page writes for; bcwithqc's own keys follow in bcwithqc's order.
 
 ## Running the tests
 
@@ -42,6 +43,12 @@ from.
 `doc/config_format.md`, without per-sequence names. After changing a source, or
 the list in `update_template_data.py`, run `python gui/update_template_data.py`.
 A test fails while the page's copy is out of date.
+
+**bcwithqc version.** The `bcwithqc_version` the page writes is
+`BCWITHQC_VERSION` in the core script. When bcwithqc's version changes, set it
+to match; a test fails until it equals `bcwithqc/__init__.py`. Bump bcwithqc's
+version whenever the config format changes, so each config says which format
+it follows.
 
 **SheetJS.** To update, replace the contents of the `vendor_sheetjs` script
 with the new `xlsx.full.min.js`, unmodified, and update the size, sha256 and

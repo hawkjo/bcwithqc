@@ -1,10 +1,12 @@
 """Helpers shared by the config builder's browser tests.
 
 Expected values are computed here in Python, independently of the page's
-JavaScript: a config's canonical text is Python's own json.dumps output.
+JavaScript: a config's canonical text is Python's own json.dumps output, and
+the bcwithqc version it records is read from bcwithqc/__init__.py.
 """
 
 import copy
+import functools
 import gzip
 import json
 import re
@@ -36,9 +38,32 @@ def read_config(path: Path) -> dict:
     return json.loads(read_bytes_text(path))
 
 
+@functools.cache
+def bcwithqc_version() -> str:
+    """Return bcwithqc's version as bcwithqc/__init__.py sets it.
+
+    Read on first use rather than at import, so a problem here fails the
+    tests that need the version instead of stopping pytest's collection.
+    """
+    text = (REPO_ROOT / "bcwithqc" / "__init__.py").read_text(encoding="utf-8")
+    match = re.search(
+        r"^__version__\s*=\s*['\"]([^'\"]+)['\"]", text, flags=re.MULTILINE
+    )
+    assert match is not None, "bcwithqc/__init__.py sets no __version__"
+    return match.group(1)
+
+
 def canonical_text(config: dict) -> str:
-    """Return the exact text the GUI must write: json.dumps(indent=4) plus a newline."""
-    return json.dumps(config, indent=4) + "\n"
+    """Return the exact text the GUI must write for a config.
+
+    That is json.dumps(indent=4) plus a newline, with "bcwithqc_version" as
+    the first key, set to bcwithqc's version whatever the config says.
+    """
+    written = {"bcwithqc_version": bcwithqc_version()}
+    written.update(
+        (key, value) for key, value in config.items() if key != "bcwithqc_version"
+    )
+    return json.dumps(written, indent=4) + "\n"
 
 
 def without_names(config: dict) -> dict:

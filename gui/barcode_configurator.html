@@ -259,7 +259,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   const DNA_PATTERN = /^[ACGT]+$/;
   const BLOCK_KEYS = ['maxerrors', 'blockfunction', 'sequence', 'length', 'blocktype', 'blockname', 'keepblock', 'linkgroup', 'name'];
   const READ_STRUCT_KEYS = ['keep_nonbarcode', 'blocks'];
-  const TOP_KEYS = ['unknown_read_orientation', 'single_end_reads', 'barcode_struct_r1', 'barcode_struct_r2'];
+  const TOP_KEYS = ['bcwithqc_version', 'unknown_read_orientation', 'single_end_reads', 'barcode_struct_r1', 'barcode_struct_r2'];
+  // The bcwithqc version this page writes configs for, recorded first in every
+  // downloaded config (decision D15). A test keeps it equal to
+  // bcwithqc/__init__.py.
+  const BCWITHQC_VERSION = '0.4.1';
   // Characters that are easy to paste by accident and invisible on screen: no-break
   // space, soft hyphen, zero-width and direction marks, line and paragraph
   // separators, word joiners and the byte-order mark. Built from code points so
@@ -297,11 +301,22 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     return out + '"';
   }
 
+  // Key order for objects whose order JavaScript can't keep by itself: it
+  // always lists integer-like keys such as "2" first. config_to_object
+  // records the order of every object that gets kept keys.
+  const KEY_ORDER = new WeakMap();
+
+  /** Set an own, enumerable key, also for a name such as "__proto__" that plain assignment can't create. */
+  function define_key(target, key, value) {
+    Object.defineProperty(target, key, { value, enumerable: true, writable: true, configurable: true });
+  }
+
   /**
    * Serialise a value exactly as Python's json.dumps(value, indent=4).
    *
    * Configs contain only null, booleans, numbers, strings, arrays and plain
-   * objects. Object keys keep their insertion order, as Python dicts do.
+   * objects. Object keys are written in the order KEY_ORDER records for the
+   * object, or else in insertion order, as Python dicts keep it.
    * @param {*} value
    * @param {number} [level=0] Nesting depth, for indentation.
    * @returns {string}
@@ -322,7 +337,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       return '[\n' + value.map((item) => pad + python_json_dumps(item, level + 1)).join(',\n') + '\n' + close_pad + ']';
     }
     if (typeof value === 'object') {
-      const keys = Object.keys(value);
+      const keys = KEY_ORDER.get(value) || Object.keys(value);
       if (keys.length === 0) return '{}';
       return '{\n' + keys.map((key) => pad + python_json_string(key) + ': ' + python_json_dumps(value[key], level + 1)).join(',\n') + '\n' + close_pad + '}';
     }
@@ -383,9 +398,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   /** Copy keys bcwithqc doesn't use onto the end of an exported object, when the model keeps them. */
   function append_extra(target, source, model) {
     if (model.keep_unknown_keys !== true || !source || !is_plain_object(source.extra)) return target;
+    const order = Object.keys(target);
     for (const [key, value] of Object.entries(source.extra)) {
-      if (!(key in target)) target[key] = value;
+      if (Object.prototype.hasOwnProperty.call(target, key)) continue;
+      define_key(target, key, value);
+      order.push(key);
     }
+    KEY_ORDER.set(target, order);
     return target;
   }
 
@@ -599,9 +618,10 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   /**
-   * The config object bcwithqc reads, in bcwithqc's key order. Keys from an
-   * opened file that bcwithqc doesn't use follow at the end of their section
-   * while model.keep_unknown_keys is true.
+   * The config object bcwithqc reads: "bcwithqc_version" first, then
+   * bcwithqc's keys in its order. Keys from an opened file that bcwithqc
+   * doesn't use follow at the end of their section while
+   * model.keep_unknown_keys is true.
    *
    * Single-end configs get no barcode_struct_r2 and write
    * unknown_read_orientation as false, which bcwithqc requires today; the
@@ -612,6 +632,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   function config_to_object(model) {
     const single_end = model.single_end === true;
     const out = {
+      bcwithqc_version: BCWITHQC_VERSION,
       unknown_read_orientation: single_end ? false : model.unknown_read_orientation,
       single_end_reads: model.single_end,
     };
@@ -655,10 +676,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * file, per-sequence name lists are dropped and lowercase sequences are
    * converted to uppercase. Each change is listed as a notice. Values the app
    * can't represent are kept as they are, so validation reports them (E11).
-   * Every barcode list opens in entered order.
+   * Every barcode list opens in entered order. Keys bcwithqc doesn't use are
+   * kept on the model and listed in unknown_keys; the caller decides through
+   * model.keep_unknown_keys whether they are written. A "bcwithqc_version"
+   * in the file is reported in a notice; saving writes the page's own.
    * @param {string|Object} input File text or parsed JSON.
    * @param {{legacy_mode?: string, file_name?: string}} [options]
-   * @returns {{ok: boolean, error?: string, model?: Object, notices?: Object[], legacy?: boolean, needs_mode_choice?: boolean}}
+   * @returns {{ok: boolean, error?: string, model?: Object, notices?: Object[], unknown_keys?: string[], legacy?: boolean, needs_mode_choice?: boolean}}
    */
   function config_from_json(input, options = {}) {
     let data = input;
@@ -684,11 +708,18 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       if (!keys.length) return;
       target.extra = {};
       for (const key of keys) {
-        target.extra[key] = source[key];
+        define_key(target.extra, key, source[key]);
         unknown_found.push('"' + key + '"' + where);
       }
     };
     keep_extra(model, data, unknown_keys(data, TOP_KEYS), '');
+
+    if ('bcwithqc_version' in data) {
+      const written = typeof data.bcwithqc_version === 'string' ? data.bcwithqc_version : JSON.stringify(data.bcwithqc_version);
+      notice('info', data.bcwithqc_version === BCWITHQC_VERSION
+        ? 'This file was made for bcwithqc ' + written + ', the version this page writes for.'
+        : 'This file was made for bcwithqc ' + written + '. The file you download will say ' + BCWITHQC_VERSION + ', the version this page writes for.');
+    }
 
     if (!legacy) {
       model.single_end = data.single_end_reads;
@@ -802,7 +833,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       notice('info', 'This single-end config also describes Read 2. Read 2 is kept, but it is not written while single-end is selected.');
     }
     if (unknown_found.length) {
-      notice('unknown_keys', 'bcwithqc doesn\'t use ' + unknown_found.join(', ') + '. They stay in the file unless you choose to leave them out.');
+      notices.push({ level: 'unknown_keys', text: 'bcwithqc doesn\'t use ' + unknown_found.join(', ') + '.', keys: unknown_found });
     }
     if (keepblock_added) notice('info', '"Keep for alignment" was not set in this file, so it is off for every block.');
     if (dropped_names.length) {
@@ -819,7 +850,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         }
       });
     }
-    return { ok: true, model, notices, legacy, needs_mode_choice };
+    return { ok: true, model, notices, unknown_keys: unknown_found, legacy, needs_mode_choice };
   }
 
   /**
@@ -1588,6 +1619,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   window.barcode_core = {
+    BCWITHQC_VERSION,
     BLOCK_TYPES,
     BLOCK_FUNCTIONS,
     READ_KEYS,
@@ -1818,13 +1850,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     if (!state.notices.length) return;
     box.append(
       h('header', null,
-        h('span', null, state.notices_title + ': ' + plural(state.notices.length, 'change') + ' on opening'),
+        h('span', null, state.notices_title + ': ' + plural(state.notices.length, 'notice')),
         h('button', { type: 'button', class: 'btn small', 'aria-label': 'Dismiss', onclick: () => { state.notices = []; render(); } }, '✕')),
       h('ul', null, state.notices.map((notice) => h('li', { class: notice.level === 'unknown_keys' ? 'warning' : notice.level }, notice.text,
         notice.level === 'unknown_keys' ? h('label', { class: 'check', style: 'margin-left:8px' },
           h('input', { type: 'checkbox', id: 'keep_unknown_keys', checked: state.model.keep_unknown_keys === true,
             onchange: (event) => update_model((m) => { m.keep_unknown_keys = event.target.checked; }) }),
-          'Keep them in the file') : null))));
+          notice.keys.length === 1 ? 'Keep it in the file' : 'Keep them in the file') : null))));
   }
 
   function render_main(all_issues) {
@@ -2316,6 +2348,19 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     });
   }
 
+  /** Ask whether to keep the keys bcwithqc doesn't use (decision D16): "keep", "leave_out", or null to cancel. */
+  function ask_unknown_keys(name, keys) {
+    const them = keys.length === 1 ? 'it' : 'them';
+    return show_dialog((close) => h('div', { class: 'dlg' },
+      h('h2', null, 'Keep the ' + (keys.length === 1 ? 'key' : 'keys') + ' bcwithqc doesn\'t use?'),
+      h('p', null, name + ' has ' + plural(keys.length, 'key') + ' that bcwithqc doesn\'t use. bcwithqc ignores ' + them + ', so a misspelt key has no effect.'),
+      h('p', { class: 'preview' }, keys.join(', ')),
+      h('div', { class: 'actions' },
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close('leave_out') }, 'Leave ' + them + ' out'),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close('keep') }, 'Keep ' + them))));
+  }
+
   function column_preview(rows, column) {
     return rows.slice(0, 4).map((row) => row.cells[column] === undefined ? '' : String(row.cells[column])).join(', ');
   }
@@ -2488,6 +2533,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         if (!answer) return;
         opened = core.config_from_json(text, { legacy_mode: answer });
       }
+      if (opened.unknown_keys.length) {
+        const answer = await ask_unknown_keys(file.name, opened.unknown_keys);
+        if (!answer) return;
+        opened.model.keep_unknown_keys = answer === 'keep';
+      }
       load_model(opened.model, opened.notices, 'Opened ' + file.name, base_name_of(file.name));
     } catch (error) {
       state.error = 'Could not open ' + file.name + ': ' + error.message;
@@ -2599,10 +2649,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     });
     document.addEventListener('keydown', (event) => {
       const in_field = ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName);
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+      const shortcut = event.metaKey || event.ctrlKey ? event.key.toLowerCase() : '';
+      if ((shortcut === 's' || shortcut === 'o') && $('dialog').open) {
+        event.preventDefault(); // answer the open question first
+      } else if (shortcut === 's') {
         event.preventDefault();
         download(false);
-      } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'o') {
+      } else if (shortcut === 'o') {
         event.preventDefault();
         $('open_input').click();
       } else if (event.key === 'Escape' && (state.open_menu || state.open_help)) {

@@ -19,6 +19,7 @@ from gui_support import (
     OLD_GUI_BARCODES,
     OLD_GUI_SAMPLE_BARCODES,
     REPO_ROOT,
+    bcwithqc_version,
     canonical_text,
     design_doc_example,
     example_config_names,
@@ -53,6 +54,8 @@ def test_example_exports_its_canonical_text_in_entered_order(core, example):
     config = read_config(EXAMPLES_DIR / example)
     result = open_and_export(core, (EXAMPLES_DIR / example).read_text(encoding="utf-8"))
     assert result["text"] == canonical_text(without_names(config))
+    # The examples carry no bcwithqc_version, so nothing may report one.
+    assert not [n for n in result["notices"] if "made for bcwithqc" in n["text"]]
 
 
 @pytest.mark.parametrize("example", example_config_names())
@@ -409,27 +412,117 @@ def test_nested_values_match_python_json_dumps(core):
     assert core.call("python_json_dumps", value) == json.dumps(value, indent=4)
 
 
-def test_unknown_keys_are_kept_by_default_and_can_be_left_out(core):
+def test_unknown_keys_are_listed_and_written_last_only_when_kept(core):
     config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
-    with_extras = copy.deepcopy(config)
-    with_extras["config_version"] = 1
-    with_extras["barcode_struct_r1"]["note"] = "plate 3"
-    with_extras["barcode_struct_r1"]["blocks"][0]["keepBlock"] = True
+    first_block = config["barcode_struct_r1"]["blocks"][0]
+    # In the file, each unknown key comes first in its section.
+    in_file = {"config_version": 1, **copy.deepcopy(config)}
+    in_file["barcode_struct_r1"] = {
+        "note": "plate 3",
+        **copy.deepcopy(config["barcode_struct_r1"]),
+    }
+    in_file["barcode_struct_r1"]["blocks"][0] = {"keepBlock": True, **first_block}
+    # Kept, each is written after the known keys of its section.
+    kept = copy.deepcopy(config)
+    kept["config_version"] = 1
+    kept["barcode_struct_r1"]["note"] = "plate 3"
+    kept["barcode_struct_r1"]["blocks"][0]["keepBlock"] = True
     result = core.run(
         """(core, arg) => {
             const opened = core.config_from_json(arg);
+            opened.model.keep_unknown_keys = true;
             const kept = core.config_to_json(opened.model);
             opened.model.keep_unknown_keys = false;
-            return {kept, left_out: core.config_to_json(opened.model), notices: opened.notices};
+            return {kept, left_out: core.config_to_json(opened.model), unknown_keys: opened.unknown_keys, notices: opened.notices};
         }""",
-        json.dumps(with_extras),
+        json.dumps(in_file),
     )
-    # Kept keys follow the known ones in their section, which is where they were.
-    assert result["kept"] == canonical_text(with_extras)
+    assert result["kept"] == canonical_text(kept)
     assert result["left_out"] == canonical_text(config)
+    expected_keys = ['"config_version"', '"note" in Read 1', '"keepBlock" in block cb1']
+    assert result["unknown_keys"] == expected_keys
     (notice,) = [n for n in result["notices"] if n["level"] == "unknown_keys"]
-    for key in ('"config_version"', '"note" in Read 1', '"keepBlock" in block cb1'):
+    assert notice["keys"] == expected_keys
+    for key in expected_keys:
         assert key in notice["text"]
+
+
+def test_kept_keys_named_like_numbers_or_proto_are_still_written_last(core):
+    """JavaScript lists a key such as "2" first and can't assign "__proto__"; json.dumps writes both where they were added."""
+    config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
+    first_block = config["barcode_struct_r1"]["blocks"][0]
+    in_file = {
+        "2": "plate",
+        "__proto__": "x",
+        "constructor": 5,
+        **copy.deepcopy(config),
+    }
+    in_file["barcode_struct_r1"]["blocks"][0] = {"0": "x", **first_block}
+    kept = copy.deepcopy(config)
+    kept["barcode_struct_r1"]["blocks"][0]["0"] = "x"
+    kept.update({"2": "plate", "__proto__": "x", "constructor": 5})
+    result = core.run(
+        """(core, arg) => {
+            const opened = core.config_from_json(arg);
+            return {text: core.config_to_json(opened.model), unknown_keys: opened.unknown_keys};
+        }""",
+        json.dumps(in_file),
+    )
+    assert result["unknown_keys"] == [
+        '"2"',
+        '"__proto__"',
+        '"constructor"',
+        '"0" in block cb1',
+    ]
+    assert result["text"] == canonical_text(kept)
+
+
+def test_the_page_writes_for_the_bcwithqc_in_this_repo(core):
+    assert core.run("(core) => core.BCWITHQC_VERSION") == bcwithqc_version(), (
+        "bcwithqc's version changed: set BCWITHQC_VERSION in "
+        "gui/barcode_configurator.html to match bcwithqc/__init__.py"
+    )
+
+
+def test_every_download_starts_with_the_bcwithqc_version(core):
+    """D15: the first key records the bcwithqc version the config was made for."""
+    config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
+    text = open_and_export(core, json.dumps(config))["text"]
+    assert text.splitlines()[:2] == [
+        "{",
+        f'    "bcwithqc_version": "{bcwithqc_version()}",',
+    ]
+    empty = core.run("(core) => core.config_to_json(core.new_model())")
+    assert next(iter(json.loads(empty))) == "bcwithqc_version"
+
+
+@pytest.mark.parametrize(
+    ("version", "shown"), [("0.3.0", "0.3.0"), (0.4, "0.4"), (None, "null")]
+)
+def test_an_opened_version_is_reported_and_replaced_by_the_pages_own(
+    core, version, shown
+):
+    config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
+    result = open_and_export(core, json.dumps({"bcwithqc_version": version, **config}))
+    assert result["text"] == canonical_text(config)
+    expected = (
+        f"This file was made for bcwithqc {shown}. The file you download will say "
+        f"{bcwithqc_version()}, the version this page writes for."
+    )
+    assert result["notices"] == [{"level": "info", "text": expected}]
+
+
+def test_a_downloaded_config_reopens_unchanged_and_reports_its_version(core):
+    config = without_names(read_config(EXAMPLES_DIR / "pe_mini_config.json"))
+    first = open_and_export(core, json.dumps(config))
+    assert first["notices"] == [], "a file without bcwithqc_version gets no notice"
+    second = open_and_export(core, first["text"])
+    assert second["text"] == first["text"]
+    expected = (
+        f"This file was made for bcwithqc {bcwithqc_version()}, "
+        "the version this page writes for."
+    )
+    assert second["notices"] == [{"level": "info", "text": expected}]
 
 
 def test_lowercase_sequences_are_written_in_uppercase(core):

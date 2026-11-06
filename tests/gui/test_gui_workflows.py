@@ -595,18 +595,92 @@ def test_name_help_lists_the_rules(app):
     assert app.locator("#help_name").is_hidden()
 
 
-def test_unknown_keys_can_be_kept_or_left_out(app, tmp_path):
+def open_with_extras(app, tmp_path, extras):
+    """Open se_mini with extra top-level keys; return (config, its dialog)."""
     config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
-    config["config_version"] = 2
-    path = tmp_path / "with_extra.json"
-    path.write_text(json.dumps(config, indent=4))
+    path = tmp_path / "with_extras.json"
+    path.write_text(json.dumps({**config, **extras}, indent=4))
+    app.set_input_files("#open_input", str(path))
+    dialog = app.get_by_role("dialog")
+    dialog.get_by_role("button", name="Cancel", exact=True).wait_for()
+    return config, dialog
+
+
+def test_opening_a_file_with_an_unknown_key_asks_whether_to_keep_it(app, tmp_path):
+    config, dialog = open_with_extras(app, tmp_path, {"config_version": 2})
+    assert "Keep the key bcwithqc doesn't use?" in dialog.inner_text()
+    assert '"config_version"' in dialog.inner_text()
+    dialog.get_by_role("button", name="Keep it", exact=True).click()
+    wait_ready(app)
+    keep = app.get_by_label("Keep it in the file", exact=True)
+    assert keep.is_checked()
+    assert download_text(app) == canonical_text({**config, "config_version": 2})
+    keep.uncheck()
+    assert download_text(app) == canonical_text(config)
+
+
+def test_unknown_keys_left_out_on_opening_can_be_kept_later(app, tmp_path):
+    extras = {"config_version": 2, "comment": "plate 3"}
+    config, dialog = open_with_extras(app, tmp_path, extras)
+    assert '"config_version", "comment"' in dialog.inner_text()
+    dialog.get_by_role("button", name="Leave them out", exact=True).click()
+    wait_ready(app)
+    keep = app.get_by_label("Keep them in the file", exact=True)
+    assert not keep.is_checked()
+    assert download_text(app) == canonical_text(config)
+    keep.check()
+    assert download_text(app) == canonical_text({**config, **extras})
+
+
+@pytest.mark.parametrize("how", ["Escape", "Cancel"])
+def test_cancelling_the_unknown_keys_question_opens_nothing(app, tmp_path, how):
+    open_template(app, "SDR-seq RNA")
+    _, dialog = open_with_extras(app, tmp_path, {"config_version": 2})
+    if how == "Escape":
+        app.keyboard.press("Escape")
+    else:
+        dialog.get_by_role("button", name="Cancel", exact=True).click()
+    wait_ready(app)
+    assert dialog.is_hidden()
+    assert download_text(app) == example("cDNA_paired_end_config.json")
+
+
+def test_a_legacy_file_with_an_unknown_key_asks_both_questions_in_turn(app, tmp_path):
+    legacy = read_config(FIXTURES_DIR / "legacy_master_gDNA.json.gz")
+    path = tmp_path / "legacy_with_comment.json"
+    path.write_text(json.dumps({**legacy, "comment": "plate 3"}, indent=4))
+    app.set_input_files("#open_input", str(path))
+    dialog = app.get_by_role("dialog")
+    dialog.get_by_role("button", name="Open", exact=True).click()
+    dialog.get_by_role("button", name="Leave it out", exact=True).click()
+    wait_ready(app)
+    assert not app.get_by_label("Keep it in the file", exact=True).is_checked()
+    assert download_text(app) == example("gDNA_paired_end_config.json")
+
+
+def test_a_downloaded_config_reopens_without_questions(app, tmp_path):
+    open_template(app, "SDR-seq gDNA")
+    path = tmp_path / "gDNA.json"
+    path.write_text(download_text(app))
+    open_template(app, "SDR-seq RNA")
     app.set_input_files("#open_input", str(path))
     wait_ready(app)
-    keep = app.get_by_label("Keep them in the file")
-    assert keep.is_checked()
-    assert json.loads(download_text(app))["config_version"] == 2
-    keep.uncheck()
-    assert "config_version" not in json.loads(download_text(app))
+    assert app.locator("#error_banner").is_hidden()
+    assert "made for bcwithqc" in app.locator("#notices").inner_text()
+    assert download_text(app) == example("gDNA_paired_end_config.json")
+
+
+def test_shortcuts_wait_while_a_question_is_open(app, tmp_path):
+    open_template(app, "SDR-seq gDNA")
+    downloads = []
+    app.on("download", lambda download: downloads.append(download.suggested_filename))
+    _, dialog = open_with_extras(app, tmp_path, {"config_version": 2})
+    app.keyboard.press("ControlOrMeta+s")
+    assert app.locator("#app").get_attribute("data-busy") == "true"
+    dialog.get_by_role("button", name="Keep it", exact=True).click()
+    wait_ready(app)
+    download_text(app)
+    assert downloads == ["with_extras.json"]
 
 
 def test_outputs_without_a_umi_block_say_ub_and_ur_are_not_written(app):
