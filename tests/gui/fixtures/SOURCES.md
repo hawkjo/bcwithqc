@@ -10,6 +10,7 @@ tools. This file records where each fixture came from, by commit.
 | `legacy_master_cDNA.json` | bcwithqc `examples/cDNA.json` at `6b36b7b1ff75d90156b0e4d88dda76c0a56d4299` | Config format from before `single_end_reads` and `keepblock`. Byte-identical to SDRranger `examples/cDNA.json` at `548683d7ac2467f2d65d3b44d4a1756a4d2d47d5`. |
 | `legacy_master_gDNA.json.gz` | bcwithqc `examples/gDNA.json.gz` at `6b36b7b1ff75d90156b0e4d88dda76c0a56d4299` | Same format, gzipped. |
 | `legacy_sdrranger_gDNA.json.gz` | SDRranger (https://github.com/hawkjo/SDRranger) `examples/gDNA.json.gz` at `548683d7ac2467f2d65d3b44d4a1756a4d2d47d5` | Same format; `keep_nonbarcode` is `false` on Read 1, unlike the bcwithqc copy. |
+| `freebarcodes/barcodes9-1.txt`, `freebarcodes/barcodes12-2.txt` | freebarcodes (https://github.com/hawkjo/freebarcodes) `barcodes/` at `2aa1e6f4c2b02d1e7dd99052ff10aea7c575d6d2`, the commit bcwithqc installs | Pre-generated FREE barcode lists, unmodified (no final newline): 554 9-nt barcodes that correct 1 error and 179 12-nt barcodes that correct 2. freebarcodes is under the UT Austin Research License (`LICENSE.pdf` in that repo); these two lists are included for testing only, with the approval of freebarcodes' author. |
 
 ## Files read in place
 

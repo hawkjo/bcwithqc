@@ -1555,7 +1555,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
             } else {
               const bytes = free_table_bytes(good.length, good[0].length);
               if (bytes >= FREE_TABLE_WARNING_BYTES) {
-                add('W04', 'warning', name + ': the FREE decoder\'s table takes ' + format_bytes(bytes) + ', and each bcwithqc process builds its own copy (--threads N means N + 1 copies).', where);
+                add('W04', 'warning', name + ': the FREE decoder\'s table takes ' + format_bytes(bytes) + ' per copy. bcwithqc builds one copy with --threads 1, and N + 1 copies with --threads N of 2 or more. Building each copy can take long: about half an hour at 16 nt.', where);
               }
             }
           } else if (lengths.size > 1) {

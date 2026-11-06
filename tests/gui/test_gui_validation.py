@@ -369,7 +369,15 @@ def free_list_config(length, count):
 )
 def test_large_free_tables_are_w04(core, length, count, fires):
     # 4^14 + 1 bytes is just over 256 MiB; 4^13 + 1 entries of 2 bytes is 128 MiB.
-    assert ("W04" in rules(issues_for(core, free_list_config(length, count)))) is fires
+    issues = issues_for(core, free_list_config(length, count))
+    w04 = [issue["message"] for issue in issues if issue["rule"] == "W04"]
+    assert bool(w04) is fires
+    if fires:
+        # Measured on bcwithqc: --threads 1 builds one table, --threads N >= 2 builds N + 1.
+        (message,) = w04
+        assert "256 MiB per copy" in message
+        assert "one copy with --threads 1" in message
+        assert "N + 1 copies with --threads N of 2 or more" in message
 
 
 def test_hidden_read_2_never_blocks_download(core):

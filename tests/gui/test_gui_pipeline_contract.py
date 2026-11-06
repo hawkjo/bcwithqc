@@ -16,12 +16,14 @@ import itertools
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 
 import pytest
 from gui_support import (
     EXAMPLES_DIR,
+    FIXTURES_DIR,
     SAMPLE_BARCODES,
     SAMPLE_CONSTANT,
     barcode_list,
@@ -80,9 +82,26 @@ def zero_errors(config):
     return exact
 
 
-def simulate(config, folder, env, nreads, seed=1, extra=()):
-    """Simulate error-free reads for a config; return the folder holding only the FASTQs."""
-    config_path = write_json(zero_errors(config), folder / "simulate_config.json")
+def errors_in_lists_only(config):
+    """A copy with maxerrors 0 on every block but the barcode lists, so simulate_reads mutates only the lists."""
+    mutated = copy.deepcopy(config)
+    for key in ("barcode_struct_r1", "barcode_struct_r2"):
+        for block in mutated.get(key, {}).get("blocks", []):
+            if block["blocktype"] != "barcodeList":
+                block["maxerrors"] = 0
+    return mutated
+
+
+def simulate(config, folder, env, nreads, seed=1, extra=(), errors_in_lists=False):
+    """Simulate reads for a config; return the folder holding only the FASTQs.
+
+    The reads are error-free, or, with errors_in_lists, carry exactly maxerrors
+    errors in every barcode list and none elsewhere.
+    """
+    simulation = (
+        errors_in_lists_only(config) if errors_in_lists else zero_errors(config)
+    )
+    config_path = write_json(simulation, folder / "simulate_config.json")
     reads = folder / "reads"
     reads.mkdir()
     result = run_bcwithqc(
@@ -380,6 +399,206 @@ END_TO_END = {
 @pytest.mark.parametrize("name", sorted(END_TO_END))
 def test_bcwithqc_output_matches_the_outputs_panel(core, tmp_path, bcwithqc_env, name):
     run_end_to_end(core, END_TO_END[name](), tmp_path, bcwithqc_env)
+
+
+# ---------------------------------------------------------------------------
+# F2, continued: reads with errors, on designed barcode lists (decision D11)
+
+# Pre-generated lists from freebarcodes, by the number of errors they correct
+# (fixtures/SOURCES.md). Their minimum FREE divergence and Levenshtein
+# distance are both 2e + 1, so at most one barcode lies within e errors of
+# any sequence.
+DESIGNED_LISTS = {1: "barcodes9-1.txt", 2: "barcodes12-2.txt"}
+SECOND_CONSTANT = "GTACTCGCAGTAGTC"
+
+
+def designed_config(errors):
+    """A designed list three times, split by two constant regions, then an 8-nt UMI.
+
+    The first two copies are decoded with Levenshtein and the last with FREE.
+    """
+    barcodes = (
+        (FIXTURES_DIR / "freebarcodes" / DESIGNED_LISTS[errors]).read_text().split()
+    )
+    return make_config(
+        [
+            barcode_list("bc1", barcodes, maxerrors=errors),
+            constant_region("con1"),
+            barcode_list("bc2", barcodes, maxerrors=errors),
+            constant_region("con2", [SECOND_CONSTANT]),
+            barcode_list("bc3", barcodes, maxerrors=errors),
+            random_block("umi", length=8),
+        ]
+    )
+
+
+def list_errors(name, blocks):
+    """(substitutions, deletions, insertions) simulate_reads made in each barcode list, from a read name."""
+    tokens = name.split("_")
+    errors = {}
+    position = 1
+    for block in blocks:
+        if block["blocktype"] == "randomBarcode":
+            position += 1
+            continue
+        counts = re.fullmatch(r"S(\d+)D(\d+)I(\d+)", tokens[position + 1])
+        assert counts is not None, name
+        if block["blocktype"] == "barcodeList":
+            errors[block["blockname"]] = tuple(int(count) for count in counts.groups())
+        position += 2
+    return errors
+
+
+def pieces_by_length(sequence, blocks, values):
+    """Each block's piece of a read whose errors are all substitutions, so every block keeps its length."""
+    pieces = {}
+    start = 0
+    for block in blocks:
+        if block["blocktype"] == "randomBarcode":
+            length = block["length"]
+        else:
+            length = len(values[block["blockname"]])
+        pieces[block["blockname"]] = sequence[start : start + length]
+        start += length
+    return pieces
+
+
+LIST_ERROR_RUNS = {}
+
+
+def designed_run(core, tmp_path_factory, env, errors, substitution_probability):
+    """run_with_list_errors on designed_config(errors), run once and shared by the tests that check it."""
+    key = (errors, substitution_probability)
+    if key not in LIST_ERROR_RUNS:
+        folder = tmp_path_factory.mktemp(
+            f"designed_{errors}_{substitution_probability}"
+        )
+        LIST_ERROR_RUNS[key] = run_with_list_errors(
+            core, designed_config(errors), folder, env, substitution_probability
+        )
+    return LIST_ERROR_RUNS[key]
+
+
+def run_with_list_errors(
+    core, config, folder, env, substitution_probability, nreads=1000
+):
+    """Export a config through the GUI, then run bcwithqc on reads with errors in every barcode list.
+
+    Returns the GUI's description of the outputs, the exported blocks, the
+    simulated reads by index, and the final BAM's records.
+    """
+    exported = gui_export(core, config)
+    assert [issue for issue in exported["issues"] if issue["level"] == "error"] == []
+    gui_config = json.loads(exported["text"])
+    blocks = gui_config["barcode_struct_r1"]["blocks"]
+    assert core.call("decoder_for_each_list", blocks) == [
+        "Levenshtein",
+        None,
+        "Levenshtein",
+        None,
+        "FREE",
+        None,
+    ]
+    reads = simulate(
+        gui_config,
+        folder,
+        env,
+        nreads,
+        extra=(f"--substitution-probability={substitution_probability}",),
+        errors_in_lists=True,
+    )
+    (path,) = fastq_files(reads)
+    simulated = {
+        name.split("_")[0]: (name, sequence) for name, sequence in read_fastq(path)
+    }
+    output, result = preprocess(exported["text"], folder, reads, env)
+    assert result.returncode == 0, result.stderr[-3000:]
+    result = count(folder, output, env)
+    assert result.returncode == 0, result.stderr[-3000:]
+    records = bam_tags(output / "with_bc_umi.sorted.bam")
+    return exported["outputs"], blocks, simulated, records
+
+
+@pytest.mark.parametrize("errors", sorted(DESIGNED_LISTS))
+def test_designed_lists_decode_every_read_with_substituted_barcodes(
+    core, tmp_path_factory, bcwithqc_env, errors
+):
+    """maxerrors substitutions in every barcode cost no read, and CB, CR and FL stay exact.
+
+    Substitutions keep each block's length, so bcwithqc cuts the read where it
+    was built, and a designed list leaves one barcode within reach. UR is
+    checked by the next test.
+    """
+    outputs, blocks, simulated, records = designed_run(
+        core, tmp_path_factory, bcwithqc_env, errors, substitution_probability=1
+    )
+    indexes = sorted(name.split("_")[0] for name, _ in records)
+    assert indexes == sorted(simulated), "every read reaches the BAM, once"
+    for name, tags in records:
+        read_name, sequence = simulated[name.split("_")[0]]
+        assert set(list_errors(read_name, blocks).values()) == {(errors, 0, 0)}
+        values, _ = truth(read_name, blocks)
+        want = expected_tags(outputs, {0: values})
+        del want["UR"]
+        raw = pieces_by_length(sequence, blocks, values)
+        want["CR"] = expected_tags(outputs, {0: raw})["CR"]
+        assert want["CR"] != want["CB"], read_name
+        assert {tag: tags.get(tag) for tag in want} == want, read_name
+        assert ("UB" in tags) is outputs["UB"]["written"], read_name
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="a substitution in a barcode's last bases can be realigned as an indel, moving the UMI by a base (notes #boundary-ambiguity)",
+)
+@pytest.mark.parametrize("errors", sorted(DESIGNED_LISTS))
+def test_umi_after_a_substituted_barcode_keeps_its_bases(
+    core, tmp_path_factory, bcwithqc_env, errors
+):
+    outputs, blocks, simulated, records = designed_run(
+        core, tmp_path_factory, bcwithqc_env, errors, substitution_probability=1
+    )
+    shifted = []
+    for name, tags in records:
+        read_name, _ = simulated[name.split("_")[0]]
+        values, _ = truth(read_name, blocks)
+        if tags.get("UR") != expected_tags(outputs, {0: values})["UR"]:
+            shifted.append(read_name)
+    assert shifted == [], (
+        f"{len(shifted)} of {len(records)} UMIs moved, such as {shifted[:3]}"
+    )
+
+
+def test_designed_lists_never_decode_a_wrong_barcode(core, tmp_path, bcwithqc_env):
+    """One error of any kind in every barcode never gives a wrong CB.
+
+    Every read with substitutions only must decode. A read with an insertion
+    or a deletion may be lost when the aligner gives a base to the
+    neighbouring block (notes #boundary-ambiguity). Two errors per list are
+    tested with substitutions only: with indels, simulate_reads fails (notes
+    #other-crashes).
+    """
+    outputs, blocks, simulated, records = run_with_list_errors(
+        core, designed_config(1), tmp_path, bcwithqc_env, substitution_probability=0.7
+    )
+    decoded = set()
+    for name, tags in records:
+        index = name.split("_")[0]
+        read_name, _ = simulated[index]
+        values, _ = truth(read_name, blocks)
+        assert tags["CB"] == expected_tags(outputs, {0: values})["CB"], read_name
+        decoded.add(index)
+    substitutions_only = {
+        index
+        for index, (read_name, _) in simulated.items()
+        if set(list_errors(read_name, blocks).values()) == {(1, 0, 0)}
+    }
+    with_indels = set(simulated) - substitutions_only
+    assert substitutions_only, "the run has reads with substitutions only"
+    assert substitutions_only <= decoded
+    assert with_indels & decoded, (
+        "some reads with indels decode, so the CB check covers them"
+    )
 
 
 # ---------------------------------------------------------------------------
