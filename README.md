@@ -56,6 +56,10 @@ Commands:
 ```
 The barcode details are input via a json configuration file, of which standard gDNA and RNA versions can be found in the `examples` folder. [`doc/config_format.md`](doc/config_format.md) describes every config key, its default and its meaning.
 
+### Config builder
+
+[Open the config builder](https://hawkjo.github.io/bcwithqc/gui/barcode_configurator.html) to build, check and download a config in your browser. It also opens configs from older bcwithqc versions, SDRranger and barcodinggui, and converts them. The page is a single file, [`gui/barcode_configurator.html`](gui/barcode_configurator.html), that also works offline; nothing you enter leaves your computer.
+
 Alignment is done by the user between `preprocess` and `count` (see Basic Workflow).
 
 ## Example Workflow
