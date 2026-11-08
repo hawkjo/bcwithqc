@@ -253,3 +253,153 @@ def layout_blocks(layout):
         else:
             blocks.append(random_block(name))
     return blocks
+
+
+# ---------------------------------------------------------------------------
+# Acting like a user, for the UI tests. The page calls blocks "regions".
+
+READY = "document.getElementById('app').dataset.busy === 'false'"
+SIMPLE_EXAMPLE = "Simple example: barcode, linker, UMI"
+ADD_BUTTONS = {
+    "Barcode list": "#add_list_button",
+    "Constant region": "#add_constant_button",
+    "Random (UMI)": "#add_random_button",
+}
+
+
+def wait_ready(app):
+    """Wait until the page reports it is idle (data-busy="false")."""
+    app.wait_for_function(READY)
+
+
+def click_button(app, name):
+    """Click the button with exactly this accessible name."""
+    app.get_by_role("button", name=name, exact=True).click()
+
+
+def add_region(app, kind):
+    """Add a region ("Barcode list", "Constant region" or "Random (UMI)") after the selected one."""
+    app.click(ADD_BUTTONS[kind])
+
+
+def select_region(app, name):
+    """Select a region in the read diagram by its name."""
+    app.get_by_role("button", name=f"Region {name}", exact=True).click()
+
+
+def fill(app, label, value):
+    """Fill the field with exactly this label."""
+    app.get_by_label(label, exact=True).fill(str(value))
+
+
+def type_sequence(app, sequence):
+    """Type one sequence into the selected list's add box and press Enter."""
+    box = app.get_by_label("Add a sequence", exact=True)
+    box.fill(sequence)
+    box.press("Enter")
+
+
+def paste_sequences(app, text):
+    """Paste text into the selected list's add box, as the browser delivers a paste.
+
+    A synthetic paste event carries the text, so this works in every engine
+    without clipboard permissions. Synthetic events never insert text
+    themselves, so a paste the page lets through leaves the box unchanged.
+
+    Returns:
+        True when the page took the paste as a list (it prevented the
+        browser's own paste), False when it let a single value through.
+    """
+    prevented = app.get_by_label("Add a sequence", exact=True).evaluate(
+        """(box, text) => {
+            const event = new Event('paste', { bubbles: true, cancelable: true });
+            Object.defineProperty(event, 'clipboardData', {
+                value: { getData: (type) => (type === 'text/plain' || type === 'text' ? text : '') },
+            });
+            box.dispatchEvent(event);
+            return event.defaultPrevented;
+        }""",
+        text,
+    )
+    wait_ready(app)
+    return prevented
+
+
+def set_order(app, order):
+    """Set the selected list's order: "A→Z" or "As entered"."""
+    app.get_by_role("group", name="Order").get_by_role(
+        "button", name=order, exact=True
+    ).click()
+
+
+def show_read(app, number):
+    """Show Read 1 or Read 2 (paired-end only)."""
+    app.get_by_role(
+        "tab", name=f"Read {number} · {'first' if number == 1 else 'second'} file"
+    ).click()
+
+
+def set_rest_in_output_reads(app, choice):
+    """Set the rest of the shown read to "Keep" or "Leave out" in the output reads (a read without regions can't be left out)."""
+    app.locator("#rest_switch").get_by_role("button", name=choice, exact=True).click()
+
+
+def set_region_in_output_reads(app, choice):
+    """Set the selected region to "Keep" or "Leave out" in the output reads."""
+    app.locator("#region_switch").get_by_role("button", name=choice, exact=True).click()
+
+
+def answer_replace(app, asks):
+    """Answer "Replace" to the replace question if it is expected (the page wasn't the welcome panel)."""
+    if asks:
+        app.get_by_role("dialog").get_by_role(
+            "button", name="Replace", exact=True
+        ).click()
+
+
+def on_welcome(app):
+    """True while the page shows the welcome panel."""
+    return app.locator("#welcome").count() == 1
+
+
+def open_template(app, title):
+    """Open a template from the Templates menu, replacing what the page holds."""
+    asks = not on_welcome(app)
+    app.click("#templates_button")
+    app.get_by_role("menuitem", name=title, exact=True).click()
+    answer_replace(app, asks)
+    wait_ready(app)
+
+
+def open_config(app, path):
+    """Choose a config file with Open…, answering the replace question if it comes.
+
+    Questions that follow (older format, unknown keys) are left to the caller.
+    """
+    asks = not on_welcome(app)
+    app.set_input_files("#open_input", str(path))
+    answer_replace(app, asks)
+
+
+def download_text(app, gzipped=False):
+    """Download the config (.json, or .json.gz unzipped) and return its text."""
+    with app.expect_download() as info:
+        if gzipped:
+            app.click("#download_menu_button")
+            app.click("#download_gz_button")
+        else:
+            app.click("#download_button")
+    data = Path(info.value.path()).read_bytes()
+    return gzip.decompress(data).decode("ascii") if gzipped else data.decode("ascii")
+
+
+def rule_ids(app):
+    """The rule ids listed under Checks, in order."""
+    return app.locator("#checks .issue").evaluate_all(
+        "(items) => items.map((item) => item.dataset.rule)"
+    )
+
+
+def table_sequences(app):
+    """The sequences shown in the selected list's table, top to bottom."""
+    return app.locator("table.seqs td.seq").all_inner_texts()

@@ -43,7 +43,7 @@ STAMP_TOKEN = re.compile(r"^[A-Za-z0-9._+!-]+$")
 TEMPLATE_SOURCES = [
     ("sdr_seq_rna", "SDR-seq RNA", "examples/cDNA_paired_end_config.json"),
     ("sdr_seq_gdna", "SDR-seq gDNA", "examples/gDNA_paired_end_config.json"),
-    ("design_doc", "Design-doc example", "doc/config_format.md"),
+    ("simple_example", "Simple example: barcode, linker, UMI", "doc/config_format.md"),
 ]
 SHARED_LIST_MIN_LENGTH = 100
 DATA_BLOCK = re.compile(

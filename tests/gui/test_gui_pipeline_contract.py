@@ -274,7 +274,7 @@ def run_end_to_end(core, config, folder, env, nreads=400):
 
     output, result = preprocess(exported["text"], folder, reads, env)
     assert result.returncode == 0, result.stderr[-3000:]
-    for file_info in outputs["alignment_files"]:
+    for file_info in outputs["output_reads"]:
         if file_info["kind"] == "none":
             continue  # bcwithqc still writes empty records (notes #empty-alignment-files)
         suffix = f"_{file_info['read'] + 1}.fq" if len(read_keys) == 2 else ".fq"
@@ -889,12 +889,30 @@ def test_read_that_keeps_nothing_gets_no_alignment_file(core, tmp_path, bcwithqc
         [],
     )
     exported = gui_export(core, config)
-    assert exported["outputs"]["alignment_files"][0]["kind"] == "none"
+    assert exported["outputs"]["output_reads"][0]["kind"] == "none"
     reads = simulate(json.loads(exported["text"]), tmp_path, bcwithqc_env, nreads=100)
     output, result = preprocess(exported["text"], tmp_path, reads, bcwithqc_env)
     assert result.returncode == 0, result.stderr[-2000:]
     first_prefix = fastq_files(reads)[0].name.removesuffix(".txt.gz")
     assert not (output / f"sans_bc_{first_prefix}.fq").exists()
+
+
+def test_read_without_regions_is_always_written_whole(core, tmp_path, bcwithqc_env):
+    """A read without regions is always output whole (V03), as bcwithqc writes it.
+
+    The opened file says to leave Read 2 out; the page writes it as output,
+    and every Read 2 record bcwithqc writes is the whole simulated read.
+    """
+    config = make_config(
+        [barcode_list("cb1"), constant_region("con1"), random_block("umi", length=6)],
+        [],
+        keep_r1=True,
+        keep_r2=False,
+    )
+    exported = gui_export(core, config)
+    assert json.loads(exported["text"])["barcode_struct_r2"]["keep_nonbarcode"] is True
+    assert exported["outputs"]["output_reads"][1]["kind"] == "whole"
+    run_end_to_end(core, config, tmp_path, bcwithqc_env)
 
 
 # ---------------------------------------------------------------------------

@@ -24,6 +24,36 @@ newline, in ASCII. Its first key, `generated_with`, records the name and
 version of the tool the page writes for, as `pyproject.toml` gives them;
 bcwithqc's own keys follow in bcwithqc's order.
 
+## Wording
+
+Everything the page shows calls bcwithqc's blocks *regions*. The config keeps
+bcwithqc's keys (`blocks`, `blockname`, `keepblock`), and the code may say
+block. The keep/drop switch says what changes in the reads bcwithqc writes,
+"In output reads: Keep | Leave out", and doesn't name a next step: the output
+reads may be aligned, pseudoaligned or counted. A region that is left out is
+still written as its tag (CB, UR, …). The Outputs panel lists the output reads
+under "Output reads".
+The switch for what follows the regions always says "Rest of Read N", also
+while a read has no regions. A read without regions is always kept whole,
+so its "Leave out" is disabled.
+Text doesn't assume the data exists yet: users may be planning an experiment.
+Steps not done yet (no read layout, no regions, an empty list) are *to do*
+items. They block the download like errors, but are not shown as mistakes.
+
+In a question, Return presses the filled button. When the focus starts on a
+button, that button is the filled one, and its focus ring always shows. Where
+a question can replace or delete work, the filled button is Cancel. In a
+question that starts on a choice (single- or paired-end, which column), the
+focus is on the choice, and Return presses the filled button once a choice is
+made.
+
+## Browsers
+
+The page needs Chrome or Edge 86+, Firefox 113+ or Safari 16.4+ (gzip
+streams, `<dialog>` and `replaceChildren`); `missing_features()` names what an
+older browser lacks in a banner. Colours mixed with `color-mix()` have plain
+fallbacks in an `@supports not` block for Chrome and Edge before 111.
+
 ## Running the tests
 
 ```
@@ -75,9 +105,11 @@ with the new `xlsx.full.min.js`, unmodified, and update the size, sha256 and
 version that `tests/gui/test_gui_spreadsheets.py` pins.
 
 **Temporary warnings.** Some warnings describe what current bcwithqc can't
-handle. They are listed in `TEMPORARY_WARNINGS` in the core script, each with
-the bcwithqc function involved, its item in the project's future-work notes,
-and the tier F test that reproduces the limitation. That test is marked
+handle, and some notes in the Outputs panel say where current bcwithqc writes
+something else. They are listed in `TEMPORARY_WARNINGS` and
+`TEMPORARY_OUTPUT_NOTES` in the core script, each with the bcwithqc function
+involved, its item in the project's future-work notes, and the tier F test that
+reproduces the limitation. That test is marked
 `xfail(strict=True)`, so once bcwithqc is fixed it passes unexpectedly and
 fails the run. Then delete the warning, its registry entry and its test
 together. Messages shown to users name neither notes items nor line numbers.

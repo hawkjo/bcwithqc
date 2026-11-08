@@ -1,7 +1,9 @@
 """Tier D: validation rules.
 
 Each rule must fire exactly at its boundary, and bcwithqc's real configs must
-pass with no errors and no warnings. Rule ids follow plan §08.
+pass with no errors and no warnings. Rule ids follow plan §08. Steps not
+done yet (no read layout, no regions, an empty list or constant region) are
+to-dos rather than errors, and messages call bcwithqc's blocks "regions".
 """
 
 import ast
@@ -20,6 +22,15 @@ from gui_support import (
 )
 
 VALIDATE = "(core, arg) => core.validate_config(core.config_from_json(arg.config, arg.options || {}).model)"
+VALIDATE_WITH_IDS = """(core, arg) => {
+    const model = core.config_from_json(arg).model;
+    return {
+        issues: core.validate_config(model),
+        block_ids: model.reads.map((read) => read.blocks.map((block) => block.id)),
+    };
+}"""
+# Barcodes of 9, 8 and 9 nt: entry 1 is the one whose length differs.
+MIXED_LENGTHS = ["CCTTAACAT", "AGCGTAGA", "TATAGGTGT"]
 
 
 def issues_for(core, config, **options):
@@ -53,9 +64,35 @@ def test_real_configs_have_no_errors_and_no_warnings(core, name, path):
 
 
 def test_new_model_needs_a_mode_and_a_block(core):
+    """A fresh page has nothing wrong yet: both of its steps are to-dos, not errors."""
     issues = core.run("(core) => core.validate_config(core.new_model())")
     assert rules(issues) == ["E01", "E14"]
-    assert all(issue["level"] == "error" for issue in issues)
+    assert {issue["rule"]: (issue["level"], issue["message"]) for issue in issues} == {
+        "E01": ("todo", "Choose paired-end or single-end reads."),
+        "E14": ("todo", "Add at least one region to Read 1 or Read 2."),
+    }
+
+
+@pytest.mark.parametrize(
+    ("config", "message"),
+    [
+        (make_config([]), "Add at least one region to Read 1."),
+        (make_config([], []), "Add at least one region to Read 1 or Read 2."),
+        # A single-end config doesn't write Read 2, so its regions don't count.
+        (
+            make_config(
+                [], [barcode_list("bc1"), constant_region("con1")], single_end=True
+            ),
+            "Add at least one region to Read 1.",
+        ),
+    ],
+    ids=["single_end", "paired_end", "single_end_with_regions_on_hidden_read_2"],
+)
+def test_e14_is_a_to_do_naming_the_reads_the_file_holds(core, config, message):
+    issues = issues_for(core, config)
+    assert [(issue["rule"], issue["level"], issue["message"]) for issue in issues] == [
+        ("E14", "todo", message)
+    ]
 
 
 def test_one_block_anywhere_satisfies_e14(core):
@@ -66,7 +103,6 @@ def test_one_block_anywhere_satisfies_e14(core):
 @pytest.mark.parametrize(
     ("sequences", "expected_rule", "text"),
     [
-        ([], "E03", "cb1 has no sequences"),
         (["CCTTAACAT", ""], "E03", "an entry is empty"),
         (["CCTTAACAT", "CCTTANCAT"], "E03", 'contains "N"'),
         (["CCTTAACAT", "CCTTAACAT" + chr(0x200B)], "E03", "an invisible U+200B"),
@@ -80,6 +116,35 @@ def test_sequence_rules(core, sequences, expected_rule, text):
     matching = [issue for issue in issues if issue["rule"] == expected_rule]
     assert len(matching) == 1
     assert text in matching[0]["message"]
+    # A bad entry is a mistake to fix, not a step still to do.
+    assert matching[0]["level"] == "error"
+
+
+@pytest.mark.parametrize(
+    ("blocks", "empty_index", "message"),
+    [
+        (
+            [barcode_list("cb1", []), constant_region("con1")],
+            0,
+            "Add barcodes to cb1.",
+        ),
+        (
+            [barcode_list("cb1"), constant_region("con1", [])],
+            1,
+            "Add the sequence of con1.",
+        ),
+    ],
+    ids=["barcode_list", "constant_region"],
+)
+def test_empty_list_or_constant_region_is_a_to_do(core, blocks, empty_index, message):
+    """The to-do points at the empty region, so the diagram can mark that region."""
+    result = core.run(VALIDATE_WITH_IDS, make_config(blocks))
+    assert [
+        (issue["rule"], issue["level"], issue["message"]) for issue in result["issues"]
+    ] == [("E03", "todo", message)]
+    (issue,) = result["issues"]
+    assert issue["read"] == 0
+    assert issue["block_id"] == result["block_ids"][0][empty_index]
 
 
 def test_duplicate_message_selects_both_rows(core):
@@ -106,6 +171,38 @@ def test_free_list_with_mixed_lengths_is_e05_and_levenshtein_list_is_w10(core):
         core, make_config([barcode_list("cb1", mixed), constant_region("con1")])
     )
     assert "W10" in rules(levenshtein) and "E05" not in rules(levenshtein)
+
+
+@pytest.mark.parametrize(
+    "blocks",
+    [
+        [constant_region("con1"), barcode_list("cb1", MIXED_LENGTHS)],
+        [
+            constant_region("con1"),
+            barcode_list("cb1", MIXED_LENGTHS),
+            random_block("umi1"),
+        ],
+    ],
+    ids=["last_region", "followed_by_a_random_region"],
+)
+def test_e05_says_how_to_fix_a_free_list_of_mixed_lengths(core, blocks):
+    """E05 names both fixes: a constant region right after the list, or one length."""
+    (e05,) = [
+        issue
+        for issue in issues_for(core, make_config(blocks))
+        if issue["rule"] == "E05"
+    ]
+    prefix = "cb1 has barcodes of different lengths ("
+    suffix = (
+        "). A list like that needs a constant region right after it, to its right."
+        " Add a constant region after cb1, or give all its barcodes the same length."
+    )
+    assert e05["level"] == "error"
+    assert e05["message"].startswith(prefix)
+    assert e05["message"].endswith(suffix)
+    length_summary = e05["message"][len(prefix) : -len(suffix)]
+    assert "9 nt" in length_summary and "8 nt" in length_summary
+    assert e05["rows"] == [1]
 
 
 @pytest.mark.parametrize(
@@ -159,6 +256,64 @@ def test_block_name_rule_e08(core, names):
 def test_valid_block_names_pass_e08(core):
     config = make_config([barcode_list("cb.1-a_B"), random_block("x" * 64)])
     assert "E08" not in rules(issues_for(core, config))
+
+
+@pytest.mark.parametrize(
+    ("config", "messages"),
+    [
+        (
+            make_config([barcode_list(""), random_block("umi1")]),
+            ["Read 1, region 1, needs a name."],
+        ),
+        (
+            make_config(
+                [barcode_list("cb1"), constant_region("con1")],
+                [random_block("umi2"), barcode_list("")],
+            ),
+            ["Read 2, region 2, needs a name."],
+        ),
+        (
+            make_config([barcode_list("cell barcode"), random_block("umi1")]),
+            [
+                'cell barcode: region names may use only letters, digits, "_", "." and "-", up to 64 characters.'
+            ],
+        ),
+        (
+            make_config([barcode_list("CB1"), random_block("cb1")]),
+            [
+                "CB1 and cb1: two regions in Read 1 can't share a name, even in different case."
+            ],
+        ),
+        (
+            make_config(
+                [barcode_list("cb1"), constant_region("con1")],
+                [barcode_list("bc2"), random_block("BC2")],
+            ),
+            [
+                "bc2 and BC2: two regions in Read 2 can't share a name, even in different case."
+            ],
+        ),
+        # Names must differ within a read only, so both reads may use cb1.
+        (
+            make_config(
+                [barcode_list("cb1"), constant_region("con1")],
+                [barcode_list("cb1"), constant_region("con2")],
+            ),
+            [],
+        ),
+    ],
+    ids=[
+        "no_name_read_1",
+        "no_name_read_2",
+        "bad_characters",
+        "clash_read_1",
+        "clash_read_2",
+        "same_name_on_both_reads",
+    ],
+)
+def test_e08_messages_speak_of_regions(core, config, messages):
+    issues = issues_for(core, config)
+    assert [issue["message"] for issue in issues if issue["rule"] == "E08"] == messages
 
 
 @pytest.mark.parametrize(
@@ -337,6 +492,53 @@ def test_config_without_a_barcode_block_is_w07(core):
     assert "W07" in rules(issues_for(core, config))
 
 
+@pytest.mark.parametrize(
+    ("config", "rule", "message"),
+    [
+        (
+            make_config([barcode_list("cb1")]),
+            "W11",
+            "Read 1 has a single region. Current bcwithqc crashes on a read with only one region.",
+        ),
+        (
+            make_config(
+                [barcode_list("cb1"), constant_region("con1")], [random_block("umi2")]
+            ),
+            "W11",
+            "Read 2 has a single region. Current bcwithqc crashes on a read with only one region.",
+        ),
+        (
+            make_config([], [barcode_list("bc1"), constant_region("con1")]),
+            "W12",
+            "Read 1 has no regions but Read 2 does. Current bcwithqc crashes on this.",
+        ),
+        (
+            make_config([constant_region("con1"), random_block("umi1")]),
+            "W07",
+            "No region is a barcode, so CB will be empty.",
+        ),
+        (
+            make_config(
+                [barcode_list("cb1"), random_block("rnd1", function="barcode")]
+            ),
+            "W06",
+            "rnd1 is a random region set to barcode, so its bases go into CB without error correction.",
+        ),
+        (
+            make_config(
+                [dict(barcode_list("cb1"), linkgroup=3), constant_region("con1")]
+            ),
+            "E12",
+            "cb1 is the only region in its link group. Link it with another region or remove the link.",
+        ),
+    ],
+    ids=["w11_read_1", "w11_read_2", "w12", "w07", "w06", "e12"],
+)
+def test_messages_about_regions_say_region(core, config, rule, message):
+    issues = issues_for(core, config)
+    assert [issue["message"] for issue in issues if issue["rule"] == rule] == [message]
+
+
 @pytest.mark.parametrize(("variants", "fires"), [(4, False), (8, False), (9, True)])
 def test_more_than_64_linker_combinations_is_w09(core, variants, fires):
     constants = [
@@ -398,6 +600,14 @@ def test_hidden_read_2_never_blocks_download(core):
 def test_every_temporary_warning_is_flagged_temporary(core):
     registry = core.run("(core) => core.TEMPORARY_WARNINGS")
     assert sorted(registry) == ["W01", "W05", "W08", "W11", "W12", "W14"]
+    for entry in registry.values():
+        assert set(entry) == {"bcwithqc", "notes", "tier_f"}
+
+
+def test_temporary_output_notes_are_the_ur_and_empty_file_notes(core):
+    """A read without regions is always kept whole, so it needs no note of its own."""
+    registry = core.run("(core) => core.TEMPORARY_OUTPUT_NOTES")
+    assert sorted(registry) == ["empty_alignment_file", "ur_without_umi"]
     for entry in registry.values():
         assert set(entry) == {"bcwithqc", "notes", "tier_f"}
 
@@ -471,3 +681,171 @@ def test_w14_fires_on_lists_bcwithqc_decodes_with_levenshtein(
     if fires:
         assert w14[0]["temporary"] is True
         assert "farthest" in w14[0]["message"]
+
+
+# Every rule in plan §08.
+ALL_RULES = [
+    "E01",
+    "E03",
+    "E04",
+    "E05",
+    "E06",
+    "E07",
+    "E08",
+    "E11",
+    "E12",
+    "E14",
+    "W01",
+    "W02",
+    "W04",
+    "W05",
+    "W06",
+    "W07",
+    "W08",
+    "W09",
+    "W10",
+    "W11",
+    "W12",
+    "W14",
+]
+
+
+def configs_that_trigger_every_rule() -> list[dict]:
+    """Return small configs that together trigger every rule, in each of its wordings.
+
+    No region name contains "block", so a message can only say it in its own
+    words.
+    """
+    list_and_constant = [barcode_list("cb1"), constant_region("con1")]
+
+    def with_list_setting(**setting):
+        """Return a single-end config of list cb1, with these settings, then con1."""
+        return make_config(
+            [dict(barcode_list("cb1"), **setting), constant_region("con1")]
+        )
+
+    nine_variants_each = [
+        constant_region(f"con{i}", ["ACGTACGT" + "A" * k for k in range(9)])
+        for i in (1, 2)
+    ]
+    return [
+        # E01 and E14, in its paired-end and single-end wordings.
+        dict(make_config([], []), single_end_reads=None),
+        make_config([]),
+        # E11 on the layout, the orientation, the rest of a read and each region setting.
+        dict(make_config(list_and_constant), single_end_reads="yes"),
+        dict(make_config(list_and_constant), unknown_read_orientation="no"),
+        make_config(list_and_constant, keep_r1="yes"),
+        with_list_setting(blocktype="fancyBarcode"),
+        with_list_setting(blockfunction="index"),
+        with_list_setting(keepblock="yes"),
+        with_list_setting(linkgroup=1.5),
+        with_list_setting(maxerrors="1"),
+        with_list_setting(sequence="CCTTAACAT"),
+        with_list_setting(sequence=["CCTTAACAT", 5]),
+        make_config([barcode_list("cb1"), dict(random_block("umi1"), length="8")]),
+        # E08: no name, characters outside the allowed set, a clash.
+        make_config([barcode_list(""), random_block("umi1")]),
+        make_config([barcode_list("cell barcode"), random_block("umi1")]),
+        make_config([barcode_list("CB1"), random_block("cb1")]),
+        # E03: an empty list and constant region, an empty entry, bad characters.
+        make_config([barcode_list("cb1", []), constant_region("con1", [])]),
+        with_list_setting(sequence=["CCTTAACAT", ""]),
+        with_list_setting(
+            sequence=["CCTTAACAT", "CCTTANCAT", "CCTTAACAT" + chr(0x200B)]
+        ),
+        # E04
+        with_list_setting(sequence=["CCTTAACAT", "AGCGTAGAA", "CCTTAACAT"]),
+        # E05 (decoded with FREE) and W10 (Levenshtein) for mixed lengths.
+        make_config([constant_region("con1"), barcode_list("cb1", MIXED_LENGTHS)]),
+        make_config([barcode_list("cb1", MIXED_LENGTHS), constant_region("con1")]),
+        # E06 on a list and on a random region; E07.
+        with_list_setting(maxerrors=5),
+        make_config([barcode_list("cb1"), random_block("umi1", maxerrors=5)]),
+        make_config([barcode_list("cb1"), random_block("umi1", length=0)]),
+        # E12
+        with_list_setting(linkgroup=3),
+        # W01 on lists and on constant regions.
+        make_config(
+            [
+                barcode_list("cb1", function="discard"),
+                constant_region("con1"),
+                barcode_list("cb2"),
+            ]
+        ),
+        make_config(
+            [
+                constant_region("con1", function="discard"),
+                barcode_list("cb1"),
+                constant_region("con2"),
+            ]
+        ),
+        # W02 on a list and on a constant region.
+        with_list_setting(blockfunction="UMI"),
+        make_config([barcode_list("cb1"), constant_region("con1", function="UMI")]),
+        # W04
+        free_list_config(14, 4),
+        # W05 with and without a constant region.
+        make_config(list_and_constant, [], orientation=True),
+        make_config(
+            [barcode_list("cb1"), random_block("umi1")],
+            [random_block("umi2"), barcode_list("cb2")],
+            orientation=True,
+        ),
+        # W06, W07, W08
+        make_config([barcode_list("cb1"), random_block("rnd1", function="barcode")]),
+        make_config([constant_region("con1"), random_block("umi1")]),
+        make_config([barcode_list("cb1"), random_block("umi1")], []),
+        # W09
+        make_config([barcode_list("cb1"), *nine_variants_each]),
+        # W11, W12
+        make_config([barcode_list("cb1")]),
+        make_config([], list_and_constant),
+        # W14
+        with_list_setting(maxerrors=2),
+    ]
+
+
+def issues_from_every_kind_of_config(core) -> list[dict]:
+    """Return the issues of the examples, the legacy fixtures and configs_that_trigger_every_rule().
+
+    Each real config is opened both ways a legacy file can open: as
+    paired-end and as single-end.
+    """
+    issues = []
+    for _, path in REAL_CONFIG_TEXTS:
+        for legacy_mode in ("paired", "single"):
+            issues += issues_for(core, read_bytes_text(path), legacy_mode=legacy_mode)
+    for config in configs_that_trigger_every_rule():
+        issues += issues_for(core, config)
+    return issues
+
+
+def test_no_message_says_block(core):
+    """Messages call bcwithqc's blocks "regions"; "block" stays only in the config's keys."""
+    issues = issues_from_every_kind_of_config(core)
+    assert sorted({issue["rule"] for issue in issues}) == ALL_RULES
+    assert [
+        issue["message"] for issue in issues if "block" in issue["message"].lower()
+    ] == []
+
+
+def test_only_steps_not_done_yet_are_to_dos(core):
+    """E01, E14 and E03 for an empty list or constant region are to-dos.
+
+    Every other E rule is an error and every W rule a warning. The to-do
+    E03 messages are the ones that ask to add something.
+    """
+    issues = issues_from_every_kind_of_config(core)
+    for issue in issues:
+        if issue["rule"].startswith("W"):
+            expected = "warning"
+        elif issue["rule"] in ("E01", "E14") or (
+            issue["rule"] == "E03" and issue["message"].startswith("Add ")
+        ):
+            expected = "todo"
+        else:
+            expected = "error"
+        assert issue["level"] == expected, issue
+    to_do_rules = {issue["rule"] for issue in issues if issue["level"] == "todo"}
+    assert sorted(to_do_rules) == ["E01", "E03", "E14"]
