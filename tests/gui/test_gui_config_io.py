@@ -10,6 +10,8 @@ import copy
 import gzip
 import importlib.util
 import json
+import re
+from pathlib import Path
 
 import pytest
 from gui_support import (
@@ -18,11 +20,18 @@ from gui_support import (
     GUI_PATH,
     OLD_GUI_BARCODES,
     OLD_GUI_SAMPLE_BARCODES,
+    READ_KEYS,
     REPO_ROOT,
+    SAMPLE_BARCODES,
+    barcode_list,
     canonical_text,
+    constant_region,
     design_doc_example,
     example_config_names,
     generated_with,
+    make_config,
+    old_gui_config,
+    random_block,
     read_bytes_text,
     read_config,
     with_sorted_lists,
@@ -138,16 +147,337 @@ def test_legacy_orientation_true_is_turned_off_with_a_notice(core):
     assert any("Orientation was on" in notice["text"] for notice in result["notices"])
 
 
-def test_legacy_barcode_read_that_keeps_nothing_gets_the_alignment_notice(core):
+def test_legacy_barcode_read_that_keeps_nothing_gets_the_keeps_nothing_notice(core):
     result = open_and_export(
         core,
         read_bytes_text(FIXTURES_DIR / "legacy_sdrranger_gDNA.json.gz"),
         legacy_mode="paired",
     )
     assert any(
-        "align only the other read's file" in notice["text"]
+        "use only the other read's file" in notice["text"]
         for notice in result["notices"]
     )
+
+
+LEGACY_FIXTURES = (
+    "legacy_master_cDNA.json",
+    "legacy_master_gDNA.json.gz",
+    "legacy_sdrranger_gDNA.json.gz",
+)
+
+
+def without_key(block: dict, key: str) -> dict:
+    """Return a copy of a block without one of its keys."""
+    return {name: value for name, value in block.items() if name != key}
+
+
+def as_legacy(config: dict) -> dict:
+    """Return a copy of a config without "single_end_reads", as older tools wrote it."""
+    return without_key(config, "single_end_reads")
+
+
+def config_text(source) -> str:
+    """Return the text of a config file (a Path) or of a config built here (a dict)."""
+    return read_bytes_text(source) if isinstance(source, Path) else json.dumps(source)
+
+
+# (file or config, a notice it must get on opening), with the page's wording.
+OPENING_NOTICES = [
+    (
+        FIXTURES_DIR / "legacy_master_gDNA.json.gz",
+        "This config is in an older format with no Read 2. It opens as paired-end with the barcodes on Read 1, and all of Read 2 is kept in the output reads, as the old pipeline did.",
+    ),
+    (
+        FIXTURES_DIR / "legacy_master_cDNA.json",
+        '"In output reads" was not set in this file, so every region is "Leave out".',
+    ),
+    (
+        FIXTURES_DIR / "legacy_sdrranger_gDNA.json.gz",
+        "This config keeps nothing from Read 1, the barcode read, in the output reads. As with the old pipeline, use only the other read's file.",
+    ),
+    (
+        make_config(
+            [without_key(barcode_list("unused"), "blockname"), constant_region("con1")]
+        ),
+        "A region without a name was named bc1.",
+    ),
+    (
+        as_legacy(
+            make_config([barcode_list("cell barcode"), constant_region("con1")], [])
+        ),
+        'Spaces in region names became "_": cell barcode → cell_barcode.',
+    ),
+    (
+        make_config([barcode_list("cb1"), "not a region", constant_region("con1")]),
+        "Item 2 in Read 1 is not a region and was left out.",
+    ),
+    (
+        dict(
+            make_config([barcode_list("cb1"), constant_region("con1")], []),
+            barcode_struct_r2={"keep_nonbarcode": True},
+        ),
+        'Read 2 has no list of regions ("blocks").',
+    ),
+    (
+        make_config(
+            [dict(barcode_list("cb1"), colour="green"), constant_region("con1")]
+        ),
+        'bcwithqc doesn\'t use "colour" in region cb1.',
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("source", "notice"),
+    OPENING_NOTICES,
+    ids=[
+        "legacy_without_read_2",
+        "no_keepblock",
+        "legacy_barcode_read_outputs_nothing",
+        "unnamed_region",
+        "spaces_in_names",
+        "item_not_a_region",
+        "no_blocks_list",
+        "unknown_key_in_a_region",
+    ],
+)
+def test_opening_notices_speak_of_regions(core, source, notice):
+    result = open_and_export(core, config_text(source), legacy_mode="paired")
+    assert notice in [item["text"] for item in result["notices"]]
+
+
+def test_no_notice_says_block_outside_a_quoted_key(core):
+    """Notices call bcwithqc's blocks "regions"; the word stays only in quoted keys such as "blocks"."""
+    sources = [EXAMPLES_DIR / name for name in example_config_names()]
+    sources += [FIXTURES_DIR / name for name in LEGACY_FIXTURES]
+    sources += [old_gui_config()] + [source for source, _ in OPENING_NOTICES]
+    texts = []
+    for source in sources:
+        for legacy_mode in ("paired", "single"):
+            result = open_and_export(core, config_text(source), legacy_mode=legacy_mode)
+            texts += [notice["text"] for notice in result["notices"]]
+    assert texts
+    saying_block = [
+        text for text in texts if "block" in re.sub(r'"[^"]*"', "", text).lower()
+    ]
+    assert saying_block == []
+
+
+LIST_AND_CONSTANT = [barcode_list("cb1"), constant_region("con1")]
+
+
+@pytest.mark.parametrize(
+    ("config", "read_key", "notices"),
+    [
+        (
+            make_config(LIST_AND_CONSTANT, [], keep_r2=False),
+            "barcode_struct_r2",
+            [
+                'Read 2 has no regions, so all of it is kept in the output reads. The file had "keep_nonbarcode": false; the page writes true, which bcwithqc does for a read without regions anyway.'
+            ],
+        ),
+        (
+            dict(make_config(LIST_AND_CONSTANT, []), barcode_struct_r2={"blocks": []}),
+            "barcode_struct_r2",
+            [
+                'Read 2 has no regions, so all of it is kept in the output reads. The file had no "keep_nonbarcode"; the page writes true, which bcwithqc does for a read without regions anyway.'
+            ],
+        ),
+        (
+            make_config(LIST_AND_CONSTANT, [], keep_r2=None),
+            "barcode_struct_r2",
+            [
+                'Read 2 has no regions, so all of it is kept in the output reads. The file had "keep_nonbarcode": null; the page writes true, which bcwithqc does for a read without regions anyway.'
+            ],
+        ),
+        (make_config(LIST_AND_CONSTANT, [], keep_r2=True), "barcode_struct_r2", []),
+        (
+            make_config([], LIST_AND_CONSTANT, keep_r1=False),
+            "barcode_struct_r1",
+            [
+                'Read 1 has no regions, so all of it is kept in the output reads. The file had "keep_nonbarcode": false; the page writes true, which bcwithqc does for a read without regions anyway.'
+            ],
+        ),
+    ],
+    ids=["false", "missing", "null", "true", "read_1_false"],
+)
+def test_a_read_without_regions_opens_as_output_whole(core, config, read_key, notices):
+    """The notice says what the file had; a file that already says true gets none."""
+    result = open_and_export(core, json.dumps(config))
+    assert json.loads(result["text"])[read_key]["keep_nonbarcode"] is True
+    assert result["notices"] == [{"level": "info", "text": text} for text in notices]
+
+
+@pytest.mark.parametrize("read_number", [1, 2])
+def test_a_read_with_regions_and_no_keep_nonbarcode_leaves_its_rest_out(
+    core, read_number
+):
+    """Both reads say true in the file until the key is removed, so false comes from its absence."""
+    read_key = f"barcode_struct_r{read_number}"
+    config = make_config(LIST_AND_CONSTANT, LIST_AND_CONSTANT, keep_r1=True)
+    config[read_key] = without_key(config[read_key], "keep_nonbarcode")
+    result = open_and_export(core, json.dumps(config))
+    assert json.loads(result["text"])[read_key]["keep_nonbarcode"] is False
+    assert result["notices"] == [
+        {
+            "level": "warning",
+            "text": f'Read {read_number} had no "keep_nonbarcode", so the rest of Read {read_number} is "Leave out".',
+        }
+    ]
+
+
+# Every region is set to "Keep", so a region that loses "keepblock" is told apart.
+ALL_OUTPUT_ON_TWO_READS = make_config(
+    [barcode_list("cb1", keep=True), constant_region("con1", keep=True)],
+    [barcode_list("bc2", keep=True), constant_region("con2", keep=True)],
+)
+
+
+def without_keepblock(config: dict, names: set[str]) -> dict:
+    """Return a copy of a config in which the regions with these names have no "keepblock"."""
+    result = copy.deepcopy(config)
+    for key in READ_KEYS:
+        result[key]["blocks"] = [
+            without_key(block, "keepblock") if block["blockname"] in names else block
+            for block in result[key]["blocks"]
+        ]
+    return result
+
+
+@pytest.mark.parametrize(
+    ("names", "notice"),
+    [
+        (
+            {"cb1", "con1", "bc2", "con2"},
+            '"In output reads" was not set in this file, so every region is "Leave out".',
+        ),
+        (
+            {"cb1", "con1"},
+            '"In output reads" was not set for cb1, con1, so they are "Leave out".',
+        ),
+        (
+            {"bc2"},
+            '"In output reads" was not set for bc2, so it is "Leave out".',
+        ),
+    ],
+    ids=["every_region", "every_region_of_read_1", "one_region"],
+)
+def test_regions_without_keepblock_are_left_out_and_the_notice_says_which(
+    core, names, notice
+):
+    """The notice says "every region" only when no region on either read has "keepblock"."""
+    result = open_and_export(
+        core, json.dumps(without_keepblock(ALL_OUTPUT_ON_TWO_READS, names))
+    )
+    assert result["notices"] == [{"level": "info", "text": notice}]
+    exported = json.loads(result["text"])
+    keepblock = {
+        block["blockname"]: block["keepblock"]
+        for key in READ_KEYS
+        for block in exported[key]["blocks"]
+    }
+    assert keepblock == {
+        name: name not in names for name in ("cb1", "con1", "bc2", "con2")
+    }
+
+
+@pytest.mark.parametrize(
+    ("config", "place"),
+    [
+        (
+            make_config(
+                [
+                    barcode_list("cb1"),
+                    dict(
+                        without_key(constant_region("con1"), "blockname"),
+                        colour="green",
+                    ),
+                ]
+            ),
+            '"colour" in region 2 of Read 1',
+        ),
+        (
+            make_config(
+                LIST_AND_CONSTANT,
+                [dict(without_key(random_block("umi2"), "blockname"), colour="green")],
+            ),
+            '"colour" in region 1 of Read 2',
+        ),
+        (
+            make_config(
+                [dict(barcode_list(""), colour="green"), constant_region("con1")]
+            ),
+            '"colour" in region 1 of Read 1',
+        ),
+    ],
+    ids=["read_1", "read_2", "empty_name"],
+)
+def test_an_unknown_key_in_a_region_without_a_name_gives_the_regions_place(
+    core, config, place
+):
+    result = open_and_export(core, json.dumps(config))
+    (notice,) = [n for n in result["notices"] if n["level"] == "unknown_keys"]
+    assert notice["keys"] == [place]
+    assert notice["text"] == f"bcwithqc doesn't use {place}."
+
+
+def test_a_region_of_unknown_type_without_a_name_is_named_region1(core):
+    unknown_type = without_key(
+        dict(constant_region("con1"), blocktype="fancyBarcode"), "blockname"
+    )
+    result = open_and_export(
+        core, json.dumps(make_config([barcode_list("cb1"), unknown_type]))
+    )
+    assert result["notices"] == [
+        {"level": "info", "text": "A region without a name was named region1."}
+    ]
+    exported = json.loads(result["text"])["barcode_struct_r1"]["blocks"]
+    assert [block["blockname"] for block in exported] == ["cb1", "region1"]
+
+
+def test_the_lowercase_notice_names_a_region_after_spaces_became_underscores(core):
+    """A notice names a region as the page writes it: "cell barcode" in an older file is cell_barcode."""
+    lowercase = [item.lower() for item in SAMPLE_BARCODES]
+    config = as_legacy(
+        make_config(
+            [barcode_list("cell barcode", lowercase), constant_region("con1")], []
+        )
+    )
+    texts = [
+        notice["text"]
+        for notice in open_and_export(core, json.dumps(config))["notices"]
+    ]
+    assert "Lowercase sequences in cell_barcode were converted to uppercase." in texts
+
+
+@pytest.mark.parametrize(
+    ("legacy_mode", "notice"),
+    [
+        (
+            "single",
+            'This config keeps nothing from Read 1 in the output reads. With single-end reads they would be empty: set the rest of Read 1, or a region, to "Keep" if you need them.',
+        ),
+        (
+            "paired",
+            "This config keeps nothing from Read 1, the barcode read, in the output reads. As with the old pipeline, use only the other read's file.",
+        ),
+    ],
+)
+def test_a_legacy_read_1_that_outputs_nothing_gets_the_notice_for_its_layout(
+    core, legacy_mode, notice
+):
+    """Paired-end leaves the other read's file to use; single-end leaves empty output reads."""
+    result = open_and_export(
+        core,
+        read_bytes_text(FIXTURES_DIR / "legacy_sdrranger_gDNA.json.gz"),
+        legacy_mode=legacy_mode,
+    )
+    outputs_nothing = [
+        n
+        for n in result["notices"]
+        if n["text"].startswith("This config keeps nothing")
+    ]
+    assert outputs_nothing == [{"level": "info", "text": notice}]
 
 
 def test_old_gui_file_migrates_exactly(core, tmp_path):
@@ -271,6 +601,44 @@ def test_single_end_writes_orientation_false_until_se_orientation_is_supported(c
     assert json.loads(exported)["unknown_read_orientation"] is False
 
 
+def test_new_model_keeps_the_rest_of_both_reads(core):
+    """Read 1 and Read 2 start with the same default: "Keep" for the rest of the read."""
+    reads = core.run("(core) => core.new_model().reads")
+    assert [read["keep_nonbarcode"] for read in reads] == [True, True]
+    assert [read["blocks"] for read in reads] == [[], []]
+
+
+def test_paired_end_model_with_one_list_exports_the_rest_of_both_reads(core):
+    exported = json.loads(
+        core.run(
+            """(core) => {
+                const model = core.new_model();
+                model.single_end = false;
+                return core.config_to_json(core.add_block(model, 0, 'barcodeList').model);
+            }"""
+        )
+    )
+    assert exported["single_end_reads"] is False
+    assert exported["barcode_struct_r1"]["keep_nonbarcode"] is True
+    (region,) = exported["barcode_struct_r1"]["blocks"]
+    assert region["blocktype"] == "barcodeList"
+    assert region["keepblock"] is False
+    assert exported["barcode_struct_r2"] == {"keep_nonbarcode": True, "blocks": []}
+
+
+@pytest.mark.parametrize(
+    "blocktype", ["barcodeList", "constantRegion", "randomBarcode"]
+)
+def test_new_regions_are_left_out_of_the_output_reads(core, blocktype):
+    """A new region starts at "Leave out"; only the rest of the read is kept by default."""
+    region = core.run(
+        "(core, blocktype) => core.add_block(core.new_model(), 0, blocktype).model.reads[0].blocks[0]",
+        blocktype,
+    )
+    assert region["blocktype"] == blocktype
+    assert region["keepblock"] is False
+
+
 def expanded_templates(core):
     return core.run("(core) => window.barcode_templates")
 
@@ -281,7 +649,9 @@ def template_source_config(source):
     return read_config(REPO_ROOT / source)
 
 
-@pytest.mark.parametrize("template_id", ["sdr_seq_rna", "sdr_seq_gdna", "design_doc"])
+@pytest.mark.parametrize(
+    "template_id", ["sdr_seq_rna", "sdr_seq_gdna", "simple_example"]
+)
 def test_template_equals_its_source_without_names(core, template_id):
     templates = {template["id"]: template for template in expanded_templates(core)}
     template = templates[template_id]
@@ -296,7 +666,28 @@ def test_template_equals_its_source_without_names(core, template_id):
 
 def test_design_doc_template_is_read_from_the_doc():
     templates = load_update_script().TEMPLATE_SOURCES
-    assert ("design_doc", "Design-doc example", "doc/config_format.md") in templates
+    assert (
+        "simple_example",
+        "Simple example: barcode, linker, UMI",
+        "doc/config_format.md",
+    ) in templates
+
+
+def test_page_lists_the_templates_in_order(core):
+    """The Templates menu shows these after "New empty config"; "Design-doc example" is gone."""
+    listed = [
+        (template["id"], template["title"], template["source"])
+        for template in expanded_templates(core)
+    ]
+    assert listed == [
+        ("sdr_seq_rna", "SDR-seq RNA", "examples/cDNA_paired_end_config.json"),
+        ("sdr_seq_gdna", "SDR-seq gDNA", "examples/gDNA_paired_end_config.json"),
+        (
+            "simple_example",
+            "Simple example: barcode, linker, UMI",
+            "doc/config_format.md",
+        ),
+    ]
 
 
 def load_update_script():
@@ -466,7 +857,11 @@ def test_unknown_keys_are_listed_and_written_last_only_when_kept(core):
     )
     assert result["kept"] == canonical_text(kept)
     assert result["left_out"] == canonical_text(config)
-    expected_keys = ['"config_version"', '"note" in Read 1', '"keepBlock" in block cb1']
+    expected_keys = [
+        '"config_version" at the top level',
+        '"note" in Read 1',
+        '"keepBlock" in region cb1',
+    ]
     assert result["unknown_keys"] == expected_keys
     (notice,) = [n for n in result["notices"] if n["level"] == "unknown_keys"]
     assert notice["keys"] == expected_keys
@@ -496,10 +891,10 @@ def test_kept_keys_named_like_numbers_or_proto_are_still_written_last(core):
         json.dumps(in_file),
     )
     assert result["unknown_keys"] == [
-        '"2"',
-        '"__proto__"',
-        '"constructor"',
-        '"0" in block cb1',
+        '"2" at the top level',
+        '"__proto__" at the top level',
+        '"constructor" at the top level',
+        '"0" in region cb1',
     ]
     assert result["text"] == canonical_text(kept)
 

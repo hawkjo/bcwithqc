@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Barcode configurator · bcwithqc</title>
 <style>
-/* Styles. One card for the read and its selected block, one side rail for checks, outputs and JSON.
-   Colour appears only on blocks (barcodinggui's: list green, constant orange, random blue) and on problems
-   (red errors, amber warnings). Spacing follows an 8-px rhythm. */
+/* Styles. One card for the read and its selected region, one side rail for checks, outputs and JSON.
+   Colour appears only on regions (barcodinggui's: list green, constant orange, random blue) and on problems
+   (red errors, amber warnings); the accent marks choices and to-do items. Spacing follows an 8-px rhythm. */
 :root {
   --bg: #f6f7f9; --surface: #ffffff; --surface-2: #eef0f4; --fg: #1a2130; --muted: #5b6577; --line: #d8dde5;
   --accent: #3446a8; --accent-fg: #ffffff; --accent-soft: #e4e8fb;
   --list: #2f8a4a; --list-bg: #e5f3e9; --const: #b45c0c; --const-bg: #fcebd9; --rand: #2f6fc4; --rand-bg: #e3ecfa;
+  /* Region colours for text on the region tints: darker in light mode, so text reaches 4.5:1. */
+  --list-text: #237a3d; --const-text: #9e4f08; --rand-text: #2a62b0;
   --rest: #6f7888; --rest-bg: #eef0f3;
   --err: #b42318; --err-bg: #fde8e6; --warn: #8a6100; --warn-bg: #fff3cf; --ok: #26734a;
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -24,6 +26,7 @@
     --bg: #10141a; --surface: #171c24; --surface-2: #1f2631; --fg: #e6e9ef; --muted: #a0aabb; --line: #2c3544;
     --accent: #9cadff; --accent-fg: #10141a; --accent-soft: #252c4c;
     --list: #6cc287; --list-bg: #18301f; --const: #f0a25c; --const-bg: #382614; --rand: #7fadf0; --rand-bg: #172a45;
+    --list-text: #6cc287; --const-text: #f0a25c; --rand-text: #7fadf0;
     --rest: #98a1b0; --rest-bg: #1d232c;
     --err: #ff8a80; --err-bg: #3a1714; --warn: #e8c35a; --warn-bg: #352a0b; --ok: #74c992;
     color-scheme: dark;
@@ -49,13 +52,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn.primary { background: var(--accent); color: var(--accent-fg); font-weight: 650; }
 .btn.primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--accent); }
 .btn.small { padding: 2px 8px; font-size: 13px; }
-.btn.danger { color: var(--err); }
+.btn.danger { color: var(--err); border-color: color-mix(in srgb, var(--err) 55%, transparent); background: var(--surface); }
+.btn.danger:hover:not(:disabled) { background: var(--err-bg); }
+.linklike { border: 0; background: transparent; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
 .split { display: inline-flex; }
 .split .btn.primary:first-child { border-radius: 8px 0 0 8px; }
 .split .btn.primary.caret { border-radius: 0 8px 8px 0; border-left: 1px solid color-mix(in srgb, var(--accent-fg) 35%, transparent); padding-inline: 8px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .menu-wrap { position: relative; display: inline-block; }
-.menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 200px; background: var(--surface); border: 1px solid var(--line);
+.menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 200px; max-width: calc(100vw - 32px); background: var(--surface); border: 1px solid var(--line);
   border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.14); padding: 4px; display: grid; }
 .menu.left { right: auto; left: 0; }
 .menu button { text-align: left; border: 0; background: transparent; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
@@ -64,7 +69,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* Layout */
 .layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
 @media (min-width: 1040px) { .layout { grid-template-columns: minmax(0, 1fr) 340px; } }
+.layout.welcome-mode { grid-template-columns: minmax(0, 1fr); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 16px; min-width: 0; }
+/* A flex column, not a grid: WebKit doesn't grow a grid row when the diagram's tiles wrap as the window narrows. */
+#main { display: flex; flex-direction: column; }
 .rail { display: grid; gap: 12px; align-content: start; min-width: 0; }
 .rail-sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; display: grid; gap: 8px; min-width: 0; }
 .rail-sec h2 { margin: 0; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
@@ -72,14 +80,34 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .notices { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 8px 16px; display: grid; gap: 4px; }
 .notices header { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 650; }
 .notices ul { margin: 0; padding-left: 20px; }
-.notices li.warning::marker { color: var(--warn); }
+/* A warning differs from an info notice by its marker's shape as well as its colour. */
+.notices li.notice-warning { list-style-type: "\26A0\FE0E\20"; }
+.notices li.notice-warning::marker { color: var(--warn); }
 
 /* Settings */
 .row { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
 .seg { display: inline-flex; background: var(--surface-2); border-radius: 8px; padding: 2px; gap: 2px; }
 .seg button { border: 0; background: transparent; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--muted); }
 .seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
-.seg.need { box-shadow: 0 0 0 2px var(--err); }
+/* The two-way "Keep / Leave out" switch: both states are named and the current one is filled.
+   No overflow clipping, so the focus ring shows; the end buttons round their own corners instead. */
+.switch2 { display: inline-flex; border: 1px solid var(--accent); border-radius: 8px; background: var(--surface); width: fit-content; }
+.switch2 button { border: 0; background: transparent; padding: 4px 14px; font-weight: 650; color: var(--accent); cursor: pointer; white-space: nowrap; }
+.switch2 button:first-child { border-radius: 7px 0 0 7px; }
+.switch2 button:last-child { border-radius: 0 7px 7px 0; }
+.switch2 button + button { border-left: 1px solid var(--accent); }
+.switch2 button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.switch2 button[aria-pressed="false"]:hover:not(:disabled) { background: var(--accent-soft); }
+.switch2 button:disabled { color: var(--muted); cursor: not-allowed; }
+.align-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.align-row .label { font-weight: 650; }
+.add-regions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.add-regions .label { font-weight: 650; margin-right: 4px; overflow-wrap: anywhere; }
+.btn.add { border: 1px solid; font-weight: 650; }
+.btn.add.list, .btn.add.list:hover:not(:disabled) { color: var(--list-text); background: var(--list-bg); border-color: color-mix(in srgb, var(--list) 55%, transparent); }
+.btn.add.const, .btn.add.const:hover:not(:disabled) { color: var(--const-text); background: var(--const-bg); border-color: color-mix(in srgb, var(--const) 55%, transparent); }
+.btn.add.rand, .btn.add.rand:hover:not(:disabled) { color: var(--rand-text); background: var(--rand-bg); border-color: color-mix(in srgb, var(--rand) 55%, transparent); }
+.btn.add:hover:not(:disabled) { box-shadow: 0 0 0 1px currentColor; }
 label.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .info { display: inline-grid; place-items: center; width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted);
   background: transparent; font-size: 11px; font-weight: 700; line-height: 1; cursor: pointer; font-family: var(--font-ui); }
@@ -93,24 +121,25 @@ label.check { display: inline-flex; align-items: center; gap: 8px; cursor: point
 .field-head label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .hint { color: var(--muted); font-size: 13px; }
 
-/* Diagram */
-.track { display: flex; gap: 4px; min-height: 76px; }
+/* Diagram. Tiles wrap onto a second line when the read has more regions than fit side by side. */
+.track { display: flex; flex-wrap: wrap; gap: 4px; min-height: 76px; }
 .blk { flex: 1 1 0; min-width: 96px; border-radius: 8px; border: 1px solid transparent; padding: 6px 8px; display: grid; gap: 2px; align-content: start;
   cursor: pointer; font-size: 12px; line-height: 1.35; overflow: hidden; text-align: left; background: var(--surface-2); }
 .blk b { font-size: 13px; overflow-wrap: anywhere; }
 .blk span { color: var(--muted); overflow-wrap: anywhere; }
 .blk.list { background: var(--list-bg); border-color: color-mix(in srgb, var(--list) 40%, transparent); }
-.blk.list b { color: var(--list); }
+.blk.list b { color: var(--list-text); }
 .blk.const { background: var(--const-bg); border-color: color-mix(in srgb, var(--const) 40%, transparent); }
-.blk.const b { color: var(--const); }
+.blk.const b { color: var(--const-text); }
 .blk.rand { background: var(--rand-bg); border-color: color-mix(in srgb, var(--rand) 40%, transparent); }
-.blk.rand b { color: var(--rand); }
+.blk.rand b { color: var(--rand-text); }
 .blk.unknown { border-style: dashed; border-color: var(--err); }
 .blk.rest { background: var(--rest-bg); cursor: default; border-style: dashed; border-color: var(--line); }
 .blk.rest.kept { border-style: solid; border-color: var(--rest); }
-.blk.rest b { color: var(--rest); }
+.blk.rest b { color: var(--muted); }
 .blk[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
 .blk.has-error { box-shadow: inset 0 -3px 0 var(--err); }
+.blk.has-todo { box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--accent) 50%, transparent); }
 .blk.has-warning { box-shadow: inset 0 -3px 0 var(--warn); }
 .blk.drop-before { box-shadow: -4px 0 0 var(--accent); }
 .tag { display: inline-flex; align-items: center; gap: 2px; border-radius: 999px; padding: 0 8px; font-family: var(--font-mono); font-size: 11.5px;
@@ -123,10 +152,11 @@ label.check { display: inline-flex; align-items: center; gap: 8px; cursor: point
 .block-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .block-head .name { font-size: 16px; font-weight: 700; margin-right: 4px; overflow-wrap: anywhere; }
 .badge { display: inline-flex; align-items: center; border-radius: 6px; padding: 1px 8px; font-size: 12px; font-weight: 650; background: var(--surface-2); color: var(--muted); }
-.badge.list { background: var(--list-bg); color: var(--list); }
-.badge.const { background: var(--const-bg); color: var(--const); }
-.badge.rand { background: var(--rand-bg); color: var(--rand); }
+.badge.list { background: var(--list-bg); color: var(--list-text); }
+.badge.const { background: var(--const-bg); color: var(--const-text); }
+.badge.rand { background: var(--rand-bg); color: var(--rand-text); }
 .block-head .spacer { margin-left: auto; }
+.block-head .head-actions { display: inline-flex; align-items: center; gap: 8px; }
 .fields { display: grid; gap: 8px 16px; grid-template-columns: minmax(200px, 2fr) repeat(auto-fit, minmax(120px, 1fr)); align-items: end; }
 .field { display: grid; gap: 4px; min-width: 0; }
 .field > span { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; min-height: 18px; display: flex; align-items: center; }
@@ -160,16 +190,19 @@ table.seqs input { width: 100%; font-family: var(--font-mono); border: 1px solid
 .add-row input { flex: 1; border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; font-family: var(--font-mono); background: var(--surface); }
 .selbar { display: flex; align-items: center; gap: 12px; background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 4px 8px 4px 12px; font-weight: 650; font-size: 13px; }
 .selbar .btn { margin-left: auto; }
-.empty-list { color: var(--muted); font-size: 13px; padding: 8px 0; }
+.dropzone { border: 1.5px dashed var(--line); border-radius: 8px; padding: 16px; color: var(--muted); font-size: 13px; display: grid; gap: 4px; justify-items: center; text-align: center; }
+.drop-target { outline: 2px dashed var(--accent); outline-offset: 4px; border-radius: 8px; }
 
 /* Rail content */
 .issue { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 13px; border: 0; background: transparent;
   text-align: left; padding: 4px 4px; border-radius: 6px; cursor: pointer; width: 100%; }
 .issue:hover { background: var(--surface-2); }
+.issue > span:last-child { overflow-wrap: anywhere; }
 .chip { display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 11.5px; font-weight: 650; border-radius: 999px; padding: 0 8px; white-space: nowrap; }
 .chip.err { color: var(--err); background: var(--err-bg); }
 .chip.warn { color: var(--warn); background: var(--warn-bg); }
 .chip.warn.temporary { background: transparent; box-shadow: inset 0 0 0 1px var(--warn); border: 0; }
+.chip.todo { color: var(--accent); background: var(--accent-soft); font-family: var(--font-ui); }
 .ok-text { color: var(--ok); font-size: 13px; }
 dl.kv { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 4px 8px; margin: 0; font-size: 13px; }
 dl.kv dt { font-family: var(--font-mono); font-weight: 650; color: var(--muted); }
@@ -179,11 +212,25 @@ dl.kv dd .note { font-family: var(--font-ui); color: var(--muted); }
 pre.json { margin: 0; max-height: 360px; overflow: auto; background: var(--surface-2); border-radius: 8px; padding: 8px 12px; font-size: 12px; }
 .json-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
 
+/* Welcome panel, shown on a fresh page until a read layout is chosen */
+.welcome { max-width: 760px; width: 100%; margin: 8px auto; display: grid; gap: 16px; }
+.welcome h2 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
+.welcome p, .welcome ol { margin: 0; }
+.welcome ol { padding-left: 24px; display: grid; gap: 4px; }
+.welcome .lead { font-size: 15.5px; }
+.welcome .start { font-weight: 650; }
+.choices-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.choice { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 16px; cursor: pointer; display: grid; gap: 4px; }
+.choice:hover { border-color: var(--accent); background: var(--accent-soft); }
+.choice b { font-size: 16px; }
+.choice span { color: var(--muted); }
+
 /* Dialogs */
 dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; background: var(--surface); color: var(--fg); width: min(560px, calc(100vw - 32px)); }
 dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 .dlg { padding: 16px; display: grid; gap: 12px; }
 .dlg h2 { margin: 0; font-size: 16px; }
+.dlg h2, .dlg p { overflow-wrap: anywhere; }
 .dlg .choices { display: grid; gap: 4px; }
 .dlg .choices label { display: flex; gap: 8px; align-items: baseline; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
 .dlg .choices label:hover { background: var(--surface-2); }
@@ -191,11 +238,29 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 .dlg textarea { width: 100%; min-height: 180px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-family: var(--font-mono); font-size: 13px; background: var(--surface); }
 .dlg .actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .dlg .error { color: var(--err); }
+/* In a question, the button Return presses always shows its ring, also after a mouse click opened it. */
+dialog button:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nowrap { white-space: nowrap; }
 @media (max-width: 640px) {
   #app { padding: 16px; }
   .fields { grid-template-columns: minmax(0, 1fr); }
-  .track { flex-wrap: wrap; }
   .blk { min-width: calc(50% - 4px); }
+}
+/* Browsers without color-mix() (Chrome and Edge before 111) drop a declaration that uses it,
+   so a plain colour is set for them here instead. */
+@supports not (color: color-mix(in srgb, red 50%, transparent)) {
+  .btn.danger { border-color: var(--err); }
+  .split .btn.primary.caret { border-left-color: var(--accent-fg); }
+  .btn.add.list, .blk.list { border-color: var(--list); }
+  .btn.add.const, .blk.const { border-color: var(--const); }
+  .btn.add.rand, .blk.rand { border-color: var(--rand); }
+  .blk.has-todo { box-shadow: inset 0 -3px 0 var(--accent); }
+}
+/* Windows contrast themes replace colours, so the chosen side of a switch keeps the system highlight. */
+@media (forced-colors: active) {
+  .switch2 button[aria-pressed="true"], .seg button[aria-pressed="true"], .seg button[aria-selected="true"] {
+    forced-color-adjust: none; background: Highlight; color: HighlightText;
+  }
 }
 </style>
 </head>
@@ -371,7 +436,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   function block_label(block, index) {
-    return typeof block.blockname === 'string' && block.blockname !== '' ? block.blockname : 'block ' + (index + 1);
+    return typeof block.blockname === 'string' && block.blockname !== '' ? block.blockname : 'region ' + (index + 1);
   }
 
   function plural(count, singular, plural_form) {
@@ -382,15 +447,17 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   // The model
 
   /**
-   * A new, empty model: no mode chosen yet, an empty Read 1, and an empty
-   * Read 2 that would send each read whole to alignment.
+   * A new, empty model: no read layout chosen yet, and two empty reads, each
+   * kept whole in the output reads. A read without regions is always kept
+   * whole (output_whole_reads_without_blocks); once it has regions, its rest
+   * is the user's choice.
    * @returns {Object}
    */
   function new_model() {
     return {
       single_end: null,
       unknown_read_orientation: false,
-      reads: [{ keep_nonbarcode: false, blocks: [] }, { keep_nonbarcode: true, blocks: [] }],
+      reads: [{ keep_nonbarcode: true, blocks: [] }, { keep_nonbarcode: true, blocks: [] }],
       keep_unknown_keys: true,
     };
   }
@@ -422,13 +489,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 
   /**
    * The default name for a new block: bc1, con1, umi1, ..., unique across
-   * both reads, ignoring case.
+   * both reads, ignoring case. A block of an unknown type gets region1, ...
    * @param {Object} model
    * @param {string} blocktype
    * @returns {string}
    */
   function default_block_name(model, blocktype) {
-    const prefix = { barcodeList: 'bc', constantRegion: 'con', randomBarcode: 'umi' }[blocktype] || 'block';
+    const prefix = { barcodeList: 'bc', constantRegion: 'con', randomBarcode: 'umi' }[blocktype] || 'region';
     const taken = new Set();
     for (const read of model.reads) {
       for (const block of read.blocks) {
@@ -486,6 +553,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   /**
    * Remove a block. A link group left with one block is dissolved, so the
    * model never holds a one-block group the user didn't open from a file.
+   * A read left without blocks outputs all of itself again (see
+   * output_whole_reads_without_blocks).
    * @param {Object} model
    * @param {number} read_index
    * @param {string} block_id
@@ -497,7 +566,26 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const removed = read.blocks.find((block) => block.id === block_id);
     read.blocks = read.blocks.filter((block) => block.id !== block_id);
     if (removed && removed.linkgroup !== null) dissolve_single_groups(read, [removed.linkgroup]);
+    output_whole_reads_without_blocks(result);
     return result;
+  }
+
+  /**
+   * A read without blocks is always kept whole: a paired-end user keeps a
+   * file in the config so its reads stay in step with the other file's, and
+   * bcwithqc writes such a read whole anyway. Sets keep_nonbarcode to true
+   * on every read without blocks, in place.
+   * @param {Object} model
+   * @returns {number[]} The reads whose keep_nonbarcode changed.
+   */
+  function output_whole_reads_without_blocks(model) {
+    const changed = [];
+    model.reads.forEach((read, index) => {
+      if (read.blocks.length || read.keep_nonbarcode === true) return;
+      read.keep_nonbarcode = true;
+      changed.push(index);
+    });
+    return changed;
   }
 
   /**
@@ -670,11 +758,12 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * A file without single_end_reads is from master, SDRranger or
    * barcodinggui. For those: Read 2 present means paired-end, otherwise the
    * caller asks (options.legacy_mode, default "paired", which adds a Read 2
-   * that sends each read whole to alignment, as the old pipeline did);
+   * that is kept whole in the output reads, as the old pipeline did);
    * missing keepblock becomes false; orientation true becomes false, since
    * the setting changed meaning; spaces in block names become "_". In every
-   * file, per-sequence name lists are dropped and lowercase sequences are
-   * converted to uppercase. Each change is listed as a notice. Values the app
+   * file, per-sequence name lists are dropped, lowercase sequences are
+   * converted to uppercase, and a read without blocks is kept whole
+   * (keep_nonbarcode true). Each change is listed as a notice. Values the app
    * can't represent are kept as they are, so validation reports them (E11).
    * Every barcode list opens in entered order. Keys bcwithqc doesn't use are
    * kept on the model and listed in unknown_keys; the caller decides through
@@ -712,7 +801,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         unknown_found.push('"' + key + '"' + where);
       }
     };
-    keep_extra(model, data, unknown_keys(data, TOP_KEYS), '');
+    keep_extra(model, data, unknown_keys(data, TOP_KEYS), ' at the top level');
 
     if ('generated_with' in data) {
       const written = data.generated_with;
@@ -739,7 +828,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       model.single_end = answer === 'single';
       if (answer === 'paired') {
         added_read_2 = true;
-        notice('info', 'This config is in an older format with no Read 2. It opens as paired-end with the barcodes on Read 1, and Read 2 is sent whole to alignment, as the old pipeline did.');
+        notice('info', 'This config is in an older format with no Read 2. It opens as paired-end with the barcodes on Read 1, and all of Read 2 is kept in the output reads, as the old pipeline did.');
       } else {
         notice('info', 'This config is in an older format. It opens as single-end.');
       }
@@ -760,7 +849,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const uppercased = [];
     const renamed = [];
     const unnamed = [];
-    let keepblock_added = false;
+    const keepblock_missing = [];
+    let block_count = 0;
+    // Where each region sits, for notices about a region whose name is "" or not text.
+    const places = new Map();
+    const notice_name = (block) => (typeof block.blockname === 'string' && block.blockname !== '' ? block.blockname : places.get(block));
+    // Per read: null when the file has no such read, else whether it has keep_nonbarcode and its value.
+    const keep_nonbarcode_in_file = [null, null];
 
     READ_KEYS.forEach((read_key, read_index) => {
       if (!(read_key in data)) return;
@@ -771,24 +866,21 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         return;
       }
       keep_extra(read, struct, unknown_keys(struct, READ_STRUCT_KEYS), ' in ' + READ_LABELS[read_index]);
-      if ('keep_nonbarcode' in struct) {
-        read.keep_nonbarcode = struct.keep_nonbarcode;
-      } else {
-        read.keep_nonbarcode = false;
-        notice('warning', READ_LABELS[read_index] + ' had no "keep_nonbarcode"; it is set to false.');
-      }
+      keep_nonbarcode_in_file[read_index] = { present: 'keep_nonbarcode' in struct, value: struct.keep_nonbarcode };
+      read.keep_nonbarcode = 'keep_nonbarcode' in struct ? struct.keep_nonbarcode : false;
       if (!Array.isArray(struct.blocks)) {
-        notice('warning', READ_LABELS[read_index] + ' has no list of blocks.');
+        notice('warning', READ_LABELS[read_index] + ' has no list of regions ("blocks").');
         read.blocks = [];
         return;
       }
       read.blocks = [];
       struct.blocks.forEach((raw, position) => {
         if (!is_plain_object(raw)) {
-          notice('warning', 'Item ' + (position + 1) + ' in ' + READ_LABELS[read_index] + ' is not a block and was left out.');
+          notice('warning', 'Item ' + (position + 1) + ' in ' + READ_LABELS[read_index] + ' is not a region and was left out.');
           return;
         }
         used_ids += 1;
+        block_count += 1;
         const block = { id: 'b' + used_ids };
         block.blocktype = raw.blocktype;
         block.blockfunction = raw.blockfunction;
@@ -802,12 +894,12 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
           block.keepblock = raw.keepblock;
         } else {
           block.keepblock = false;
-          keepblock_added = true;
+          keepblock_missing.push(block);
         }
         if ('sequence' in raw) {
           if (Array.isArray(raw.sequence)) {
             const upper = raw.sequence.map((item) => (typeof item === 'string' ? item.toUpperCase() : item));
-            if (upper.some((item, i) => item !== raw.sequence[i])) uppercased.push(block_label(block, position));
+            if (upper.some((item, i) => item !== raw.sequence[i])) uppercased.push(block);
             block.sequence = upper;
             block.sequence_source = upper.map(() => null);
           } else {
@@ -821,7 +913,10 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         block.linkgroup = 'linkgroup' in raw ? raw.linkgroup : null;
         if (block.blocktype === 'barcodeList') block.sort = 'entered';
         if ('name' in raw) dropped_names.push(block);
-        keep_extra(block, raw, unknown_keys(raw, BLOCK_KEYS), ' in block ' + block_label(block, position));
+        // A region without a name is placed by its position among the read's regions, as the diagram shows it.
+        places.set(block, 'region ' + (read.blocks.length + 1) + ' of ' + READ_LABELS[read_index]);
+        const has_name = typeof block.blockname === 'string' && block.blockname !== '';
+        keep_extra(block, raw, unknown_keys(raw, BLOCK_KEYS), ' in ' + (has_name ? 'region ' + block.blockname : places.get(block)));
         if (legacy && typeof block.blockname === 'string' && /\s/.test(block.blockname)) {
           const new_name = block.blockname.trim().replace(/\s+/g, '_');
           renamed.push(block.blockname + ' → ' + new_name);
@@ -833,28 +928,51 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 
     for (const block of unnamed) {
       block.blockname = default_block_name(model, block.blocktype);
-      notice('info', 'A block without a name was named ' + block.blockname + '.');
+      notice('info', 'A region without a name was named ' + block.blockname + '.');
     }
     if (added_read_2) model.reads[1] = { keep_nonbarcode: true, blocks: [] };
+    READ_KEYS.forEach((read_key, read_index) => {
+      const in_file = keep_nonbarcode_in_file[read_index];
+      if (in_file === null) return;
+      const label = READ_LABELS[read_index];
+      if (!model.reads[read_index].blocks.length) {
+        model.reads[read_index].keep_nonbarcode = true;
+        // A single-end download doesn't write Read 2, so its value is not worth a notice.
+        const written = !(model.single_end === true && read_index === 1);
+        if (written && (!in_file.present || in_file.value !== true)) {
+          notice('info', label + ' has no regions, so all of it is kept in the output reads. The file '
+            + (in_file.present ? 'had "keep_nonbarcode": ' + describe_raw(in_file.value) : 'had no "keep_nonbarcode"')
+            + '; the page writes true, which bcwithqc does for a read without regions anyway.');
+        }
+      } else if (!in_file.present) {
+        notice('warning', label + ' had no "keep_nonbarcode", so the rest of ' + label + ' is "Leave out".');
+      }
+    });
     if (!legacy && model.single_end === true && 'barcode_struct_r2' in data) {
       notice('info', 'This single-end config also describes Read 2. Read 2 is kept, but it is not written while single-end is selected.');
     }
     if (unknown_found.length) {
       notices.push({ level: 'unknown_keys', text: 'bcwithqc doesn\'t use ' + unknown_found.join(', ') + '.', keys: unknown_found });
     }
-    if (keepblock_added) notice('info', '"Keep for alignment" was not set in this file, so it is off for every block.');
-    if (dropped_names.length) {
-      notice('warning', 'Per-sequence names were dropped from ' + dropped_names.map((block) => block.blockname).join(', ') + '. bcwithqc uses them only to label simulated reads.');
+    if (keepblock_missing.length) {
+      notice('info', keepblock_missing.length === block_count
+        ? '"In output reads" was not set in this file, so every region is "Leave out".'
+        : '"In output reads" was not set for ' + keepblock_missing.map(notice_name).join(', ')
+          + ', so ' + (keepblock_missing.length === 1 ? 'it is' : 'they are') + ' "Leave out".');
     }
-    if (uppercased.length) notice('info', 'Lowercase sequences in ' + uppercased.join(', ') + ' were converted to uppercase.');
-    if (renamed.length) notice('info', 'Spaces in block names became "_": ' + renamed.join(', ') + '.');
+    if (dropped_names.length) {
+      notice('warning', 'Per-sequence names were dropped from ' + dropped_names.map(notice_name).join(', ') + '. bcwithqc uses them only to label simulated reads.');
+    }
+    if (uppercased.length) notice('info', 'Lowercase sequences in ' + uppercased.map(notice_name).join(', ') + ' were converted to uppercase.');
+    if (renamed.length) notice('info', 'Spaces in region names became "_": ' + renamed.join(', ') + '.');
     if (legacy) {
       exported_read_indices(model).forEach((read_index) => {
         const read = model.reads[read_index];
         const keeps_something = read.keep_nonbarcode === true || read.blocks.some((block) => block.keepblock === true);
-        if (read.blocks.length && !keeps_something) {
-          notice('info', 'This config sends nothing from ' + READ_LABELS[read_index] + ', the barcode read, to alignment. As with the old pipeline, align only the other read\'s file.');
-        }
+        if (!read.blocks.length || keeps_something) return;
+        notice('info', model.single_end === true
+          ? 'This config keeps nothing from Read 1 in the output reads. With single-end reads they would be empty: set the rest of Read 1, or a region, to "Keep" if you need them.'
+          : 'This config keeps nothing from ' + READ_LABELS[read_index] + ', the barcode read, in the output reads. As with the old pipeline, use only the other read\'s file.');
       });
     }
     return { ok: true, model, notices, unknown_keys: unknown_found, legacy, needs_mode_choice };
@@ -942,66 +1060,87 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   /**
-   * Shortest and longest length a block can take in a read. A barcode list
-   * takes the length of the first sequence written, because bcwithqc sizes
-   * the slot from it; a constant region takes any of its variants' lengths.
+   * Shortest and longest length a block can take in a read: a random
+   * block's length, or the shortest and longest of a list's barcodes or a
+   * constant region's variants. Null while the length isn't known (no
+   * sequences yet, or a length that isn't a positive whole number).
+   * @param {Object} block
+   * @returns {?number[]} [shortest, longest]
    */
   function block_length_range(block) {
     if (block.blocktype === 'randomBarcode') {
-      return Number.isInteger(block.length) ? [block.length, block.length] : [0, 0];
+      return Number.isInteger(block.length) && block.length > 0 ? [block.length, block.length] : null;
     }
-    const sequences = valid_sequences({ sequence: export_sequence_order(block) });
-    if (!sequences.length) return [0, 0];
-    if (block.blocktype === 'barcodeList') return [sequences[0].length, sequences[0].length];
-    const lengths = sequences.map((item) => item.length);
-    return [Math.min(...lengths), Math.max(...lengths)];
+    const lengths = valid_sequences(block).filter((item) => item !== '').map((item) => item.length);
+    return lengths.length ? [Math.min(...lengths), Math.max(...lengths)] : null;
   }
 
   /**
    * Facts about one read's structure, shown as the caption under the
-   * diagram.
+   * diagram. The read lengths count every allowed error: a read must be at
+   * least the shortest structure minus all allowed errors (each one a
+   * deletion), and is recommended to be at least the longest structure plus
+   * all allowed errors (each one an insertion).
    * @param {Object[]} blocks
-   * @returns {?{min_length: number, max_length: number, linker_combinations: number, min_read_length: number}}
-   *   min_read_length is the shortest read bcwithqc can process: every block
-   *   but the last at its longest, plus one base. Null for a read without blocks.
+   * @returns {?{lengths_known: boolean, min_length: ?number, max_length: ?number, allowed_errors: ?number,
+   *   linker_combinations: number, min_read_length: ?number, recommended_read_length: ?number}}
+   *   Null for a read without blocks. The lengths are null, and lengths_known
+   *   false, until every block's length and allowed errors are known.
    */
   function describe_structure(blocks) {
     if (!blocks.length) return null;
-    let min_length = 0;
-    let max_length = 0;
     let linker_combinations = 1;
-    blocks.forEach((block) => {
-      const [low, high] = block_length_range(block);
-      min_length += low;
-      max_length += high;
+    for (const block of blocks) {
       if (block.blocktype === 'constantRegion') linker_combinations *= Math.max(1, valid_sequences(block).length);
-    });
-    const all_but_last = blocks.slice(0, -1).reduce((total, block) => total + block_length_range(block)[1], 0);
-    return { min_length, max_length, linker_combinations, min_read_length: all_but_last + 1 };
+    }
+    const ranges = blocks.map(block_length_range);
+    const errors_known = blocks.every((block) => Number.isInteger(block.maxerrors) && block.maxerrors >= 0);
+    if (!errors_known || ranges.some((range) => range === null)) {
+      return {
+        lengths_known: false, min_length: null, max_length: null, allowed_errors: null,
+        linker_combinations, min_read_length: null, recommended_read_length: null,
+      };
+    }
+    const min_length = ranges.reduce((total, range) => total + range[0], 0);
+    const max_length = ranges.reduce((total, range) => total + range[1], 0);
+    const allowed_errors = blocks.reduce((total, block) => total + block.maxerrors, 0);
+    return {
+      lengths_known: true, min_length, max_length, allowed_errors, linker_combinations,
+      min_read_length: Math.max(1, min_length - allowed_errors),
+      recommended_read_length: max_length + allowed_errors,
+    };
   }
 
   /**
-   * What bcwithqc writes for the config: the BAM tags and the files for
-   * alignment, as structured data the panel text is rendered from.
+   * What bcwithqc writes for the config: the BAM tags and the output reads
+   * (the sans_bc files, one per read), as structured data the panel text is
+   * rendered from.
    *
    * Per read, CB and CR take the barcode lists and random blocks set to
    * barcode (lists set to UMI count as barcode), UR the random blocks set to
-   * UMI, and FL the constant regions not set to discard. Pieces are joined
+   * UMI, and FL the constant regions not set to discard; FL.known is false
+   * while one of those has no valid variant yet. Pieces are joined
    * with "."; with blocks on both reads, the two reads' values are joined
    * with "." again, which gives a leading or trailing dot when one read
-   * contributes nothing. UB and UR exist only if some block has function UMI
+   * contributes nothing. CB.corrected names the barcode lists in CB, which
+   * bcwithqc corrects; CB.uncorrected names the random blocks in CB, whose
+   * bases go in as read. UB and UR exist only if some block has function UMI
    * (current bcwithqc still writes UR, empty: TEMPORARY_OUTPUT_NOTES).
-   * Each read's file for alignment is "whole" (a read without blocks),
-   * "none" (nothing kept) or "parts": the kept blocks in order, then the rest
-   * of the read if rest is true.
+   * Each read's output reads are "whole" (a read without blocks, always kept
+   * whole), "none" (nothing kept) or "parts": the kept blocks in order, then
+   * the rest of the read if rest is true.
    * @param {Object} model
    * @returns {Object}
    */
   function describe_outputs(model) {
     const read_indices = exported_read_indices(model).filter((index) => model.reads[index].blocks.length);
     const tags = { CB: [], CR: [], UR: [] };
+    const corrected = [];
+    const uncorrected = [];
     const fl_ranges = [];
     const fl_blocks = [];
+    // FL's length is known once every constant region in it has a valid variant.
+    let fl_known = true;
     for (const read_index of read_indices) {
       const pieces = { CB: [], UR: [] };
       let fl_low = 0;
@@ -1011,16 +1150,23 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         if (block.blockfunction === 'discard') continue;
         if (block.blocktype === 'barcodeList') {
           pieces.CB.push(block.blockname);
+          corrected.push(block.blockname);
         } else if (block.blocktype === 'constantRegion') {
           const lengths = valid_sequences(block).map((item) => item.length);
           if (lengths.length) {
             fl_low += Math.min(...lengths);
             fl_high += Math.max(...lengths);
+          } else {
+            fl_known = false;
           }
           fl_names.push(block.blockname);
         } else if (block.blocktype === 'randomBarcode') {
-          if (block.blockfunction === 'UMI') pieces.UR.push(block.blockname);
-          else pieces.CB.push(block.blockname);
+          if (block.blockfunction === 'UMI') {
+            pieces.UR.push(block.blockname);
+          } else {
+            pieces.CB.push(block.blockname);
+            uncorrected.push(block.blockname);
+          }
         }
       }
       tags.CB.push(pieces.CB);
@@ -1032,7 +1178,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const join_reads = (per_read) => per_read.map((names) => names.join('.')).join('.');
     const has_umi_block = exported_read_indices(model).some((index) =>
       model.reads[index].blocks.some((block) => block.blockfunction === 'UMI'));
-    const alignment_files = exported_read_indices(model).map((read_index) => {
+    const output_reads = exported_read_indices(model).map((read_index) => {
       const read = model.reads[read_index];
       if (!read.blocks.length) return { read: read_index, kind: 'whole', parts: [], rest: false };
       const parts = read.blocks.filter((block) => block.keepblock === true).map((block) => block.blockname);
@@ -1041,17 +1187,18 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     });
     return {
       reads_with_blocks: read_indices,
-      CB: { pieces: tags.CB, value: join_reads(tags.CB) },
+      CB: { pieces: tags.CB, value: join_reads(tags.CB), corrected, uncorrected },
       CR: { pieces: tags.CR, value: join_reads(tags.CR) },
       UR: { pieces: tags.UR, value: join_reads(tags.UR), written: has_umi_block },
       UB: { written: has_umi_block },
       FL: {
         blocks: fl_blocks,
+        known: fl_known,
         min: fl_ranges.reduce((total, range) => total + range[0], 0),
         max: fl_ranges.reduce((total, range) => total + range[1], 0),
       },
       has_umi_block,
-      alignment_files,
+      output_reads,
     };
   }
 
@@ -1141,6 +1288,30 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   /**
+   * The rows of pasted text that holds several sequences, or null for a
+   * single value, which is pasted into the box as typed. Text of two or more
+   * lines is a table, read as an imported file is. One line with two or more
+   * DNA entries separated by tabs, commas or semicolons is a list, one entry
+   * per row, numbered as items. Spaces separate entries only when
+   * split_on_spaces is true (barcode lists): a constant region's sequence is
+   * often copied in groups of ten ("GTCTCGTGGG CTCGGAGATG"), and splitting
+   * it would silently make variants.
+   * @param {string} text
+   * @param {boolean} [split_on_spaces=true]
+   * @returns {?{rows: {line: number, cells: string[]}[], unit: string}}
+   */
+  function pasted_list_rows(text, split_on_spaces = true) {
+    const table = parse_delimited_text(text);
+    if (table.rows.length > 1) return { rows: table.rows, unit: 'line' };
+    if (!table.rows.length) return null;
+    const body = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+    const separators = split_on_spaces ? /[\s,;]+/ : /\s*[\t,;]\s*/;
+    const entries = body.trim().split(separators).filter((entry) => entry !== '');
+    if (entries.length < 2 || !entries.every((entry) => classify_cell(entry) === 'dna')) return null;
+    return { rows: entries.map((entry, index) => ({ line: index + 1, cells: [entry] })), unit: 'item' };
+  }
+
+  /**
    * Classify a table cell: "dna" (only A, C, G, T in any case), "dna_junk"
    * (DNA once invisible characters are removed; imported as is, so the
    * sequence check flags it), "text", or "empty".
@@ -1184,14 +1355,16 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * Whether the first row is a header for the sequence column.
    *
    * A first cell that isn't DNA is a header. A DNA-like first cell is
-   * suspicious when it is "TAG" or no other entry has its length: with other
-   * columns that start with text, it is a header; in a single column the user
-   * is asked.
+   * suspicious when it is "TAG", or, for a barcode list, when no other entry
+   * has its length (a constant region's variants often differ in length):
+   * with other columns that start with text, it is a header; in a single
+   * column the user is asked.
    * @param {{line: number, cells: string[]}[]} rows
    * @param {number} column
+   * @param {boolean} [by_length=true] Whether a length no other entry has is suspicious.
    * @returns {boolean|string} true, false, or "ask".
    */
-  function detect_header_row(rows, column) {
+  function detect_header_row(rows, column, by_length = true) {
     if (rows.length < 2) return false;
     const first = cell_at(rows[0], column);
     const kind = classify_cell(first);
@@ -1200,7 +1373,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const body_lengths = new Set(rows.slice(1).map((row) => cell_at(row, column))
       .filter((cell) => classify_cell(cell) !== 'empty')
       .map((cell) => cell.replace(INVISIBLE_PATTERN, '').length));
-    const suspicious = first.toUpperCase() === 'TAG' || !body_lengths.has(first.length);
+    const suspicious = first.toUpperCase() === 'TAG' || (by_length && !body_lengths.has(first.length));
     if (!suspicious) return false;
     const other_text = rows[0].cells.some((cell, index) => index !== column && classify_cell(cell) === 'text');
     if (other_text) return true;
@@ -1239,18 +1412,20 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
    * @param {{line: number, cells: string[]}[]} rows
    * @param {string} source_name File name (or "pasted text"), for messages.
    * @param {{column?: number, header?: boolean}} [choices] The user's answers so far.
-   * @param {string} [unit="line"] What a row number counts in the source: "line" or "row".
+   * @param {string} [unit="line"] What a row number counts in the source: "line", "row" or "item".
+   * @param {string} [blocktype="barcodeList"] The block imported into; a constant region's
+   *   variants may differ in length, so length alone never makes its first entry a header.
    * @returns {Object} {status: "ok", sequences, sources, column, header},
    *   {status: "choose_column", candidates}, {status: "ask_header", column, first},
    *   or {status: "error", message}.
    */
-  function plan_table_import(rows, source_name, choices = {}, unit = 'line') {
+  function plan_table_import(rows, source_name, choices = {}, unit = 'line', blocktype = 'barcodeList') {
     if (!rows.length) return { status: 'error', message: 'There is nothing to import: the input is empty.' };
     const candidates = detect_sequence_column(rows);
     if (rows.length === 1 && !candidates.length && rows[0].cells.every((cell) => classify_cell(cell) !== 'dna')) {
       return { status: 'error', message: 'There is nothing to import: the input has only a header row.' };
     }
-    if (!candidates.length) return { status: 'error', message: 'No column of DNA sequences (A, C, G, T) was found.' };
+    if (!candidates.length) return { status: 'error', message: 'No column of DNA sequences (only A, C, G and T) was found.' };
     let column = choices.column;
     if (column === undefined || column === null) {
       if (candidates.length > 1) return { status: 'choose_column', candidates };
@@ -1258,7 +1433,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     }
     let header = choices.header;
     if (header === undefined || header === null) {
-      header = detect_header_row(rows, column);
+      header = detect_header_row(rows, column, blocktype !== 'constantRegion');
       if (header === 'ask') return { status: 'ask_header', column, first: cell_at(rows[0], column) };
     }
     const sequences = [];
@@ -1343,17 +1518,30 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       .map(([length, count]) => length + ' nt ×' + count.toLocaleString('en-US')).join(' · ');
   }
 
+  // Whitespace that shows as a gap rather than as nothing, named in messages.
+  const WHITESPACE_NAMES = { ' ': 'a space', '\t': 'a tab', '\n': 'a line break', '\r': 'a line break' };
+
   function describe_bad_characters(sequence) {
     const bad = [];
     for (const ch of sequence) {
       if ('ACGT'.includes(ch)) continue;
       const code = ch.codePointAt(0);
-      const label = ch.replace(INVISIBLE_PATTERN, '') === '' || code < 0x20
+      const label = WHITESPACE_NAMES[ch] || (ch.replace(INVISIBLE_PATTERN, '') === '' || code < 0x20
         ? 'an invisible U+' + code.toString(16).toUpperCase().padStart(4, '0')
-        : '"' + ch + '"';
+        : '"' + ch + '"');
       if (!bad.includes(label)) bad.push(label);
     }
     return bad.join(', ');
+  }
+
+  /** A sequence for quoting in a message: invisible characters removed, spaces and tabs kept. */
+  function visible_text(sequence) {
+    return sequence.replace(INVISIBLE_PATTERN, (ch) => (ch === ' ' || ch === '\t' ? ch : ''));
+  }
+
+  /** A typed or imported value for a message: "empty" for an empty field, else as describe_raw shows it. */
+  function describe_value(value) {
+    return value === '' ? 'empty' : describe_raw(value);
   }
 
   function format_bytes(bytes) {
@@ -1417,9 +1605,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   /**
-   * Check a model against the app's rules. Errors disable Download;
-   * warnings don't. Only the reads the file will contain are checked, so a
-   * hidden Read 2 never blocks a single-end download.
+   * Check a model against the app's rules. Each issue has a level: "error"
+   * for a mistake, "todo" for a step not done yet (no read layout, no
+   * regions, an empty list), or "warning". Errors and to-dos disable
+   * Download; warnings don't. Only the reads the file will contain are
+   * checked, so a hidden Read 2 never blocks a single-end download.
    * @param {Object} model
    * @returns {{rule: string, level: string, temporary: boolean, read: ?number, block_id: ?string, rows: ?number[], message: string}[]}
    */
@@ -1430,7 +1620,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     });
 
     if (model.single_end === null || model.single_end === undefined) {
-      add('E01', 'error', 'Choose single-end or paired-end reads.');
+      add('E01', 'todo', 'Choose paired-end or single-end reads.');
     } else if (typeof model.single_end !== 'boolean') {
       add('E11', 'error', 'Single- or paired-end must be true or false; the file has ' + describe_raw(model.single_end) + '.');
     }
@@ -1441,9 +1631,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const read_indices = exported_read_indices(model);
     const block_count = read_indices.reduce((total, index) => total + model.reads[index].blocks.length, 0);
     if (!block_count) {
-      add('E14', 'error', model.single_end === true
-        ? 'The config has no blocks. Add at least one block to Read 1.'
-        : 'The config has no blocks. Add at least one block to Read 1 or Read 2.');
+      add('E14', 'todo', model.single_end === true
+        ? 'Add at least one region to Read 1.'
+        : 'Add at least one region to Read 1 or Read 2.');
     }
 
     for (const read_index of read_indices) {
@@ -1451,7 +1641,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       const label = READ_LABELS[read_index];
       const decoders = decoder_for_each_list(read.blocks);
       if (typeof read.keep_nonbarcode !== 'boolean') {
-        add('E11', 'error', label + ': "send rest of read" must be true or false; the file has ' + describe_raw(read.keep_nonbarcode) + '.', { read: read_index });
+        add('E11', 'error', label + ': "In output reads" for the rest of the read must be Keep or Leave out; the file has ' + describe_raw(read.keep_nonbarcode) + '.', { read: read_index });
       }
 
       const seen_names = new Map();
@@ -1461,13 +1651,13 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         const where = { read: read_index, block_id: block.id };
 
         if (typeof block.blockname !== 'string' || block.blockname === '') {
-          add('E08', 'error', label + ', block ' + (index + 1) + ': the block needs a name.', where);
+          add('E08', 'error', label + ', region ' + (index + 1) + ', needs a name.', where);
         } else if (!BLOCKNAME_PATTERN.test(block.blockname)) {
-          add('E08', 'error', name + ': names may use only letters, digits, "_", "." and "-", up to 64 characters.', where);
+          add('E08', 'error', name + ': region names may use only letters, digits, "_", "." and "-", up to 64 characters.', where);
         } else {
           const key = block.blockname.toLowerCase();
           if (seen_names.has(key)) {
-            add('E08', 'error', seen_names.get(key) + ' and ' + name + ': block names in a read must differ, ignoring case.', where);
+            add('E08', 'error', seen_names.get(key) + ' and ' + name + ': two regions in ' + label + ' can\'t share a name, even in different case.', where);
           } else {
             seen_names.set(key, name);
           }
@@ -1481,26 +1671,26 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
           add('E11', 'error', name + ' has an unknown function, ' + describe_raw(block.blockfunction) + '.', where);
         }
         if (typeof block.keepblock !== 'boolean') {
-          add('E11', 'error', name + ': "keep for alignment" must be true or false; the file has ' + describe_raw(block.keepblock) + '.', where);
+          add('E11', 'error', name + ': "In output reads" must be Keep or Leave out; the file has ' + describe_raw(block.keepblock) + '.', where);
         }
         if (block.linkgroup !== null && block.linkgroup !== undefined && !Number.isInteger(block.linkgroup)) {
           add('E11', 'error', name + ': the link group must be a whole number; the file has ' + describe_raw(block.linkgroup) + '.', where);
         }
         const maxerrors_ok = Number.isInteger(block.maxerrors);
         if (!maxerrors_ok) {
-          add('E11', 'error', name + ': allowed errors must be a whole number; the file has ' + describe_raw(block.maxerrors) + '.', where);
+          add('E11', 'error', name + ': allowed errors must be a whole number; it is ' + describe_value(block.maxerrors) + '.', where);
         }
 
         if (block.blocktype === 'randomBarcode') {
           if (!Number.isInteger(block.length)) {
-            add('E11', 'error', name + ': the length must be a whole number; the file has ' + describe_raw(block.length) + '.', where);
+            add('E11', 'error', name + ': the length must be a whole number; it is ' + describe_value(block.length) + '.', where);
           } else if (block.length < 1) {
             add('E07', 'error', name + ': the length must be at least 1.', where);
           } else if (maxerrors_ok && (block.maxerrors < 0 || block.maxerrors > Math.floor(block.length / 2))) {
             add('E06', 'error', name + ': allowed errors must be from 0 to ' + Math.floor(block.length / 2) + ' (half the length, rounded down).', where);
           }
           if (block.blockfunction === 'barcode') {
-            add('W06', 'warning', name + ' is a random block set to barcode, so its bases go into CB without error correction.', where);
+            add('W06', 'warning', name + ' is a random region set to barcode, so its bases go into CB without error correction.', where);
           }
           return;
         }
@@ -1510,7 +1700,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
           return;
         }
         if (!block.sequence.length) {
-          add('E03', 'error', name + ' has no sequences.', where);
+          add('E03', 'todo', block.blocktype === 'barcodeList' ? 'Add barcodes to ' + name + '.' : 'Add the sequence of ' + name + '.', where);
           return;
         }
         const statuses = sequence_row_statuses(block);
@@ -1523,7 +1713,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
           } else if (statuses[row] === 'empty') {
             add('E03', 'error', name + ': an entry is empty' + place + '.', { ...where, rows: [row] });
           } else if (statuses[row] === 'invalid') {
-            add('E03', 'error', name + ': "' + item.replace(INVISIBLE_PATTERN, '') + '"' + place + ' contains ' + describe_bad_characters(item) + '; only A, C, G and T are allowed.', { ...where, rows: [row] });
+            add('E03', 'error', name + ': "' + visible_text(item) + '"' + place + ' contains ' + describe_bad_characters(item) + '; only A, C, G and T are allowed.', { ...where, rows: [row] });
           }
         });
         const positions = new Map();
@@ -1558,7 +1748,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
           const length_rows = statuses.map((status, row) => (status === 'length' ? row : -1)).filter((row) => row >= 0);
           if (decoders[index] === 'FREE') {
             if (lengths.size > 1) {
-              add('E05', 'error', name + ' is decoded with FREE, so its barcodes must all have the same length. It has ' + length_summary(good) + '.', { ...where, rows: length_rows });
+              add('E05', 'error', name + ' has barcodes of different lengths (' + length_summary(good) + '). A list like that needs a constant region right after it, to its right. Add a constant region after ' + name + ', or give all its barcodes the same length.', { ...where, rows: length_rows });
             } else {
               const bytes = free_table_bytes(good.length, good[0].length);
               if (bytes >= FREE_TABLE_WARNING_BYTES) {
@@ -1580,12 +1770,12 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       });
       for (const members of groups.values()) {
         if (members.length === 1) {
-          add('E12', 'error', members[0].blockname + ' is the only block in its link group. Link it with another block or remove the link.', { read: read_index, block_id: members[0].id });
+          add('E12', 'error', members[0].blockname + ' is the only region in its link group. Link it with another region or remove the link.', { read: read_index, block_id: members[0].id });
         }
       }
 
       if (read.blocks.length === 1) {
-        add('W11', 'warning', label + ' has a single block. Current bcwithqc crashes on a read structure with only one block.', { read: read_index });
+        add('W11', 'warning', label + ' has a single region. Current bcwithqc crashes on a read with only one region.', { read: read_index });
       }
       const combinations = read.blocks.filter((block) => block.blocktype === 'constantRegion' && Array.isArray(block.sequence))
         .reduce((total, block) => total * Math.max(1, block.sequence.length), 1);
@@ -1609,7 +1799,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     if (model.single_end === false) {
       const [read_1, read_2] = model.reads;
       if (!read_1.blocks.length && read_2.blocks.length) {
-        add('W12', 'warning', 'Read 1 has no blocks but Read 2 does. Current bcwithqc crashes on this.', { read: 0 });
+        add('W12', 'warning', 'Read 1 has no regions but Read 2 does. Current bcwithqc crashes on this.', { read: 0 });
       }
       if (read_1.blocks.length && !read_2.blocks.length && !read_1.blocks.some((block) => block.blocktype === 'constantRegion')) {
         add('W08', 'warning', 'With barcodes on Read 1 only and no constant region, current bcwithqc does not follow the file order: it guesses which file holds the barcodes from the first 500 reads, and picks the second file whenever its reads are at least as long as the Read 1 structure.', { read: 0 });
@@ -1621,7 +1811,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     }
     const has_barcode = read_indices.some((index) => model.reads[index].blocks.some((block) =>
       block.blockfunction !== 'discard' && (block.blocktype === 'barcodeList' || (block.blocktype === 'randomBarcode' && block.blockfunction === 'barcode'))));
-    if (block_count && !has_barcode) add('W07', 'warning', 'No block is a barcode, so CB will be empty.');
+    if (block_count && !has_barcode) add('W07', 'warning', 'No region is a barcode, so CB will be empty.');
     return issues;
   }
 
@@ -1634,6 +1824,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     TEMPORARY_OUTPUT_NOTES,
     bcwithqc_decoders_today,
     parse_delimited_text,
+    pasted_list_rows,
     classify_cell,
     detect_sequence_column,
     detect_header_row,
@@ -1651,6 +1842,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     new_block,
     add_block,
     remove_block,
+    output_whole_reads_without_blocks,
     move_block,
     add_link,
     remove_link,
@@ -1685,9 +1877,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   const TYPE_LABELS = { barcodeList: 'Barcode list', constantRegion: 'Constant region', randomBarcode: 'Random' };
   const TYPE_CLASSES = { barcodeList: 'list', constantRegion: 'const', randomBarcode: 'rand' };
   const ROW_STATUS_TEXT = { invalid: 'not A, C, G or T', empty: 'empty', duplicate: 'duplicate', length: 'length differs' };
-  const CONTIGUITY_NOTE = 'Blocks start at base 1 and must be contiguous. Anything after the last block is the rest of the read.';
+  const CHIP_CLASSES = { error: 'err', todo: 'todo', warning: 'warn' };
+  const LEVEL_ORDER = { error: 0, todo: 1, warning: 2 };
+  const CONTIGUITY_NOTE = 'Regions start at base 1 and follow each other without gaps. Anything after the last region is the rest of the read.';
   const ORIENTATION_HELP = 'Each molecule may be oriented either way, so the barcodes of a read pair may be in either file. bcwithqc decides per pair by matching the constant regions, and swaps the two reads where needed. Single-end reads are not supported yet: single-end configs are written with this off.';
-  const NAME_HELP = 'Use letters, digits, "_", "." and "-", up to 64 characters. Names in a read must differ, also when case is ignored: CB1 and cb1 clash. bcwithqc uses the names in its QC files.';
+  const NAME_HELP = 'Use letters, digits, "_", "." and "-", up to 64 characters. Two regions in the same read can\'t share a name, even in different case: CB1 and cb1 clash.';
 
   const state = {
     model: core.new_model(),
@@ -1703,8 +1897,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     json_open: false,
     base_name: 'barcode_config',
     open_menu: null,
+    menu_opener: null,
     open_help: null,
     drag_id: null,
+    // Text in the add box not added yet; kept across redraws, cleared when another region is selected.
+    add_text: '',
     templates: [],
   };
 
@@ -1740,10 +1937,17 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     return count.toLocaleString('en-US') + ' ' + (count === 1 ? singular : plural_form || singular + 's');
   }
 
+  /**
+   * Remember the focused control across a redraw, by its data-focus key or else
+   * its id. Its data-focus-fallback names the key to focus instead when the
+   * control is gone or disabled after the redraw (Move right at the end).
+   */
   function capture_focus() {
     const active = document.activeElement;
-    if (!active || !active.dataset || !active.dataset.focus) return null;
-    const saved = { key: active.dataset.focus };
+    if (!active || active === document.body || !active.dataset) return null;
+    const saved = active.dataset.focus ? { key: active.dataset.focus } : active.id ? { id: active.id } : null;
+    if (!saved) return null;
+    saved.fallback = active.dataset.focusFallback || null;
     try {
       saved.start = active.selectionStart;
       saved.end = active.selectionEnd;
@@ -1755,8 +1959,10 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 
   function restore_focus(saved) {
     if (!saved) return;
-    const element = document.querySelector('[data-focus="' + saved.key + '"]');
-    if (!element) return;
+    const by_key = (key) => document.querySelector('[data-focus="' + key + '"]');
+    let element = saved.key ? by_key(saved.key) : $(saved.id);
+    if ((!element || element.disabled) && saved.fallback) element = by_key(saved.fallback);
+    if (!element || element.disabled) return;
     element.focus();
     if (saved.start !== undefined && saved.start !== null && element.setSelectionRange) {
       try {
@@ -1782,10 +1988,11 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     return JSON.parse(JSON.stringify(value));
   }
 
-  /** Replace the model after an edit, mark it unsaved and redraw. */
+  /** Replace the model after an edit, mark it unsaved and redraw. An old "Could not open" banner goes. */
   function commit(model) {
     state.model = model;
     state.dirty = true;
+    state.error = '';
     render();
   }
 
@@ -1805,6 +2012,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   function select_block(block_id) {
+    if (block_id !== state.block_id) state.add_text = '';
     state.block_id = block_id;
     state.rows = new Set();
     state.anchor = null;
@@ -1819,6 +2027,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     state.error = '';
     state.dirty = false;
     state.base_name = base_name;
+    state.add_text = '';
     select_block(model.reads[0].blocks.length ? model.reads[0].blocks[0].id : null);
     render();
   }
@@ -1827,8 +2036,17 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     return core.validate_config(state.model);
   }
 
-  function has_errors() {
-    return issues().some((issue) => issue.level === 'error');
+  /** True when an error or a to-do item stands in the way of downloading. */
+  function download_blocked(all_issues) {
+    return all_issues.some((issue) => issue.level === 'error' || issue.level === 'todo');
+  }
+
+  /**
+   * True for a fresh page: no read layout chosen and no regions. The page then
+   * shows the welcome panel, and nothing would be lost by replacing it.
+   */
+  function is_welcome() {
+    return state.model.single_end === null && state.model.reads.every((read) => read.blocks.length === 0);
   }
 
   // ----------------------------------------------------------------
@@ -1837,17 +2055,64 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   function render() {
     const focus = capture_focus();
     const all_issues = issues();
+    const welcome = is_welcome();
+    $('layout').classList.toggle('welcome-mode', welcome);
+    $('rail').hidden = welcome;
     render_notices();
-    render_main(all_issues);
-    render_rail(all_issues);
+    if (welcome) {
+      $('main').replaceChildren(render_welcome());
+    } else {
+      render_main(all_issues);
+      render_rail(all_issues);
+    }
     render_top_menus();
-    const blocked = all_issues.some((issue) => issue.level === 'error');
+    const blocked = download_blocked(all_issues);
     $('download_button').disabled = blocked;
     $('download_gz_button').disabled = blocked;
-    $('download_button').title = blocked ? 'Fix the errors in Checks first' : 'Download the config (Ctrl/Cmd+S)';
+    $('download_button').title = welcome ? 'Choose the read layout first'
+      : all_issues.some((issue) => issue.level === 'error') ? 'Fix the errors in Checks first'
+        : blocked ? 'Finish the to-do items in Checks first' : 'Download the config (Ctrl/Cmd+S)';
     $('error_banner').hidden = !state.error;
     $('error_banner').textContent = state.error;
     restore_focus(focus);
+  }
+
+  /**
+   * The welcome panel: what the page does, and the first choice. Each choice
+   * shares its data-focus key with the matching Read layout button, so the
+   * keyboard focus lands there once the editor replaces the panel.
+   */
+  function render_welcome() {
+    const choice = (single, title, text) => {
+      const id = 'choice_' + (single ? 'single' : 'paired');
+      return h('button', { type: 'button', class: 'choice', 'aria-label': title, 'aria-describedby': id,
+        'data-focus': single ? 'layout_single' : 'layout_paired',
+        onclick: () => update_model((m) => { m.single_end = single; }) },
+      h('b', null, title), h('span', { id }, text));
+    };
+    const templates_open = state.open_menu === 'templates';
+    return h('section', { class: 'welcome', id: 'welcome', 'aria-labelledby': 'welcome_title' },
+      h('h2', { id: 'welcome_title' }, 'Welcome to the barcode configurator'),
+      h('p', { class: 'lead' }, 'This page builds the config file that tells bcwithqc where the barcodes, UMIs and constant sequences sit in each read.'),
+      h('ol', null,
+        h('li', null, 'Choose the read layout.'),
+        h('li', null, 'Add the regions of each read: barcode lists, constant regions and random sequences such as UMIs.'),
+        h('li', null, 'Download the .json and give it to bcwithqc with ', h('code', { class: 'nowrap' }, '--config'), '.')),
+      h('p', { class: 'hint' }, 'What you enter stays in this browser tab.'),
+      h('p', { class: 'start' }, 'Choose the read layout to start:'),
+      h('div', { class: 'choices-row' },
+        choice(false, 'Paired-end', 'Two reads per fragment, in two files per sample.'),
+        choice(true, 'Single-end', 'One read per fragment, in one file per sample.')),
+      h('p', null, 'Or ',
+        h('button', { type: 'button', class: 'linklike', id: 'welcome_templates', 'aria-haspopup': 'menu', 'aria-expanded': String(templates_open),
+          onclick: (event) => {
+            event.stopPropagation();
+            open_menu('templates', 'welcome_templates');
+          } },
+        'start from a template'),
+        ', or ',
+        h('button', { type: 'button', class: 'linklike', id: 'welcome_open', onclick: () => $('open_input').click() }, 'open a config you already have'),
+        '.'));
   }
 
   function render_notices() {
@@ -1858,8 +2123,14 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     box.append(
       h('header', null,
         h('span', null, state.notices_title + ': ' + plural(state.notices.length, 'notice')),
-        h('button', { type: 'button', class: 'btn small', 'aria-label': 'Dismiss', onclick: () => { state.notices = []; render(); } }, '✕')),
-      h('ul', null, state.notices.map((notice) => h('li', { class: notice.level === 'unknown_keys' ? 'warning' : notice.level }, notice.text,
+        h('button', { type: 'button', class: 'btn small', 'aria-label': 'Dismiss', onclick: () => {
+          state.notices = [];
+          render();
+          // The notices are gone; the focus moves on to the first control below them.
+          const next = $('main').querySelector('button, input, select');
+          if (next) next.focus();
+        } }, '✕')),
+      h('ul', null, state.notices.map((notice) => h('li', { class: 'notice-' + (notice.level === 'unknown_keys' ? 'warning' : notice.level) }, notice.text,
         notice.level === 'unknown_keys' ? h('label', { class: 'check', style: 'margin-left:8px' },
           h('input', { type: 'checkbox', id: 'keep_unknown_keys', checked: state.model.keep_unknown_keys === true,
             onchange: (event) => update_model((m) => { m.keep_unknown_keys = event.target.checked; }) }),
@@ -1871,14 +2142,18 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     main.replaceChildren();
     const model = state.model;
     const single = model.single_end === true;
-    if (single && state.read === 1) state.read = 0;
+    if (single && state.read === 1) {
+      state.read = 0;
+      select_block(null);
+    }
 
-    const mode = h('div', { class: 'seg' + (model.single_end === null ? ' need' : ''), role: 'group', 'aria-label': 'Read layout' },
-      h('button', { type: 'button', 'aria-pressed': String(model.single_end === false), onclick: () => update_model((m) => { m.single_end = false; }) }, 'Paired-end'),
-      h('button', { type: 'button', 'aria-pressed': String(model.single_end === true), onclick: () => update_model((m) => { m.single_end = true; }) }, 'Single-end'));
+    const mode = h('div', { class: 'seg', role: 'group', 'aria-label': 'Read layout' },
+      h('button', { type: 'button', 'aria-pressed': String(model.single_end === false), 'data-focus': 'layout_paired', onclick: () => update_model((m) => { m.single_end = false; }) }, 'Paired-end'),
+      h('button', { type: 'button', 'aria-pressed': String(model.single_end === true), 'data-focus': 'layout_single', onclick: () => update_model((m) => { m.single_end = true; }) }, 'Single-end'));
     const orientation = h('span', { class: 'check-help' },
       h('label', { class: 'check' },
-        h('input', { type: 'checkbox', checked: model.unknown_read_orientation === true, onchange: (event) => update_model((m) => { m.unknown_read_orientation = event.target.checked; }) }),
+        h('input', { type: 'checkbox', checked: model.unknown_read_orientation === true, 'data-focus': 'orientation',
+          onchange: (event) => update_model((m) => { m.unknown_read_orientation = event.target.checked; }) }),
         'Molecules may be oriented either way'),
       help_button('orientation', 'About molecule orientation', ORIENTATION_HELP));
     main.append(h('div', { class: 'row' }, mode, orientation,
@@ -1887,7 +2162,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     if (!single) {
       main.append(h('div', { class: 'row' }, h('div', { class: 'seg', role: 'tablist', 'aria-label': 'Reads' },
         [0, 1].map((index) => h('button', {
-          type: 'button', role: 'tab', 'aria-selected': String(state.read === index),
+          type: 'button', role: 'tab', 'aria-selected': String(state.read === index), 'data-focus': 'read_tab_' + index,
           onclick: () => { state.read = index; select_block(null); render(); },
         }, READ_LABELS[index] + ' · ' + (index === 0 ? 'first file' : 'second file'))))));
     }
@@ -1895,26 +2170,84 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const read = current_read();
     main.append(render_diagram(read, all_issues));
 
-    const structure = core.describe_structure(read.blocks);
-    const facts = structure
-      ? [range_text(structure.min_length, structure.max_length) + ' nt',
-        plural(structure.linker_combinations, 'linker combination'),
-        'reads must be ≥ ' + structure.min_read_length.toLocaleString('en-US') + ' nt',
-        CONTIGUITY_NOTE].join(' · ')
-      : CONTIGUITY_NOTE;
-    main.append(h('div', { class: 'caption' },
-      h('span', { class: 'facts', id: 'structure_caption' }, facts),
-      menu_button('add_block', '+ Add block ▾', 'btn outline small', [
-        ['Barcode list', () => add_block('barcodeList')],
-        ['Constant region', () => add_block('constantRegion')],
-        ['Random (UMI)', () => add_block('randomBarcode')],
-      ])));
-    main.append(h('label', { class: 'check' },
-      h('input', { type: 'checkbox', id: 'keep_nonbarcode', checked: read.keep_nonbarcode === true, onchange: (event) => update_model((m) => { m.reads[state.read].keep_nonbarcode = event.target.checked; }) }),
-      'Send the rest of ' + READ_LABELS[state.read] + ' to alignment'));
+    main.append(h('div', { class: 'caption' }, render_structure_facts(core.describe_structure(read.blocks))));
 
     const block = selected_block();
+    const read_label = READ_LABELS[state.read];
+    const where = block ? 'Add a region after ' + block_name(block) + ':'
+      : read.blocks.length ? 'Add a region at the end of ' + read_label + ':' : 'Add a region to ' + read_label + ':';
+    const add_button = (blocktype, kind, id, text) => h('button', { type: 'button', class: 'btn add ' + kind, id, 'data-focus': 'add_' + blocktype,
+      onclick: () => add_block(blocktype) }, text);
+    main.append(h('div', { class: 'add-regions', role: 'group', 'aria-labelledby': 'add_region_where' },
+      h('span', { class: 'label', id: 'add_region_where' }, where),
+      add_button('barcodeList', 'list', 'add_list_button', '+ Barcode list'),
+      add_button('constantRegion', 'const', 'add_constant_button', '+ Constant region'),
+      add_button('randomBarcode', 'rand', 'add_random_button', '+ Random (UMI)')));
+
+    // The switch always speaks of the rest of the read, so nothing feels decided before
+    // regions are added. A read without regions is always kept whole (core.output_whole_reads_without_blocks).
+    // It names what changes in the reads bcwithqc writes, not a next step (V04).
+    const subject = 'Rest of ' + read_label;
+    const always_kept = 'A read without regions is always kept.';
+    main.append(h('div', { class: 'align-row' },
+      h('span', { class: 'label' }, subject),
+      h('span', { class: 'hint' }, 'In output reads:'),
+      keep_switch('rest_switch', subject + ' in output reads', 'rest', read.keep_nonbarcode,
+        (value) => update_model((m) => { m.reads[state.read].keep_nonbarcode = value; }),
+        read.blocks.length ? null : always_kept),
+      read.blocks.length ? null : h('span', { class: 'hint', id: 'rest_always_kept' }, always_kept)));
+
     if (block) main.append(render_block_card(block, read, all_issues));
+  }
+
+  /**
+   * The facts line under the diagram: the structure's length, the linker
+   * combinations, and the read lengths it needs (core.describe_structure).
+   * Lengths show once every region's length and allowed errors are known.
+   */
+  function render_structure_facts(structure) {
+    const facts = [];
+    if (structure && structure.lengths_known) {
+      const number = (value) => value.toLocaleString('en-US');
+      // A no-break space keeps each number on the same line as its "≥" and "nt".
+      const nbsp = String.fromCharCode(0xa0);
+      facts.push(h('span', null, range_text(structure.min_length, structure.max_length) + ' nt'));
+      facts.push(h('span', null, plural(structure.linker_combinations, 'linker combination')));
+      facts.push(h('span', {
+        id: 'read_lengths',
+        title: 'At least the regions\' shortest total length (' + number(structure.min_length) + ' nt) minus all their allowed errors ('
+          + number(structure.allowed_errors) + '). Recommended: their longest total length (' + number(structure.max_length) + ' nt) plus all their allowed errors.',
+      }, 'reads ≥' + nbsp + number(structure.min_read_length) + nbsp + 'nt (≥' + nbsp + number(structure.recommended_read_length) + nbsp + 'nt recommended)'));
+    } else if (structure) {
+      facts.push(h('span', null, plural(structure.linker_combinations, 'linker combination')));
+      facts.push(h('span', { id: 'read_lengths' }, 'lengths show once every region is filled in'));
+    }
+    facts.push(h('span', null, CONTIGUITY_NOTE));
+    return h('span', { class: 'facts', id: 'structure_caption' }, facts.flatMap((fact, index) => (index ? [' · ', fact] : [fact])));
+  }
+
+  /** A region's name as the page shows it: its name, or "region N" while it has none. */
+  function block_name(block) {
+    const index = current_read().blocks.indexOf(block);
+    return typeof block.blockname === 'string' && block.blockname !== '' ? block.blockname : 'region ' + (index + 1);
+  }
+
+  /**
+   * The two-way "Keep / Leave out" switch for whether bases stay in the output
+   * reads. Neither side is pressed while the value isn't true or false (a
+   * file's invalid value, reported as E11).
+   * @param {string} id Element id.
+   * @param {string} label Accessible name of the group.
+   * @param {string} focus_key Prefix for the buttons' data-focus keys.
+   * @param {*} value The current value.
+   * @param {function(boolean)} set Called with the value chosen.
+   * @param {?string} [leave_out_blocked] When given, "Leave out" is disabled and this says why.
+   */
+  function keep_switch(id, label, focus_key, value, set, leave_out_blocked = null) {
+    return h('div', { class: 'switch2', id, role: 'group', 'aria-label': label },
+      h('button', { type: 'button', 'aria-pressed': String(value === true), 'data-focus': focus_key + '_keep', onclick: () => set(true) }, 'Keep'),
+      h('button', { type: 'button', 'aria-pressed': String(value === false), 'data-focus': focus_key + '_leave', disabled: Boolean(leave_out_blocked),
+        title: leave_out_blocked, onclick: () => set(false) }, 'Leave out'));
   }
 
   function range_text(low, high) {
@@ -1929,18 +2262,22 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   function block_detail(block) {
     if (block.blocktype === 'randomBarcode') return ['random', block.length + ' nt'];
     if (!core.BLOCK_TYPES.includes(block.blocktype)) return ['unknown type'];
+    if (!Array.isArray(block.sequence)) return ['sequences not a list'];
     const lengths = sequence_lengths(block);
     const span = lengths.length ? range_text(Math.min(...lengths), Math.max(...lengths)) + ' nt' : 'no sequences';
     return [plural(block.sequence.length, block.blocktype === 'barcodeList' ? 'barcode' : 'variant'), span];
   }
 
   function render_diagram(read, all_issues) {
-    const track = h('div', { class: 'track', role: 'group', 'aria-label': READ_LABELS[state.read] + ' blocks' });
+    const track = h('div', { class: 'track', role: 'group', 'aria-label': READ_LABELS[state.read] + ' regions' });
     const decoders = core.decoder_for_each_list(read.blocks);
     const groups = core.linkgroup_numbers(read.blocks);
+    // Only regions dragged within the diagram are dropped here; files go to a list's drop area.
+    const reordering = () => state.drag_id !== null;
     read.blocks.forEach((block, index) => {
       const own = all_issues.filter((issue) => issue.block_id === block.id);
-      const level = own.some((issue) => issue.level === 'error') ? ' has-error' : own.length ? ' has-warning' : '';
+      const has = (level) => own.some((issue) => issue.level === level);
+      const level = has('error') ? ' has-error' : has('todo') ? ' has-todo' : has('warning') ? ' has-warning' : '';
       const lengths = sequence_lengths(block);
       const grow = block.blocktype === 'randomBarcode' ? Number(block.length) || 4 : (lengths.length ? Math.max(...lengths) : 8);
       const extra = [];
@@ -1951,34 +2288,39 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         extra.push(h('span', null, '≤ ' + block.maxerrors + ' error' + (block.maxerrors === 1 ? '' : 's')));
       }
       if (block.blockfunction !== 'barcode' && block.blocktype !== 'constantRegion') extra.push(h('span', null, block.blockfunction));
-      if (block.keepblock === true) extra.push(h('span', null, 'kept'));
+      if (block.keepblock === true) extra.push(h('span', null, 'in output reads'));
       if (block.linkgroup !== null && block.linkgroup !== undefined) extra.push(h('span', { class: 'tag' }, 'link ' + (groups.get(block.linkgroup) + 1)));
       track.append(h('button', {
         type: 'button',
         class: 'blk ' + (TYPE_CLASSES[block.blocktype] || 'unknown') + level,
         style: 'flex-grow:' + Math.max(4, Math.min(grow, 40)),
         'aria-pressed': String(block.id === state.block_id),
-        'aria-label': 'Block ' + block.blockname,
+        'aria-label': 'Region ' + block.blockname,
+        'data-focus': 'tile_' + block.id,
         dataset: { block: block.id },
         draggable: 'true',
         onclick: () => { select_block(block.id); render(); },
-        ondragstart: (event) => { state.drag_id = block.id; event.dataTransfer.setData('text/plain', block.id); event.dataTransfer.effectAllowed = 'move'; },
-        ondragover: (event) => { event.preventDefault(); event.currentTarget.classList.add('drop-before'); },
+        // The drag carries the region under a type of its own, not as text, so no field takes it as typed text.
+        ondragstart: (event) => { state.drag_id = block.id; event.dataTransfer.setData('application/x-bcwithqc-region', block.id); event.dataTransfer.effectAllowed = 'move'; },
+        ondragend: () => { state.drag_id = null; },
+        ondragover: (event) => { if (!reordering()) return; event.preventDefault(); event.currentTarget.classList.add('drop-before'); },
         ondragleave: (event) => event.currentTarget.classList.remove('drop-before'),
-        ondrop: (event) => { event.preventDefault(); drop_block_before(index); },
+        ondrop: (event) => { if (!reordering()) return; event.preventDefault(); drop_block_before(index); },
       }, h('b', null, block.blockname), block_detail(block).map((line) => h('span', null, line)), extra));
     });
+    const kept = read.keep_nonbarcode === true;
+    const read_label = READ_LABELS[state.read];
     if (!read.blocks.length) {
-      track.append(h('div', { class: 'blk rest kept', style: 'flex-grow:1' },
-        h('b', null, 'no blocks'),
-        h('span', null, state.read === 1 ? 'The whole read goes to its file for alignment.' : 'Add a block with + Add block.')));
+      // The same text for either read: a read without regions is always kept whole.
+      track.append(h('div', { class: 'blk rest kept', style: 'flex-grow:1', id: 'empty_read' },
+        h('b', null, 'No regions yet'),
+        h('span', null, 'All of ' + read_label + ' is kept in the output reads.')));
     } else {
-      const kept = read.keep_nonbarcode === true;
       track.append(h('div', {
         class: 'blk rest' + (kept ? ' kept' : ''), style: 'flex-grow:12',
-        ondragover: (event) => event.preventDefault(),
-        ondrop: (event) => { event.preventDefault(); drop_block_before(read.blocks.length); },
-      }, h('b', null, 'rest of read'), h('span', null, kept ? 'sent to alignment' : 'not kept')));
+        ondragover: (event) => { if (reordering()) event.preventDefault(); },
+        ondrop: (event) => { if (!reordering()) return; event.preventDefault(); drop_block_before(read.blocks.length); },
+      }, h('b', null, 'rest of read'), h('span', null, kept ? 'in output reads' : 'left out')));
     }
     return track;
   }
@@ -1998,35 +2340,46 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 
   function decoder_reason(blocks, index) {
     const next = blocks[index + 1];
-    if (!next) return 'last block';
-    if (next.blocktype === 'randomBarcode') return 'a random block follows';
-    if (next.blocktype === 'constantRegion') return 'a constant follows';
+    if (!next) return 'last region';
+    if (next.blocktype === 'randomBarcode') return 'a random region follows';
+    if (next.blocktype === 'constantRegion') return 'a constant region follows';
     return 'another list follows';
   }
 
   function render_block_card(block, read, all_issues) {
     const index = read.blocks.findIndex((item) => item.id === block.id);
     const decoders = core.decoder_for_each_list(read.blocks);
-    const card = h('section', { class: 'block-card', 'aria-label': 'Selected block' });
+    const card = h('section', { class: 'block-card', 'aria-label': 'Selected region' });
     const head = h('div', { class: 'block-head' },
       h('span', { class: 'name' }, block.blockname),
       h('span', { class: 'badge ' + (TYPE_CLASSES[block.blocktype] || '') }, TYPE_LABELS[block.blocktype] || 'Unknown type'),
       decoders[index] ? h('span', { class: 'badge', id: 'decoder_badge' }, decoders[index] + ' ≤ ' + block.maxerrors + ' · ' + decoder_reason(read.blocks, index)) : null,
       h('span', { class: 'spacer' }),
-      h('button', { type: 'button', class: 'btn small outline', 'aria-label': 'Move left', disabled: index === 0, onclick: () => commit(core.move_block(state.model, state.read, index, index - 1)) }, '◀'),
-      h('button', { type: 'button', class: 'btn small outline', 'aria-label': 'Move right', disabled: index === read.blocks.length - 1, onclick: () => commit(core.move_block(state.model, state.read, index, index + 1)) }, '▶'),
-      h('button', { type: 'button', class: 'btn small danger', onclick: () => { const model = core.remove_block(state.model, state.read, block.id); select_block(null); commit(model); } }, 'Delete block'));
+      // One group, so the three buttons wrap onto a new line together. A move button that becomes
+      // disabled (first or last place) hands the focus to the other one.
+      h('span', { class: 'head-actions' },
+        h('button', { type: 'button', class: 'btn small outline', 'aria-label': 'Move left', disabled: index === 0, 'data-focus': 'move_left', 'data-focus-fallback': 'move_right',
+          onclick: () => commit(core.move_block(state.model, state.read, index, index - 1)) }, '◀'),
+        h('button', { type: 'button', class: 'btn small outline', 'aria-label': 'Move right', disabled: index === read.blocks.length - 1, 'data-focus': 'move_right', 'data-focus-fallback': 'move_left',
+          onclick: () => commit(core.move_block(state.model, state.read, index, index + 1)) }, '▶'),
+        h('button', { type: 'button', class: 'btn small danger', id: 'delete_region_button', onclick: () => delete_region(block) }, 'Delete region')));
     card.append(head);
 
     const own = all_issues.filter((issue) => issue.block_id === block.id);
     const field_invalid = (rule) => own.some((issue) => issue.rule === rule);
     const fields = h('div', { class: 'fields' },
       h('div', { class: 'field' + (field_invalid('E08') ? ' invalid' : '') },
-        h('span', { class: 'field-head' }, h('label', { for: 'block_name' }, 'Name'), help_button('name', 'Rules for block names', NAME_HELP)),
+        h('span', { class: 'field-head' }, h('label', { for: 'block_name' }, 'Name'), help_button('name', 'Rules for region names', NAME_HELP)),
         h('input', { type: 'text', id: 'block_name', value: String(block.blockname), 'data-focus': 'name', spellcheck: 'false', maxlength: '200',
           oninput: (event) => update_block((b) => { b.blockname = event.target.value; }) })),
       h('label', { class: 'field' }, h('span', null, 'Type'),
-        h('select', { 'data-focus': 'type', onchange: (event) => update_block((b, model) => change_type(b, event.target.value, model)) },
+        h('select', { 'data-focus': 'type', onchange: (event) => {
+          // Rows selected in a list don't carry over to another type.
+          state.rows = new Set();
+          state.anchor = null;
+          state.editing_row = null;
+          update_block((b, model) => change_type(b, event.target.value, model));
+        } },
           Object.entries(TYPE_LABELS).map(([value, label]) => h('option', { value, selected: block.blocktype === value }, label)),
           core.BLOCK_TYPES.includes(block.blocktype) ? null : h('option', { value: '', selected: true, disabled: true }, 'Unknown: ' + block.blocktype))),
       h('label', { class: 'field' }, h('span', null, 'Function'),
@@ -2042,20 +2395,27 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
             oninput: (event) => update_block((b) => { b.length = integer_or_raw(event.target.value); }) }))
         : null);
     card.append(fields);
+    card.append(h('div', { class: 'align-row' },
+      h('span', { class: 'label' }, 'In output reads:'),
+      keep_switch('region_switch', block_name(block) + ' in output reads', 'keepblock', block.keepblock,
+        (value) => update_block((b) => { b.keepblock = value; }))));
 
     const group_members = block.linkgroup === null || block.linkgroup === undefined ? [] : read.blocks.filter((item) => item.id !== block.id && item.linkgroup === block.linkgroup);
     const candidates = read.blocks.filter((item) => item.id !== block.id && !group_members.includes(item));
     card.append(h('div', { class: 'links' },
-      h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: block.keepblock === true, 'data-focus': 'keepblock', onchange: (event) => update_block((b) => { b.keepblock = event.target.checked; }) }), 'Keep for alignment'),
       h('span', { class: 'hint' }, 'Linked with'),
       group_members.length ? group_members.map((member) => h('span', { class: 'tag' }, member.blockname,
-        h('button', { type: 'button', 'aria-label': 'Unlink ' + member.blockname, onclick: () => commit(core.remove_link(state.model, state.read, member.id)) }, '✕'))) : h('span', { class: 'hint' }, 'none'),
+        h('button', { type: 'button', 'aria-label': 'Unlink ' + member.blockname, 'data-focus': 'unlink_' + member.id, 'data-focus-fallback': 'add_link',
+          onclick: () => commit(core.remove_link(state.model, state.read, member.id)) }, '✕'))) : h('span', { class: 'hint' }, 'none'),
       candidates.length ? h('select', { 'aria-label': 'Add link with', 'data-focus': 'add_link',
         onchange: (event) => { if (event.target.value) commit(core.add_link(state.model, state.read, block.id, event.target.value)); } },
       h('option', { value: '', selected: true }, '+ Add link with…'),
       candidates.map((item) => h('option', { value: item.id }, item.blockname))) : null));
 
-    if (block.blocktype === 'barcodeList' || block.blocktype === 'constantRegion') card.append(render_sequences(block));
+    if (block.blocktype === 'barcodeList' || block.blocktype === 'constantRegion') {
+      card.append(render_sequences(block));
+      accept_drops(card);
+    }
     return card;
   }
 
@@ -2083,8 +2443,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       else delete block.sort;
     }
     block.blocktype = new_type;
-    // A default name follows the type (bc1 becomes con1); a name the user chose stays.
-    if (/^(bc|con|umi)[0-9]+$/.test(block.blockname) && old_type !== new_type) {
+    // A default name follows the type (bc1 becomes con1, region1 becomes bc1); a name the user chose stays.
+    if (/^(bc|con|umi|region)[0-9]+$/.test(block.blockname) && old_type !== new_type) {
       block.blockname = '';
       block.blockname = core.default_block_name(model, new_type);
     }
@@ -2092,6 +2452,9 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 
   function render_sequences(block) {
     const wrap = h('div', { class: 'sequences', style: 'display:grid;gap:8px' });
+    // A file can hold something other than a list here (reported as E11); it shows as empty
+    // until the user adds or imports sequences, which replace it.
+    const sequences = Array.isArray(block.sequence) ? block.sequence : [];
     const lengths = sequence_lengths(block);
     const counts = new Map();
     for (const length of lengths) counts.set(length, (counts.get(length) || 0) + 1);
@@ -2100,22 +2463,22 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       : counts.size === 1 ? lengths[0] + ' nt' : '';
     const is_list = block.blocktype === 'barcodeList';
     wrap.append(h('div', { class: 'list-head' },
-      h('span', { class: 'count num', id: 'sequence_count' }, plural(block.sequence.length, is_list ? 'barcode' : 'variant')),
+      h('span', { class: 'count num', id: 'sequence_count' }, plural(sequences.length, is_list ? 'barcode' : 'variant')),
       h('span', { class: 'lens', id: 'sequence_lengths' }, length_text),
       h('span', { class: 'spacer' }),
       is_list ? h('div', { class: 'seg', role: 'group', 'aria-label': 'Order' },
-        h('button', { type: 'button', 'aria-pressed': String(block.sort === 'az'), onclick: () => update_block((b) => { b.sort = 'az'; }) }, 'A→Z'),
-        h('button', { type: 'button', 'aria-pressed': String(block.sort === 'entered'), onclick: () => update_block((b) => { b.sort = 'entered'; }) }, 'Entered')) : h('span', { class: 'hint' }, 'variants keep their order'),
-      menu_button('add_sequences', is_list ? 'Add barcodes ▾' : 'Add variants ▾', 'btn outline small', [
-        ['Import file…', () => $('import_input').click()],
-        ['Paste…', () => open_paste_dialog()],
-      ]),
+        h('button', { type: 'button', 'aria-pressed': String(block.sort === 'az'), 'data-focus': 'order_az', onclick: () => update_block((b) => { b.sort = 'az'; }) }, 'A→Z'),
+        h('button', { type: 'button', 'aria-pressed': String(block.sort === 'entered'), 'data-focus': 'order_entered', onclick: () => update_block((b) => { b.sort = 'entered'; }) }, 'As entered')) : h('span', { class: 'hint' }, 'variants keep their order'),
+      h('button', { type: 'button', class: 'btn outline small', id: 'import_button', onclick: () => $('import_input').click() }, 'Import file…'),
       menu_button('list_more', '⋯', 'btn small', [
         ['Clear list', () => update_block((b) => { b.sequence = []; b.sequence_source = []; state.rows = new Set(); })],
       ], 'More list actions')));
 
-    if (!block.sequence.length) {
-      wrap.append(h('div', { class: 'empty-list' }, 'No sequences yet. Type one below, paste a list, or import a file.'));
+    if (!sequences.length) {
+      wrap.append(h('div', { class: 'dropzone', id: 'list_dropzone' },
+        h('span', null, 'Drop a file here (CSV, TSV, TXT, Excel or ODS), or ',
+          h('button', { type: 'button', class: 'linklike', onclick: () => $('import_input').click() }, 'choose a file'), '.'),
+        h('span', null, is_list ? 'You can also paste a whole list into the box below.' : 'You can also paste several variants into the box below.')));
     } else {
       const statuses = core.sequence_row_statuses(block);
       const order = core.display_order(block);
@@ -2147,14 +2510,128 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       h('span', { id: 'selection_count' }, plural(state.rows.size, 'row') + ' selected'),
       h('button', { type: 'button', class: 'btn primary small', onclick: delete_selected_rows }, 'Delete selected')));
     wrap.append(h('div', { class: 'add-row' },
-      h('input', { type: 'text', placeholder: is_list ? 'Type a barcode and press Enter' : 'Type a variant and press Enter', 'aria-label': 'Add a sequence', 'data-focus': 'add_sequence', spellcheck: 'false',
+      h('input', { type: 'text', id: 'add_sequence', placeholder: is_list ? 'Type a barcode, or paste a list' : 'Type a variant, or paste several',
+        title: 'Press Enter to add what you typed. Pasting several lines, or several sequences on one line, adds them all.',
+        'aria-label': 'Add a sequence', 'data-focus': 'add_sequence', spellcheck: 'false', value: state.add_text,
+        oninput: (event) => { state.add_text = event.target.value; },
+        onpaste: (event) => {
+          // Several lines (or several sequences on one line) are a list: import them all.
+          // A single sequence is pasted into the box as usual.
+          const data = event.clipboardData;
+          const text = data ? data.getData('text/plain') || data.getData('text') : '';
+          const pasted = core.pasted_list_rows(text, is_list);
+          if (!pasted) return;
+          event.preventDefault();
+          run_import(pasted.rows, 'pasted text', {}, pasted.unit, 'append');
+        },
         onkeydown: (event) => {
           if (event.key !== 'Enter') return;
           const value = event.target.value.trim().toUpperCase();
           if (!value) return;
-          update_block((b) => { b.sequence.push(value); (b.sequence_source = b.sequence_source || []).push(null); });
+          state.add_text = '';
+          update_block((b) => {
+            if (!Array.isArray(b.sequence)) {
+              b.sequence = [];
+              b.sequence_source = [];
+            }
+            b.sequence.push(value);
+            (b.sequence_source = b.sequence_source || []).push(null);
+          });
         } })));
     return wrap;
+  }
+
+  /** True while something is dragged in from outside the page: a file, or text. */
+  function dragging_in(event) {
+    if (state.drag_id !== null || !event.dataTransfer) return false;
+    const types = Array.from(event.dataTransfer.types || []);
+    return types.includes('Files') || types.includes('text/plain');
+  }
+
+  function dragging_files(event) {
+    return Array.from(event.dataTransfer.types || []).includes('Files');
+  }
+
+  /**
+   * True when dropped text should go where the browser puts it: into a text
+   * field, a list's add box excepted (a drop there imports, like a paste).
+   */
+  function text_drop_for_field(event) {
+    if (dragging_files(event)) return false;
+    const field = event.target instanceof Element ? event.target.closest('input, textarea, select') : null;
+    return Boolean(field) && field.dataset.focus !== 'add_sequence';
+  }
+
+  /** Let a list's card take dropped files and text, importing them into the list. */
+  function accept_drops(element) {
+    const take = (event) => {
+      if (!dragging_in(event) || text_drop_for_field(event)) return false;
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
+    };
+    element.addEventListener('dragenter', (event) => {
+      if (take(event)) element.classList.add('drop-target');
+    });
+    // Over a field, dropped text goes into the field, so the card stops offering to import it.
+    element.addEventListener('dragover', (event) => {
+      if (!take(event)) {
+        element.classList.remove('drop-target');
+        return;
+      }
+      event.dataTransfer.dropEffect = 'copy';
+      element.classList.add('drop-target');
+    });
+    element.addEventListener('dragleave', (event) => {
+      if (!element.contains(event.relatedTarget)) element.classList.remove('drop-target');
+    });
+    element.addEventListener('drop', (event) => {
+      element.classList.remove('drop-target');
+      if (!take(event)) return;
+      receive_drop(event.dataTransfer);
+    });
+  }
+
+  /**
+   * Import what was dropped on a list: one file, or text read like a paste.
+   * One line of text that is neither a clean list nor a single sequence goes
+   * into the add box, where a paste would put it, so nothing in it is dropped
+   * unseen.
+   */
+  async function receive_drop(data) {
+    const files = Array.from(data.files || []);
+    if (files.length > 1) {
+      await message_dialog('Nothing imported', 'Drop one file at a time.');
+      return;
+    }
+    if (files.length === 1) {
+      await import_file(files[0]);
+      return;
+    }
+    const text = data.getData('text/plain');
+    if (!text) return;
+    const block = selected_block();
+    const pasted = core.pasted_list_rows(text, Boolean(block) && block.blocktype === 'barcodeList');
+    if (pasted) {
+      await run_import(pasted.rows, 'dropped text', {}, pasted.unit);
+      return;
+    }
+    const rows = core.parse_delimited_text(text).rows;
+    const single_sequence = rows.length === 1 && rows[0].cells.length === 1 && core.classify_cell(rows[0].cells[0]) === 'dna';
+    if (rows.length > 1 || single_sequence) {
+      await run_import(rows, 'dropped text', {}, 'line');
+      return;
+    }
+    if (rows.length) put_in_add_box(text);
+  }
+
+  /** Put text into the add box and focus it, so the user sees all of it before adding it. */
+  function put_in_add_box(text) {
+    state.add_text = text.trim();
+    const box = $('add_sequence');
+    if (!box) return;
+    box.value = state.add_text;
+    box.focus();
   }
 
   function finish_edit(row, text) {
@@ -2200,6 +2677,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const doomed = state.rows;
     state.rows = new Set();
     state.anchor = null;
+    const selected = selected_block();
+    if (!selected || !Array.isArray(selected.sequence)) return;
     update_block((block) => {
       const keep = block.sequence.map((_, index) => !doomed.has(index));
       block.sequence = block.sequence.filter((_, index) => keep[index]);
@@ -2207,12 +2686,40 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     });
   }
 
+  /** Add a region after the selected one of the shown read, or at its end. */
   function add_block(blocktype) {
     const read = current_read();
-    const position = state.block_id ? read.blocks.findIndex((block) => block.id === state.block_id) + 1 : read.blocks.length;
+    const selected = selected_block();
+    const position = selected ? read.blocks.indexOf(selected) + 1 : read.blocks.length;
     const result = core.add_block(state.model, state.read, blocktype, position);
     select_block(result.block_id);
     commit(result.model);
+  }
+
+  /** Ask, then delete a region; the keyboard focus moves to the add buttons. */
+  async function delete_region(block) {
+    if (!(await confirm_delete_region(block))) return;
+    const model = core.remove_block(state.model, state.read, block.id);
+    select_block(null);
+    commit(model);
+    const next = document.querySelector('[data-focus="add_barcodeList"]');
+    if (next) next.focus();
+  }
+
+  /**
+   * Open a menu and move the focus to its first item, remembering the control
+   * that opened it so Escape can give it the focus back.
+   */
+  function open_menu(id, opener_id) {
+    state.open_menu = id;
+    state.menu_opener = opener_id;
+    render();
+    focus_first_menu_item(id);
+  }
+
+  function focus_first_menu_item(id) {
+    const first = document.querySelector('#' + id + '_menu [role="menuitem"]');
+    if (first) first.focus();
   }
 
   function menu_button(id, label, classes, items, aria_label) {
@@ -2221,7 +2728,15 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       items.map(([text, action]) => h('button', { type: 'button', role: 'menuitem', onclick: () => { state.open_menu = null; render(); action(); } }, text)));
     return h('div', { class: 'menu-wrap' },
       h('button', { type: 'button', class: classes, id: id + '_button', 'aria-haspopup': 'menu', 'aria-expanded': String(open), 'aria-label': aria_label || null,
-        onclick: (event) => { event.stopPropagation(); state.open_menu = open ? null : id; render(); } }, label),
+        onclick: (event) => {
+          event.stopPropagation();
+          if (open) {
+            state.open_menu = null;
+            render();
+          } else {
+            open_menu(id, id + '_button');
+          }
+        } }, label),
       menu);
   }
 
@@ -2233,7 +2748,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   function help_button(id, label, text) {
     const open = state.open_help === id;
     return h('span', { class: 'help-wrap' },
-      h('button', { type: 'button', class: 'info', 'aria-label': label, 'aria-expanded': String(open), 'aria-controls': 'help_' + id,
+      h('button', { type: 'button', class: 'info', id: 'info_' + id, 'aria-label': label, 'aria-expanded': String(open), 'aria-controls': 'help_' + id,
+        'aria-describedby': open ? 'help_' + id : null,
         onclick: (event) => { event.stopPropagation(); state.open_help = open ? null : id; render(); } }, 'i'),
       h('span', { class: 'help', id: 'help_' + id, role: 'note', hidden: !open, onclick: (event) => event.stopPropagation() }, text));
   }
@@ -2241,42 +2757,62 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   function render_rail(all_issues) {
     const rail = $('rail');
     rail.replaceChildren();
-    const all = all_issues.slice().sort((a, b) => (a.level === b.level ? 0 : a.level === 'error' ? -1 : 1));
-    const errors = all.filter((issue) => issue.level === 'error').length;
-    const warnings = all.length - errors;
-    const summary = [errors ? plural(errors, 'error') : null, warnings ? plural(warnings, 'warning') : null].filter(Boolean).join(' · ');
+    const all = all_issues.slice().sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level]);
+    const count = (level) => all.filter((issue) => issue.level === level).length;
+    const summary = [
+      count('error') ? plural(count('error'), 'error') : null,
+      count('todo') ? count('todo').toLocaleString('en-US') + ' to do' : null,
+      count('warning') ? plural(count('warning'), 'warning') : null,
+    ].filter(Boolean).join(' · ');
+    const chip_title = (issue) => issue.level === 'todo' ? 'A step still to do (' + issue.rule + ')'
+      : issue.temporary ? 'About a current bcwithqc limitation; goes away once bcwithqc is fixed' : '';
     rail.append(h('section', { class: 'rail-sec', id: 'checks', 'aria-label': 'Checks' },
       h('h2', null, 'Checks', h('span', { id: 'checks_summary' }, summary)),
       all.length
-        ? all.map((issue) => h('button', { type: 'button', class: 'issue', dataset: { rule: issue.rule }, onclick: () => focus_issue(issue) },
-          h('span', { class: 'chip ' + (issue.level === 'error' ? 'err' : 'warn') + (issue.temporary ? ' temporary' : ''), title: issue.temporary ? 'About a current bcwithqc limitation; goes away once bcwithqc is fixed' : '' }, issue.rule),
+        ? all.map((issue, index) => h('button', { type: 'button', class: 'issue', 'data-focus': 'issue_' + index, dataset: { rule: issue.rule, level: issue.level }, onclick: () => focus_issue(issue) },
+          h('span', { class: 'chip ' + CHIP_CLASSES[issue.level] + (issue.temporary ? ' temporary' : ''), title: chip_title(issue) }, issue.level === 'todo' ? 'to do' : issue.rule),
           h('span', null, issue.message)))
         : h('div', { class: 'ok-text' }, 'No problems found.')));
 
     const outputs = core.describe_outputs(state.model);
     const empty = h('span', { class: 'note' }, 'empty');
+    // Barcode lists are corrected; random regions set to barcode go in as read.
+    const cb_note = !outputs.CB.uncorrected.length ? 'corrected'
+      : outputs.CB.corrected.length ? 'barcode lists corrected; ' + outputs.CB.uncorrected.join(', ') + ' as read'
+        : 'as read, not corrected';
     rail.append(h('section', { class: 'rail-sec', id: 'outputs', 'aria-label': 'Outputs' },
       h('h2', null, 'Outputs'),
       h('dl', { class: 'kv' },
-        h('dt', null, 'CB'), h('dd', { id: 'out_cb' }, outputs.CB.value || empty.cloneNode(true)),
-        h('dt', null, 'CR'), h('dd', { id: 'out_cr' }, outputs.CR.value ? h('span', { class: 'note' }, 'raw bases of the same blocks') : empty.cloneNode(true)),
-        h('dt', null, 'UB'), h('dd', { id: 'out_ub' }, outputs.UB.written ? h('span', { class: 'note' }, 'UR, corrected') : h('span', { class: 'note' }, 'not written (no UMI block)')),
+        h('dt', null, 'CB'), h('dd', { id: 'out_cb' }, outputs.CB.value ? [outputs.CB.value, ' ', h('span', { class: 'note' }, cb_note)] : empty.cloneNode(true)),
+        h('dt', null, 'CR'), h('dd', { id: 'out_cr' }, outputs.CR.value ? h('span', { class: 'note' }, 'raw bases of the CB regions') : empty.cloneNode(true)),
+        h('dt', null, 'UB'), h('dd', { id: 'out_ub' }, outputs.UB.written ? h('span', { class: 'note' }, 'UR, corrected') : h('span', { class: 'note' }, 'not written (no UMI region)')),
         h('dt', null, 'UR'), h('dd', { id: 'out_ur' }, outputs.UR.written
-          ? (outputs.UR.value || h('span', { class: 'note' }, 'empty'))
-          : h('span', { class: 'note' }, 'not written (no UMI block); current bcwithqc writes it empty')),
-        h('dt', null, 'FL'), h('dd', { id: 'out_fl' }, outputs.FL.blocks.some((names) => names.length) ? range_text(outputs.FL.min, outputs.FL.max) : h('span', { class: 'note' }, '0 (no constant region)'))),
-      h('div', { class: 'files', id: 'out_files' }, h('span', { class: 'hint' }, 'Files for alignment'),
-        outputs.alignment_files.map((file) => h('span', null, READ_LABELS[file.read] + ': ' + (file.kind === 'whole' ? 'whole read'
-          : file.kind === 'none' ? 'no file for alignment (nothing kept); current bcwithqc writes a file of empty reads'
-            : file.parts.concat(file.rest ? ['rest of read'] : []).join(' + ')))))));
+          ? (outputs.UR.value ? [outputs.UR.value, ' ', h('span', { class: 'note' }, 'raw UMI')] : h('span', { class: 'note' }, 'empty'))
+          : h('span', { class: 'note' }, 'not written (no UMI region); current bcwithqc writes it empty')),
+        h('dt', null, 'FL'), h('dd', { id: 'out_fl' }, !outputs.FL.blocks.some((names) => names.length) ? h('span', { class: 'note' }, '0 (no constant region)')
+          : outputs.FL.known ? range_text(outputs.FL.min, outputs.FL.max) : h('span', { class: 'note' }, 'shows once every constant region is filled in'))),
+      h('div', { class: 'files', id: 'out_files' }, h('span', { class: 'hint' }, 'Output reads'),
+        outputs.output_reads.map((file) => h('span', null, READ_LABELS[file.read] + ': ' + output_read_text(file))))));
 
     const text = core.config_to_json(state.model);
     rail.append(h('section', { class: 'rail-sec', id: 'json', 'aria-label': 'JSON' },
       h('div', { class: 'json-head' }, h('h2', null, 'JSON'),
         h('span', null,
           state.json_open ? h('button', { type: 'button', class: 'btn small outline', onclick: () => copy_json(text) }, 'Copy') : null,
-          h('button', { type: 'button', class: 'btn small', 'aria-expanded': String(state.json_open), onclick: () => { state.json_open = !state.json_open; render(); } }, state.json_open ? '▾ hide' : '▸ show'))),
+          h('button', { type: 'button', class: 'btn small', 'aria-expanded': String(state.json_open), 'data-focus': 'json_toggle',
+            onclick: () => { state.json_open = !state.json_open; render(); } }, state.json_open ? '▾ hide' : '▸ show'))),
       state.json_open ? h('pre', { class: 'json', id: 'json_preview', tabindex: '0' }, text) : null));
+  }
+
+  /**
+   * What one read's output reads hold, for the Outputs panel. The "current
+   * bcwithqc" note is TEMPORARY_OUTPUT_NOTES.empty_alignment_file; it goes
+   * once bcwithqc writes no file for a read that keeps nothing.
+   */
+  function output_read_text(file) {
+    if (file.kind === 'whole') return 'the whole read';
+    if (file.kind === 'parts') return file.parts.concat(file.rest ? ['rest of read'] : []).join(' + ');
+    return 'no file (nothing is kept); current bcwithqc writes a file of empty reads';
   }
 
   function copy_json(text) {
@@ -2297,13 +2833,19 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     selection.addRange(range);
   }
 
+  /** Show the region a Checks item is about and move the focus to its tile; without a region, the focus stays on the item. */
   function focus_issue(issue) {
-    if (issue.read !== null && issue.read !== undefined) state.read = issue.read;
+    if (issue.read !== null && issue.read !== undefined && issue.read !== state.read) {
+      state.read = issue.read;
+      select_block(null);
+    }
     if (issue.block_id) {
       select_block(issue.block_id);
       if (issue.rows) state.rows = new Set(issue.rows);
     }
     render();
+    const tile = issue.block_id ? document.querySelector('[data-focus="tile_' + issue.block_id + '"]') : null;
+    if (tile) tile.focus();
     const first = issue.rows && issue.rows.length ? document.querySelector('tr[data-row="' + issue.rows[0] + '"]') : null;
     if (first) first.scrollIntoView({ block: 'nearest' });
   }
@@ -2322,6 +2864,14 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       };
       dialog.replaceChildren(build(close));
       dialog.oncancel = (event) => { event.preventDefault(); close(null); };
+      // Return on a choice (a radio button) presses the filled button, as it does on a button.
+      dialog.onkeydown = (event) => {
+        if (event.key !== 'Enter' || event.target.type !== 'radio') return;
+        const filled = dialog.querySelector('.actions .btn.primary');
+        if (!filled || filled.disabled) return;
+        event.preventDefault();
+        filled.click();
+      };
       dialog.showModal();
     });
   }
@@ -2331,13 +2881,37 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn primary', onclick: () => close(true) }, 'OK'))));
   }
 
-  function confirm_discard() {
-    if (!state.dirty) return Promise.resolve(true);
-    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Discard unsaved changes?'),
-      h('p', null, 'The current config has changes that have not been downloaded.'),
+  /**
+   * Ask before a file, a template or a new config replaces what the page holds.
+   * Only the untouched welcome page is replaced without asking.
+   * @param {string} action What replaces it, as the start of a sentence: "Opening plate3.json".
+   * @returns {Promise<boolean>} True to go ahead.
+   */
+  function confirm_replace(action) {
+    if (is_welcome()) return Promise.resolve(true);
+    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Replace the current config?'),
+      h('p', null, action + ' replaces the config on this page.' + (state.dirty ? ' It has changes you have not downloaded.' : '')),
       h('div', { class: 'actions' },
-        h('button', { type: 'button', class: 'btn outline', autofocus: true, onclick: () => close(false) }, 'Keep editing'),
-        h('button', { type: 'button', class: 'btn primary', onclick: () => close(true) }, 'Discard changes'))));
+        h('button', { type: 'button', class: 'btn primary', autofocus: true, onclick: () => close(false) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close(true) }, 'Replace'))));
+  }
+
+  /**
+   * Ask before deleting a region. Cancel is the filled button and has the
+   * focus, so Return keeps the region.
+   * @param {Object} block
+   * @returns {Promise<boolean>} True to delete.
+   */
+  function confirm_delete_region(block) {
+    const name = block_name(block);
+    const count = Array.isArray(block.sequence) ? block.sequence.length : 0;
+    const holds = block.blocktype === 'barcodeList' && count ? ' and its ' + plural(count, 'barcode')
+      : block.blocktype === 'constantRegion' && count ? ' and its ' + plural(count, 'variant') : '';
+    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Delete ' + name + '?'),
+      h('p', null, name + holds + ' will be removed from ' + READ_LABELS[state.read] + '.'),
+      h('div', { class: 'actions' },
+        h('button', { type: 'button', class: 'btn primary', autofocus: true, onclick: () => close(false) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn danger', onclick: () => close(true) }, 'Delete region')))).then(Boolean);
   }
 
   function ask_legacy_mode(name) {
@@ -2363,7 +2937,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       h('p', null, name + ' has ' + plural(keys.length, 'key') + ' that bcwithqc doesn\'t use. bcwithqc ignores ' + them + ', so a misspelt key has no effect.'),
       h('p', { class: 'preview' }, keys.join(', ')),
       h('div', { class: 'actions' },
-        h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn primary', autofocus: true, onclick: () => close(null) }, 'Cancel'),
         h('button', { type: 'button', class: 'btn outline', onclick: () => close('leave_out') }, 'Leave ' + them + ' out'),
         h('button', { type: 'button', class: 'btn outline', onclick: () => close('keep') }, 'Keep ' + them))));
   }
@@ -2388,20 +2962,34 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     });
   }
 
-  function ask_header(first) {
-    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Is "' + first + '" a header or a barcode?'),
+  /**
+   * Ask whether the first entry of an import is a header.
+   * @param {string} first The entry.
+   * @param {boolean} is_list True for a barcode list, false for a constant region's variants.
+   */
+  function ask_header(first, is_list) {
+    const entry = is_list ? 'barcode' : 'variant';
+    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Is "' + first + '" a header or a ' + entry + '?'),
       h('p', null, 'The first entry looks like it could be a column header.'),
       h('div', { class: 'actions' },
-        h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'),
-        h('button', { type: 'button', class: 'btn outline', onclick: () => close(false) }, 'A barcode'),
+        h('button', { type: 'button', class: 'btn primary', autofocus: true, onclick: () => close(null) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn outline', onclick: () => close(false) }, 'A ' + entry),
         h('button', { type: 'button', class: 'btn outline', onclick: () => close(true) }, 'A header'))));
   }
 
-  function ask_append_or_replace(existing, incoming) {
-    return show_dialog((close) => h('div', { class: 'dlg' }, h('h2', null, 'Add to the list or replace it?'),
-      h('p', null, 'The list already has ' + plural(existing, 'sequence') + '; the import has ' + plural(incoming, 'sequence') + '.'),
+  /**
+   * Ask whether an import adds to a list's entries or replaces them.
+   * @param {number} existing Entries the list has.
+   * @param {number} incoming Entries the import has.
+   * @param {boolean} is_list True for a barcode list, false for a constant region's variants.
+   */
+  function ask_append_or_replace(existing, incoming, is_list) {
+    const entry = is_list ? 'barcode' : 'variant';
+    return show_dialog((close) => h('div', { class: 'dlg' },
+      h('h2', null, is_list ? 'Add to the list or replace it?' : 'Add to the variants or replace them?'),
+      h('p', null, (is_list ? 'The list already has ' : 'The region already has ') + plural(existing, entry) + '; the import has ' + plural(incoming, entry) + '.'),
       h('div', { class: 'actions' },
-        h('button', { type: 'button', class: 'btn outline', autofocus: true, onclick: () => close(null) }, 'Cancel'),
+        h('button', { type: 'button', class: 'btn primary', autofocus: true, onclick: () => close(null) }, 'Cancel'),
         h('button', { type: 'button', class: 'btn outline', onclick: () => close('append') }, 'Add to the existing ' + existing.toLocaleString('en-US')),
         h('button', { type: 'button', class: 'btn outline', onclick: () => close('replace') }, 'Replace them'))));
   }
@@ -2427,25 +3015,6 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         h('p', null, 'This workbook has ' + sheets.length + ' sheets. Choose the sheet, then the column that holds the sequences.'),
         h('label', { class: 'field' }, h('span', null, 'Sheet'), sheet_select), columns,
         h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'), ok));
-    });
-  }
-
-  function open_paste_dialog() {
-    return show_dialog((close) => {
-      const status = h('p', { class: 'hint', 'aria-live': 'polite' }, 'Paste a list or a table copied from a spreadsheet.');
-      const area = h('textarea', { 'aria-label': 'Pasted sequences', spellcheck: 'false', oninput: () => {
-        const plan = core.plan_table_import(core.parse_delimited_text(area.value).rows, 'pasted text');
-        status.textContent = plan.status === 'ok' ? plural(plan.sequences.length, 'sequence') + ' found.'
-          : plan.status === 'choose_column' ? 'Several DNA columns; you will be asked which one.'
-            : plan.status === 'ask_header' ? 'You will be asked whether the first entry is a header.' : plan.message;
-      } });
-      return h('div', { class: 'dlg' }, h('h2', null, 'Paste sequences'), area, status,
-        h('div', { class: 'actions' },
-          h('button', { type: 'button', class: 'btn outline', onclick: () => close(null) }, 'Cancel'),
-          h('button', { type: 'button', class: 'btn primary', onclick: () => close(area.value) }, 'Import')));
-    }).then((text) => {
-      if (text === null || text === undefined) return null;
-      return run_import(core.parse_delimited_text(text).rows, 'pasted text', {}, 'line');
     });
   }
 
@@ -2476,8 +3045,17 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         const name = sheets.length > 1 ? file.name + ', sheet ' + sheet : file.name;
         await run_import(core.read_spreadsheet_rows(bytes, sheet), name, choices, 'row');
       } else {
+        // One line of several sequences is a list, as when pasted; other text is a table. For a
+        // constant region, spaces don't separate variants, so one line that splits into several
+        // cells goes into the add box, as a dropped one does, rather than offering half of it.
         const text = new TextDecoder('utf-8').decode(bytes);
-        await run_import(core.parse_delimited_text(text).rows, file.name, {}, 'line');
+        const block = selected_block();
+        const is_list = Boolean(block) && block.blocktype === 'barcodeList';
+        const one_line = core.pasted_list_rows(text, is_list);
+        const rows = core.parse_delimited_text(text).rows;
+        if (one_line && one_line.unit === 'item') await run_import(one_line.rows, file.name, {}, 'item');
+        else if (!is_list && rows.length === 1 && rows[0].cells.length > 1) put_in_add_box(text);
+        else await run_import(rows, file.name, {}, 'line');
       }
     } catch (error) {
       await message_dialog('Nothing imported', 'Could not read ' + file.name + ': ' + error.message);
@@ -2486,10 +3064,21 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     }
   }
 
-  async function run_import(rows, source_name, initial_choices, unit) {
+  /**
+   * Import table rows into the selected list, asking what the rows leave open.
+   * @param {Object[]} rows
+   * @param {string} source_name For messages: a file name, "pasted text" or "dropped text".
+   * @param {Object} initial_choices Column or header choices made already.
+   * @param {string} unit What a row number counts: "line", "row" or "item".
+   * @param {string} [mode] "append" to add without asking (a paste into the add box);
+   *   otherwise a list that already has entries asks whether to add or replace.
+   */
+  async function run_import(rows, source_name, initial_choices, unit, mode) {
     let choices = { ...initial_choices };
+    const target = selected_block();
+    const is_list = !target || target.blocktype === 'barcodeList';
     for (;;) {
-      const plan = core.plan_table_import(rows, source_name, choices, unit);
+      const plan = core.plan_table_import(rows, source_name, choices, unit, is_list ? 'barcodeList' : 'constantRegion');
       if (plan.status === 'error') {
         await message_dialog('Nothing imported', plan.message);
         return;
@@ -2501,20 +3090,20 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         continue;
       }
       if (plan.status === 'ask_header') {
-        const header = await ask_header(plan.first);
+        const header = await ask_header(plan.first, is_list);
         if (header === null) return;
         choices = { ...choices, header };
         continue;
       }
       const block = selected_block();
       if (!block) return;
-      let mode = 'replace';
-      if (Array.isArray(block.sequence) && block.sequence.length) {
-        mode = await ask_append_or_replace(block.sequence.length, plan.sequences.length);
-        if (!mode) return;
+      let chosen = mode || 'replace';
+      if (!mode && Array.isArray(block.sequence) && block.sequence.length) {
+        chosen = await ask_append_or_replace(block.sequence.length, plan.sequences.length, is_list);
+        if (!chosen) return;
       }
       state.rows = new Set();
-      commit(core.apply_import(state.model, state.read, block.id, plan, mode));
+      commit(core.apply_import(state.model, state.read, block.id, plan, chosen));
       return;
     }
   }
@@ -2524,7 +3113,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   async function open_config_file(file) {
-    if (!(await confirm_discard())) return;
+    if (!(await confirm_replace('Opening ' + file.name))) return;
     set_busy(true);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -2555,18 +3144,18 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
   }
 
   async function load_template(template) {
-    if (!(await confirm_discard())) return;
+    if (!(await confirm_replace('Opening the template "' + template.title + '"'))) return;
     const opened = core.config_from_json(template.config);
     load_model(opened.model, opened.notices, template.title, template.id);
   }
 
   async function new_config() {
-    if (!(await confirm_discard())) return;
+    if (!(await confirm_replace('Starting a new empty config'))) return;
     load_model(core.new_model(), [], '', 'barcode_config');
   }
 
   async function download(gzipped) {
-    if (has_errors()) return;
+    if (download_blocked(issues())) return;
     set_busy(true);
     try {
       const text = core.config_to_json(state.model);
@@ -2593,6 +3182,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const missing = [];
     if (typeof CompressionStream === 'undefined' || typeof DecompressionStream === 'undefined') missing.push('gzip streams');
     if (typeof HTMLDialogElement === 'undefined') missing.push('dialogs');
+    if (typeof Element.prototype.replaceChildren !== 'function') missing.push('replaceChildren');
     return missing;
   }
 
@@ -2615,7 +3205,12 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     const missing = missing_features();
     if (missing.length) {
       $('feature_banner').hidden = false;
-      $('feature_banner').textContent = 'This browser lacks ' + missing.join(' and ') + '. Use Chrome or Edge 80+, Firefox 113+ or Safari 16.4+.';
+      $('feature_banner').textContent = 'This browser lacks ' + missing.join(' and ') + '. Use Chrome or Edge 86+, Firefox 113+ or Safari 16.4+.';
+      // Start-up below needs replaceChildren; without it the banner is all that can be shown.
+      if (missing.includes('replaceChildren')) {
+        $('loading').hidden = true;
+        return;
+      }
     }
     state.templates = load_templates();
     window.barcode_templates = state.templates;
@@ -2634,18 +3229,27 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     $('templates_button').addEventListener('click', (event) => {
       event.stopPropagation();
       state.open_menu = state.open_menu === 'templates' ? null : 'templates';
-      render_top_menus();
+      state.menu_opener = 'templates_button';
+      render();
+      if (state.open_menu) focus_first_menu_item('templates');
     });
+    // A chosen item closes the menu first; the focus goes to the Templates button, so it
+    // returns there when a question that follows is answered.
+    const template_item = (text, action) => h('button', { type: 'button', role: 'menuitem',
+      onclick: () => { state.open_menu = null; render(); $('templates_button').focus(); action(); } }, text);
     $('templates_menu').replaceChildren(
-      h('button', { type: 'button', role: 'menuitem', onclick: () => { state.open_menu = null; render_top_menus(); new_config(); } }, 'New empty config'),
-      ...state.templates.map((template) => h('button', { type: 'button', role: 'menuitem', onclick: () => { state.open_menu = null; render_top_menus(); load_template(template); } }, template.title)));
+      template_item('New empty config', new_config),
+      ...state.templates.map((template) => template_item(template.title, () => load_template(template))));
     $('download_button').addEventListener('click', () => download(false));
     $('download_menu_button').addEventListener('click', (event) => {
       event.stopPropagation();
       state.open_menu = state.open_menu === 'download' ? null : 'download';
-      render_top_menus();
+      state.menu_opener = 'download_menu_button';
+      // A full redraw, so a menu open elsewhere (Templates, ⋯) closes and says so.
+      render();
+      if (state.open_menu) focus_first_menu_item('download');
     });
-    $('download_gz_button').addEventListener('click', () => { state.open_menu = null; render_top_menus(); download(true); });
+    $('download_gz_button').addEventListener('click', () => { state.open_menu = null; render(); download(true); });
 
     document.addEventListener('click', () => {
       if (state.open_menu || state.open_help) {
@@ -2666,9 +3270,12 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
         event.preventDefault();
         $('open_input').click();
       } else if (event.key === 'Escape' && (state.open_menu || state.open_help)) {
+        // The focus goes back to what opened the menu or help.
+        const opener = state.open_menu ? state.menu_opener : 'info_' + state.open_help;
         state.open_menu = null;
         state.open_help = null;
         render();
+        if (opener && $(opener)) $(opener).focus();
       } else if ((event.key === 'Delete' || event.key === 'Backspace') && !in_field && state.rows.size && !$('dialog').open) {
         event.preventDefault();
         delete_selected_rows();
@@ -2679,6 +3286,18 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
       event.preventDefault();
       event.returnValue = '';
     });
+    // A file dropped outside a list's card would make the browser leave the
+    // page to show it. Refuse such drops instead; a list's card accepts them.
+    // Text dropped on a text field is left to the browser, which inserts it.
+    window.addEventListener('dragover', (event) => {
+      if (!dragging_in(event) || text_drop_for_field(event)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'none';
+    });
+    window.addEventListener('drop', (event) => {
+      if (dragging_in(event) && !text_drop_for_field(event)) event.preventDefault();
+    });
+    window.addEventListener('resize', keep_popups_on_screen);
 
     $('loading').hidden = true;
     $('layout').hidden = false;
@@ -2691,6 +3310,30 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
     $('templates_button').setAttribute('aria-expanded', String(state.open_menu === 'templates'));
     $('download_menu').hidden = state.open_menu !== 'download';
     $('download_menu_button').setAttribute('aria-expanded', String(state.open_menu === 'download'));
+    keep_popups_on_screen();
+  }
+
+  /**
+   * Menus open below their button, right-aligned with it; help opens below
+   * its "i", left-aligned. A menu whose left edge would leave the screen is
+   * left-aligned instead. Then any menu or help still past an edge is
+   * shifted back, so it keeps 8 px from both edges where it fits.
+   */
+  function keep_popups_on_screen() {
+    const margin = 8;
+    const width = document.documentElement.clientWidth;
+    for (const popup of document.querySelectorAll('.menu:not([hidden]), .help:not([hidden])')) {
+      popup.style.transform = '';
+      if (popup.classList.contains('menu')) {
+        popup.classList.remove('left');
+        if (popup.getBoundingClientRect().left < margin) popup.classList.add('left');
+      }
+      const box = popup.getBoundingClientRect();
+      let shift = 0;
+      if (box.right > width - margin) shift = width - margin - box.right;
+      if (box.left + shift < margin) shift = margin - box.left;
+      if (shift) popup.style.transform = 'translateX(' + Math.round(shift) + 'px)';
+    }
   }
 
   document.addEventListener('DOMContentLoaded', init);
@@ -2698,7 +3341,7 @@ dialog::backdrop { background: rgb(0 0 0 / 0.35); }
 </script>
 
 <script type="application/json" id="template_data">
-{"lists":{"list_1":["CCTTAACAT","AGCGTAGAA","CATAGGTGT","CACGACTCA","AGCATTCCA","TCCACCGGT","GCAGCTTGA","TAACACATC","ACGCTATGT","TAGACCATG","TTCTGAATG","CTCTTCAGC","CTGTACGAC","AAGCCAAGT","AGAATCAGA","TTGGTAACT","GTCAGCGTC","AGTGAACGG","TAATCTGGA","ACCGTCCTA","AGTTGAGCG","AAGAGAACT","GTTAGTCAA","AAGCACAAC","CTACGTTGG","CCATGCGTC","TTACTTACG","GTGTCCGTG","GACTCTCAC","AATTAGAGG","ATTAGCCAC","GGAAGTATG","CCATATCTT","CGCTGTAGT","TGAGAGGAC","ACCTGTACC","TATGCCTTC","TAGCAGAGT","CGGTAGCTT","GATAACGTC","TGTTGTCGA","ATTAGCACA","ATCCGGTCC","GCCATCGCT","GCGAAGACA","AGGTCAGCA","ACTGTGTCA","GAGACGATC","AGTCCAGTG","GTGAATGCC","CCTAAGTCT","CCGGTTGAG","GACTGCCTG","TACGGTCGT","ACCTCCTAG","CTAACCGGT","ACTCGTAGG","GTAGTTGGT","GCTACCTTA","CTACGGTAT","GATTAGTGT","CGCAATCGA","CCGGTTCTA","CCATCTAGG","AAGCAACTA","CGACCACTT","GATGCGGTT","CACTCACTA","TAGGTTAGT","ACCACTAGG","TCGCTGTAA","CAAGAGAGT","GTGTCTGGA","GATCTGAAT","GCTGATGTC","AGCCTCTAG","GATCTTCGC","AATCCTCGT","AGATATGGA","CGTATAGCG","GCTTGTCCT","ATCCAGCTG","ATCTCGTGA","CCGATGTTC","TCTTAAGTG","ATCAAGCAT","CGACGTGAT","GTATGATCT","AAGTAGGAC","TTCACCTTG","CTGAGATAG","ATGCGTGGA","AGCTTGGTG","TGCCGCTAC","GGAAGAAGC","GGAGTTAGC","TTAGATCGG","CAATTGTCT","CAGTGAGGA","GTCATTCTA","GAGCACATT","GATGTCTAG","GAGTGCATA","CTTATCTCA","AGCCAGGAC","ATAGACCGA","ACATGACTA","CAGCTTACC","GATTGGAAG","CAACGATCG","CACTAGACT","CCACACAGA","CGATTCGAG","AGCCACTTC","GTCTGAGCC","TACTACTGT","TCGTACCTT","CAATCTCCG","CCGTCAGGT","TCCAATCAT","GTGTTGGAA","GTTAGAGAC","AGTGATGCG","TAGCCAGTG","GCCTGCATC","CTGACAGCA","TCGGTATCA","GGTCGGTCT","CGAACAGAG","GCGATATGA","TTCTCCACA","CGCCATTAC","TCTAGTGAC","GTTCAGAAG","ACAGGTATC","TATACCACT","GTCACAGAG","CCGTCCACT","GTACTCTAC","GCACGTAGA","CTCGCTACG","GAGCGACTC","ACATTCCAC","ATGACACAA","CATGCCAGT","TACCATGTA","TCAGCGACC","GGACTCCTT","GTAGACTCT","AGTTGCCTT","CGTGAGACT","CTAATACGC","TCTTAGCGA","TAGTAGTCT","CATAATTGG","CGAAGAGGT","AAGTACAGA","GACTCTGGT","AGCGGTCTA","CCTCCAATC","GTAACAGTC","ATGATAGCT","ACGCTAGTG","GAGACATTG","CCTATTGGT","CCGTAGTTG","TGGTTATAC","TAGCACACG","TCAATCTAG","TGGATAGGT","TCTGTGAAG","ATAGCTTGC","TGAACCAAT","GGTGAGTTC","CCATATGCC","TCAGTGCAA","TCGTGCCAC","TGCAGTTCA","CCACTACCA","GTCCGCTCA","GCATACTCC","CGCAGTGTC","ATCGTAGTG","GCCGTCTTC","GTGTATCTG","ACTCTGCTC","TCGTCCGAT","TCAGAGCGT","GAGTTATAG","TTCCTTGAC","CTCTAGTAA","GACGTAGCA","ACAGCGGTC","TAGCACTAT","GGATACAAT","AATATCAGC","AACGGTAGC","CCAGATCAC","CGATCCAGA","GCTTCACTC","TGGTAGCAG","CATTGACAA","GACGGTGCT","CAGTCCTAA","CCGAGTACT","CTTCTCATC","GCGTGAGCT","GTTGCATGG","TATCTGTCA","GTCTACCAA","CACCAAGAT","CGTGGTACC","GCCTTAGAG","TCGGAACGA","ATTATGCAG","GGTTGCTAT","TGTCATAGC","TCAAGCGTA","TGTATGTAG","CCGATACCG","TGCTTACGG","GTAATCAGC","AGGATCTCA","TTCTGGTGC","GGAACCTAG","AGCAGACAA","AGCACCAGC","CCTCATAAC","TTCCGAGCG","ACCATACTT","TCCTTCGTA","TAGCGAGAA","GATATGGAC","GCGACACAG","TGCGATACT","ACACATCTG","ACTCTAGGA","TAGAGACTA","GTAGCATAC","TTAACGGAG","TAGCGCAGC","CACACCACA","TTGCGAACA","GTGACTCTC","AAGTTGCCA","CTGAGTCCA","CGAGCCGTT","TACGACTTG","GTCAAGATC","ACTAACCGA","TATAGTGCG","GTGGATAAG","CACCTAGCG","ATAACGACA","GCTTGGTTC","CTAGAGGTA","TCAATGGAC","ACAGAAGAG","CTAGAGTCG","GATGTTACA","CACTTCCTT","TACCTCCTC","CTTCACTGT","TCGCTTAAC","TGCTCAGCG","TCCGGAGCT","CTCGCAAGA","CTGTCTAGT","TGCTATGAA","GTGATGTGC","TGAGATCAT","GCAGCTCTT","ATCCAATGA","AGGATTACT","ACGAGAGCA","CATCGAAGC","ATTCGAAGA","GCCTTCCAT","AGTCTGGAA","CTGTTACCA","GAGATACAC","AGGTCCGTC","ATCTGCGTA","AGTCATACT","CCTGCTCCA","CCTGCGTTA","CCACGTTCT","CCTCGGTCA","CAACGTCTT","CAATACCAC","AACTCCATG","TCACCGAGG","CCTATTCAA","TTCGCATCC","CGCCACCAT","ATGCCTTCA","AAGCAATCG","TACAACACC","ACACTAACG","CATATGTCG","CCGGTGGTT","AAGGATACG","GACGCCGTA","TCATGCAGG","ATAGTCAGT","GGTACTTCC","GGTAAGGAT","CCGCATCCT","GCTACAATG","AGTCGCCGA","AGGAATTGG","CTTGATCTA","ATGAACTAG","CTGGAGCGA","CTGCTGCTT","GTGGACTGG","CACCTTCCT","CGTACATCT","CTGGTACAT","GATACACTA","TAAGCCATT","GGAGAATGA","CCATACGAT","TGGAAGATT","GAATTGTTG","GGACTATTC","TCCTGTGGA","AGACTAGTA","GATGTAAGG","CAAGAGGAG","CCAATGCCT","GCTCAGCCA","CAGCAGTAC","AGACATCCA","GTTAGATTG","CACACTGCC","TCTAGCTGG","GTTATCGAT","CTTAGAAGG","TGATGGACA","AAGTTCTCT","CGCAACCTC","GTGTCGAGC","GAGTCGTAC","CCGGATTGC","GGAGCTCAA","CAGGTTGTC","ACCTAGTTA","TTACTAGTC","GGTCCTAAG","GATCGATAC","CACTGGTCC","GAACTGCAA","TAATGTAGC","ACGTTCAAT","GCACGCATT","AATGCTGAT","GCCACGAGT","CTACGAGAA","CATCCAGGA","AGTACGAAT","TGAACGTCA","TAAGTACAC","CTCCTATCT","CAGGATCAA","AACTGCGAC","ACGGACCAT","GAATTCAGT","AGTAATCAG","GCTATGTAA","AGTATGACG","CCTTCCTCA","AATGCGTGC","GCTGTTCGG","AAGCTTGCA","TAGCTGTTG","TGTGTAGAG","CCTAGTTAG","GTATACAGA","GGTTCGCAA","CGGTTGCGA","AACAGATCG","GCATACATG","GACCGTAGT","TGCGTCTTA","ACAATTCGG","CGCATCTAC","CATGTGAAC","ATGCTTCAG","CCAATATAC","TGTTACTGA","TATCGAGCC","ACAGGAACT","GAGCCGTTA","TGCGCACTG","AGATACGTT","ACCGAGTAG","ATATAGCGT","CGTGACCAG","GGTTCTATC","GTCGACATT","TAGTAACGG","GCATTGATC","CGCTTATGA","TCCTTCAAC","TGGAACTAA","AGATGTTGG","GGATAATAC","GCGCATTAC","AATCGCCAT","GAAGTGTGA","GAGTCTTCG","ACGATGGAA","ATCTACATC","ACGACATCT","GGTTACGCA","ACAATAGGT","TATCCTCAG","TACAAGAGG","CGACAGGAA","AACGCTCAA","GCTCTGTGT","TCGCTGATT","TTGAGCTCT","GTATCCTGC","CTCCTGACG","GTTCCAACA","TGAAGACCA","GCGTTCAGA","GACTATTGA","GAACCAGTT","CGTCTGTCC","GGTAAGTGA","GCGCTACCT","TGATCGGAA","TTCCTCGGT","GCCGAACCA","CTGACGGAT","CTCTAAGAG","TCCTTAGGT","GTACCACAA","TGATTATCG","TTACGCTCG","GTGCCATGA","GCGGACGAA","ATCAGAAGC","TGTCGTACA","GTCAGTTGT","ACAAGGTAC","CACGTAGAC","TCTCGTATC","CATCCACCG","CGACAGACC","GTGAGGACG","AGCAAGTCC","ACACGTTGC","ATGCGCTAC","CCAAGCGAG","GTGAACCAC","ACGCGTGAC","ACTACCATC","ATAATGTGG","GTCCTAGTT","GGAGCATCT","AGCAACATT","TAAGGTGAT","GTTGCTCAG","GTGCTGACT","TCGTCATTC","CGGTGTTAC","TGGAGTGGA","CAAGTCGAA","CCTCTCTAG","TATCAGTGC","GAGATTCCT","TCCATCATT","TATGACCGA","ACTAAGTTC","CAACACCTA","GTCCTTCAT","GGTGTTCAT","ACAACCGGA","CACCTACGC","CGACCTAGC","CCTTCGAGC","ATTGACACG","ATGCGGATT","CCGCACTCA","TGACTGAGA","ACAGAGATG","TCGCGTCAT","CTAGTGCTG","ACCATCTAA","TCATCATCT","TCAGACAAG","ATGCCTGTC","TAAGGTCCG","TCGGATGTT","GCTTCTGAA","TCCGTATAC","AGAAGAGTC","GGAGACACA","TTCTGCCGA","ATGCAGTTC","CTGTAGAAG","TGAACGGTT","CCGCAACAC","ATCTCGAAC","AACTTAGCT","CAGCTTCGA","CGACGTACG","TACGAGTGA","CATTCAGTT","GTACGCGAT","CTTCCGGTA","TCTGGAGGA","GCCTAACGG","CCGAAGCGT","TAGCCTTGT","CTGTGGTGG","GCAGATCCG","GCTGGTTCG","AGTGAGAGA","CCGTACGGA","CCACGAAGG","AGCATATGG","ACTGGTGCT","GCAATCACG","CAGATCATT","AGCTGCACT","CCAGGAGTT","GTCTGACGT","GAATCAACC","TCTGATGAA","CCAAGTCGA","TGTGGACAA","GGATTCGTC","AATCAGGAG","CCTCGCGTT","AATACGTCT","ATGGATATC","GGTAGTGTT","AACAACTGG","TATCATGCT","GCGAGTCTA","GCGACCTGT","AATATCGCT","ACCAGCGTT","TCCACCTCA","AGAAGTCCT","GTTCACTCC","GATAGTTCT","AGGAGGTGA","GATGCAGAA","TGTACACGA","GACCAGAGA","ATTAAGACC","TTGCCAGAT","ACCATGTCT","TGTCCATAG","ATATTCGCA","GATATATCC","TGCCTGGTT","CTCAGTGAT","TACCGCGTT","TTGGACTTC","CATACGCAG","GCCAACAAT","GTGCTCGGA","TGCAGTCGG","AGATCTGAC","CATGGACTC","TACATGCAC","AGTGTGCAC","TACACGGTC","ACTGACTAC","CATAGTATG","GAGAATCAG","TCGCCAAGC","CCTGTATCT","AAGAGAGAG","ATAAGACAG","TGCCATCTC","ATCACCGCA","GTTGACGTG","GGTGAGCGT","ACGTGAATC","CATGGTTAC","TCTAGGATG","TCAAGGAGT","CTGGTCGGT","GTCTTCATA","AGGTGCGAG","CTGCGTCAC","ACGACTGCG","CGGAAGACG","CACAATAAC","GTACGTCTA","TACTAGTAG","GATTATGCG","TAATTCGTG","CTGCTTAGG","GTAACGCGA","CATTGTTCA","CCAGTCTCA","AATACCTTG","TGCATACAT","GGATTACGC","CCTTATCCG","CAGATCGAC","GACAGGTTA","ATCCTCCGA","GACATATGT","CTTGGATCA","CAGCTCTTC","AGTGTTCTG","AAGACTGGT","CTCGTGTCC","ACAGTATTG","CCTCAGGTG","CAGTCTAAC","AACCATGGT","ACGTGCTCG","TCAACACTC","CGTTACACC","TATACGTGG","ACCTAGCAC","CCATCACGA","GACTTGATT","CATCCGACA","TCTACATCC","ATCCATTAG","TGCTCCTCC","ACGAATCGC","GACCAACAG","AATGCACTT","TTGGAGAAC","GAGTCAAGG","ACCGGAAGG","CTCTGCGGT","TCTAATACC","TAACATTGG","TAACACGAG","TGAACTTGC","TCCTGAGAC","TACGAACTC","TATCGGAAC","GGTAGACAT","GTCTTATGC","CTCTGCAAG","TATGGTTGG","CTATACTAG","CAATCATAC","GTGCATCAA","AGCTATATG","ATAGCACGG","CTTCTATGA","AGTAATGGT","CTGATCCGA","TCTCGATGC","ACTTCAGTA","GCAGCAGTG","ACTACTCAT","TAGGAGGAT","CCTTGTTGC","ACATTGACA","CTGACGATG","TTGTATCAC","TGAGCTAGA","CACTGCTTA","GTCGAGTAC","GAGTTAACT","ATCACTTCC","GCACATGTT","TTACAGTGT","ATCCGACCA","TCCAGCAGC","CAAGGTGTG","CAACCGGTC","CCGATCAGC","ATTGCCGAC","TGACCTATG","CAAGTCACT","CAGTGCTGC","TCCAGAACG","TTATCGCAC","AATGTGCGT","CGATTGAAC","TGGAGAACC","CTCCACGTC","GCAACCAAC","GGTGATAGG","GTGGTTACC","ACGACGATT","GCCGCCTAA","TTGATGCTG","ACACCACAT","TAGTCGCAT","TGTCAACCT","TGATTCACC","CAGTAATGT","TACCAGCCA","GCGTCGTCT","GTGTTCCAG","AGCGCATGA","CGTAATGAC","TGATTGTGC","TCTATTAGG","ATAGAGCAG","TGATCTCGG","AGTGACGAT","TCATCTGTC","TTGAGACGG","CATATGCGA","TAGGAGCTA","CTCTGTCAA","TCTGAGATA","CAGGTATCG","GAGGTCCTT","TAGCTAAGA","ACCGAGACA","ATCTCTGCT","CCTAGTCTC","CCATGATGT","CGGAACGAG","CCGTTCCAA","TCATCAGAG","TGTATCGTG","AGACTTCGT","GCGTAACAA","GGTTCAGAC","ACTCACGAA","CGTATCGAA","ACTGTAATC","GCCACATGG","GACTCAGTG","TGGTCGCTA","TATGAAGAC","AGTTCGATA","TCGTAGGAA","GAATAAGAG","TCCTCTAGT","GCCGTTGTT","TTGACCTGA","GGTACGAGC","CGGATTCTC","GTAGAAGTT","GTGGAGGTC","TGTAGCAAG","CCGCTATCC","TTATGAGGA","AGTAGAGGA","ACGACAGTC","CGATACTCT","CTGCAAGCC","AGCGTCGTC","CGATAGGTG","TTCGCTGAG","GCTCTCCAA","CCTTAATTC","GCCGCTATC","TAGACCTAC","GCACAGTAA","ACTCCGTCG","CGTGCAAGG","GAGCTCTCA","CGAATCCTG","CAACGCACA","CCAACAACA","GCCAATGAA","CATCAATAG","TATGATGTG","CACGGATAG","ACCACGCTA","TGACAAGTT","AATACTCCG","GTCTCCAGG","TCAGTAAGC","CAAGAACCG","CGCGCACAT","GATCTAGAG","AATTCGGAA","CTTGCGACC","CTCATTAGT","GCCTTGTGA","ACTATCCTG","CAGCGACGT","AAGCCACAC","CTTGGTCAT","TTACACCTT","AACGAGGTG","GCGAACTCG","ATACCGAAG","AGTACTCTC","TACGTTGGA","TAGATCTGT","GTAATATCG","TGAGAATCC","GCTCAATGA","GACGTGGTC","GGAATTGGA","GAGCATACA","TTCAACTAC","ACCGACGGT","GCTAGCTCC","GACTGCGCA","TCCGATAAC","GGTCCTGGT","ATACGAGGT","GGATCAGGT","GAGTGTGCC","CAGAAGTGA","ACGAGCTTC","CTTATTGAG","TCACATACT","TGTAGATCG","GAACAACCA","ACATGGATT","CCTTGCTTG","CTCGAACTG","TGCAGCCTT","AGAGGACGT","GTTGACCAT","ATATGCAGC","CCACTGAAG","ATACTTGCT","AAGACTACC","AACGCCTAC","CTCGACGAT","TCCTATTCC","CAATGCATT","CAAGCGCAT","ATGAGTGTG","GATCGTTGA","CCACATTAG","TACTCGCTG","CAATCAAGT","GATCGCACT","ACCGGAGTA","TGACGGTTG","ACTTCTTGG","AAGGTCTGA","TCTACAGTT","TGATTGCTG","CCGTTAGAC","GACGTTCAG","CGTTCCATT","CGTTGATCC","CGAACAATC","TTCGGAGTC","AGCTCGTCT","TGCCAATGG","CCTACTAGA","CTGGTGACA","AGTAACGTA","AGACGCTAT","TTGCAGTCA","GAGCCATCC","TGTAACAGT","AGTTATCGC","TAATCACGC","CACTACAGG","ACCGCTGTG","GGTTAACAG","GAAGAGCAC","ACTCATTCA","ACCATTCAC","ATCATAGAC","CAACCTGGT","CACCTCGGA","TAGGATTAG","TATTCAACG","TAGGATGCC","GCCTGGAAT","CACACCTGT","GACTAGCAT","GGTAGCATC","TGGACGAGA","AGAGCCGCA","CGTGTGTGG","TGTTAAGCC","AGCGGAACA","AAGCTGGTC","TTGATCGTA","GTAACTCAT","TGTGAGTAT","CTGATGCAC","GCTACCGAG","CGTACACAC","TGCTCACAC","AGTTCAACC","CATTCCGAG","CGTTCGTAC","GCTTAGAAC","CCACCATGC","CTATGGATG","GATTAGACA","CCTCTTGTA","GAACATGAC","GCATGTAAG","GGAGATGAG","GTACCTAAC","CACTTGGAT","ACGTCTATG","ACGCACACT","CCGAATATG","TGCCACCGA","CATCCTCTC","TGAGGTCTC","CCGAGCTGA","TACTTACCA","ACGCAAGAT","GTAAGGTCC","ACCGATCGA","CGTATTCCT","AGTCAGTTG","GCACAACTC","CTCTCGATA","AGGATCATG","CGTGCTTGA","TGGTGGATC","AACTTCTGC","CCTCGACCT","GACCACTCG","TGAGACAGC","GATGCGACG","TGGAATCGT","TTGTCAACC","CGCGTGAGA","ATGGACGTT","TTAGGAAGG","CCTCGAGAG","CACATTCTG","CGCTTCACG","TCTTGGTAG","CTCAGCTGG","GATTCCTCT","AGTCTAAGC","TCACGCGAC","ATAGTGGTT","CTCGACTGC","TGAGTTAAG","TCCAACGTG","AGCTACTCA","GAGACTCGA","GATTCTCGG","GTCGTGTTA","GTAGGACGC","TACCGATTG","TCCTGTCCG","ACAAGTACA","CAGTGCCAT","AAGGTGCTG","GCGAGCAAG","CGTCATGGA","CATCTCGAT","ACCTGCAGA","CACCAGAAG","CATGGTCGA","GCACTGGAT","ACTATTGTC","GCAACTCGC","CCACGGATC","AGATCGAGT","AACACACTC","CTTCGACTG","ACGTCGCTC","TCGATTCAG","CCGATCTCT","AAGGAACAG","ATTCGCTTA","CTGAGGTTA","CTATAGCTC","TCGTGACGT","TTCCAATTC","CTGTGCTCA","CTTAACAGC","GTGCTCTTG","ACAGCATCA","AACCGCTGA","ATTCACCTC","CTAACACTG","GGATGCGAA","GAGATGTAT","TCTATGACA","ACACACGTC","GCGACAACC","GTACGAACG","GATGCTCCT","GGACGAGCA","GACACGCAA","TAAGCACTA","CCTAGCAAT","TGATAGAGG","AACTAACTG","GAACTCGTA","ATACAACCG","GAGGTGAGC","CTCGTTCAC","CCTAAGAAG","TGTCTACAC","TAGGTCAAC","ACCGTACGC","ACACAGAAC","CTGATCAAG","ACCGGTTAC","ATCTTACAG","CAGGAGCCT","GTATCGTCG","CGTGTATTC","TGTCGTGAG","ACAACGAGC","CACGTCATA","AACGTCGAG","AGGTACCAA","ATTCTCTGG","CTGCAGAGC","CAAGCCTCG","GCGCTAGAA","ATGAGGTAT","CTGTCACTT","AGACGGAGG","TGCACGATG","AGCGGTAAG","ATAGTCTCC","AGCCGTTCT","CTCCAGCGT","CACTGTATC","CATCGCTGG","TAACGGATA","GTCGTCGAC","CCTTGACGG","GATCTACTT","GATACCGGA","CGTCGTCAA","TCTCAGGAT","ATTGCGCTA","TAGTACGTA","ACTGCTAGT","CAACTCCAG","CAGTACATC","TCCACGTGC","TAGTTGACG","TGTAGGTTA","ACCGTCACG","AATCGTGTT","GCTTACGTT","CGGTGAGTC","GTTACTACT","TGCATCGGA","CCTGACCTC","TATTACAGC","CTACCTGCG","GGACAGATT","TCACTCGCT","AGTCGATCA","GATCGCGAA","GCTGGTAAC","AGTGTCTCT","TAGACCGCA","AATAGACGC","CTTCTGAGT","AGGAGCAAT","CGCACTGAA","ACTGGTCAG","GGTGCGTAG","CAATGTGCT","TGCGTGCCA","ATCAGGATG","ATAAGTTCG","AGACATATC","ACTTCTAAC","AATTGGTGA","AACTTGTCG","TGGTAACCA","TGCCGAACT","CTGGTAATC","CAGTTGAGT","CCACAAGGT","CCGCTCATG","TGATGACAG","CGCGTACTA","TCTACGCAA","ACGTATGTC","ATGAGCAGG","CACGATAGA","CGACCTGTA","GACACCGAT","CCTGCAGAT","GCTTCTACG","CTTAAGTTG","TACCTATCC","AGAGCGCGA","CCGCAGAAT","CTCAGGTAC","CGCCTGCAA","CGAATGAGT","TCTCATCGG","GTCAACTGA","GTCACTATG","TCGAACGCT","CCAGTACTC","AGGTATTCC","CTAGGTACT","CCAACGGAA","TGCTGCGTC","GTCGCAGGT","CACGGAAGT","GAACCTTCA","CACCTCAAC","TTCCATACC","ATCGAATCG","CAGTCGGTA","TCACGACAA","TCGCAAGCA","AACAATGCA","CGTTAATGG","AGACCAGCT","ACACCGCCA","TTACCTCTC","GTGCGTTCC","CGTCAGCAC","TCAGAGTCA","TTCACTCCT","ATCCACAGT","GGATCAATG","GCGGTAAGT","TCAGGACTG","AGCTCTCCG","TTGTAATGC","TGCCGACTA","GACATAACG","CTAGTCGTC","CCGCAGCTA","ATGTCCTCC","ATTGATTGG","GTATGTATC","TTCCTGCTA","GCGCTTCTC","CCAGCCAAT","GACCGCTTC","TTGCCGTAG","GGACACTGG","AAGCAGCAT","TTCATCCAA","ATCGATCCT","CTAGACATG","CAGCACGTG","GAGCAGGAA","AGAAGTAAC","ATCCTGCCT","CGCACTCTT","AGGATGCGT","TCACACTGC","TCAAGGTCG","CAGCGTAAG","ATCGCCTCT","ATTCCTACG","CTGAGTAGC","GCTCCTAGC","AGTTGTGTA","CTTAGGACT","AAGACGAAG","GACGGACTA","AGTGGAATG","AGACGCCTG","CGCGATGTA","GGTCTCATG","GTCTCTTCA","GGATACCTA","ATGGTTCGA","ATATCCGAT","TGCGTAATC","GCAGCGATA","AACGGAGAT","TACTCGACC","TGATGTGTG","TCACAGGTA","ATCCGTCTC","CTATTCCGT","TTCGTGATG","GCGGTAGTC","CGCGAGTGT","AACGTTCTT","AGCACACCT","ATAATCGAG","ATATGTCCA","ATCATGTTC","GTGCACGAG","AGTCGCGAC","CACATATCA","GAGTCACCA","TTAGTCGGA","CGGAATGCA","TTCATTCGC","CAGAGCACC","AGATCTTCA","ACCTTGAAG","TCATGCTCA","AGTTACAAG","ACGCTCTTA","GATAAGCTG","GCCGTGAAC","GGTAATCTA","ACACTGTGA","AATAACTCC","CTATCTTGA","GGAACTGCT","TGCGTATCT","GTCTTCTCG","CATAAGATC","CTCTCAGTC","GACGTCAAT","GCAGGAGAA","TATAATCGC","CACAACGCT","CCTGTTAGC","AATCCGCTG","TCGCATTCG","TGCGACGTT","ACTCTCACA","TAGACACGT","GCGTATAGG","ACATCGTCC","CTCGTCTTG","GGTTAGATG","CCACGCCAT","TGTGCTAAC","ACGATGACC","ATCAAGAGA","CGGACAAGT","TGACCAAGT","TTAACGTTC","GCCATACAA","GAGTCCAAT","CCATAAGTA","TGTGCCATG","GGTCTTGCA","GTGTCACAC","ACGGTGCCT","CGGTTCTAT","AGGAAGGTG","ATTCCGTAC","TACTGATGA","CTCTACGCA","AGGTCACGT","TTAGCGTCT","GCGATGGTG","CGACCATCA","CTGGACTAA","CTTCGTGCA","CTCCGCATT","TACAGTTAG","GGTTGAAGG","CATTGCAGA","TGACGATGA","CTCATGCCA","ATCAGTCGA","CAGCTAGTT","CGAGTAGCA","AGGTGTACA","TTCCGCCAG","TCCAGCTAT","TTATCCAAG","TATTGCTAC","ATTGGTTCC","CACAGCGAA","GTAAGTGAG","AATGCCTCA","GTCCACAAC","GGAGTACAG","GTCCGTAAG","GCGCTCTAT","GTAGCCTTG","TATGAGACC","GACGCTTGC","CATGACGTT","GTTAATTCG","GAATCGAGA","CCATTACAG","CCGCAATGG","TAGTGCACT","GTAGCTACA","GTGACGTAA","TCGTTCTCC","ATGTGACGA","CCTGTCATT","CATCTCACG","GTACAATGC","TATCTAGGT","CTTGTAACG","AAGGATCGT","AGATGAAGA","CCTGTCGAC","ACGCGACAG","GCGTGATAC","AGGATTGAG","AAGCATTGC","TATTACTCG","TGAGTGACT","GTCAATACA","TCAGCTCAG","CTTCCGTGG","TCGACGTTG","GAGGACTTA","TGGAGAGTG","GAGGTCACG","TGGATTAGC","TAAGTGTAG","CGCATAACT","TGATACCGT","ACGTACTGC","TTCCTAAGG","GTCAGACCG","ATTCATGTG","CATACAACC","TACGACCAT","GCCGAGTCT","GCTGACAGA","GGTCGGATA","GACCGGTAG","GAACTATGG","CCGACTTGG","AACAGCAGT","GACCTTGTG","CCACTTCGC","CGTGTCCGA","ATATCAGCC","CGGAGACTT","ATCGGTGGT","TAGTCAGAC","ATCTAGGTT","TGCAGATGC","CGGTTCGTA","TGCGCTGCA","GTAGAGAGC","GCATGTGGT","TCCAAGTAA","TCCTCGTCG","CATTCGAAT","GACTTCACC","ATAGCCTAA","CCATAATCG","GGTGGAGCT","TACAGGACT","GGATAGTCA","ACTTGATCT","ATGCGCCGT","TAGAGCCAG","TAGAGCGTC","ATTAGCGGT","AACAACCTA","CAACACTCC","AGCCTCGCA","TTATTCGAC","AGATGAGAT","GATTGAGTA","GTGCGAGTA","CTGCGATTC","GACAATGTT","GAAGGATCA","CTGGACACT","GTTGATGCA","TGCAACTCT","CTGCATGTT","AACGCATTG","ATGTGAGAC","TCTGCAACA","CACATGTGC","AGTTAGGTC","GCTAGTGGA","TATTGACTG","CGTGCCTAT","CTTCCTGAT","GGTGTGACC","TCAGGTGCA","CTAACTAAG","GCCTTATCT","CAGCTGGAG","TTACGGACC","ATACCGCTT","ACTTCGCAG","GCAACACCT","AGTACTACA","AGCATTGTT","TCCGATCTG","ATGCTGTCG","AACGAGAAT","GCCATTAAG","TGGTGCCTG","TTAAGTGGT","TAGTGATCC","TATGTACCT","TATACGGAT","CAGCCGCAA","ACGTGTAGT","ACTCGTCTA","CCTAGAGTA","ACAGCGTAT","GTGGTACGG","AACGATGAC","AAGCTGAGG","TCTCCGCGT","AGTCCGTGT","TGTGTCTAC","CTATTAAGG","GGATCGTTC","CTTAATCGT","CCATAGCCA","CCGACTGTT","CTTACATGC","CTAGTATAG","ACCACGGAT","TTGCTCTGC","CGAGCTTAC","ACGGTGTAC","AGTAAGCCA","AGACCACGC","GCTTACTAG","CAACTAATC","TGCCAGACG","AATTGGATC","AATCTCCTA","AGAAGCTGC","CGTCTGCTG","TAACGTGTC","CATGTCCTG","CCTCCTTGT","GATCCGCAC","TCTGCGCTG","TCATATCGC","CAGTATGAT","TGGTGGTAA","TGTGCAGTA","CCGACGTCA","ACAAGAATG","ATTGATCAC","CCAGTTACG","TGTGGTCCT","ATGCTCACC","ATGAGATCC","TTCCAGATT","CGGTCGACA","CTTACCTAG","TACGTTACC","ATGGAGAGT","TTCCAGGAG","ACTCGAGTC","GCGAAGCTC","AGAGCGGAG","GGTAACTAC","AGCACCGTG","GGAATTCAC","TAACCGTGA","TCGGACAGT","AGCGACACC","GAACGCTGT","AAGGAAGTC","CAAGTACGA","CACGCGTAA","TGCCTTCAG","ACTCCTGAG","TTCAGTGCC","GTAACCATA","TGAGCAGAT","CGCTTGTAG","AATGAGTCG","TATGTATGC","AGAGGTGAA","ACACACCGT","TTGATGAGT","TTGTTAGAG","CTACTGTCA","GTGCTAAGC","TCGTAATAG","ACTCCAACT","ATGGAGGAA","TGGTCCTAG","TATCACCTG","AAGTCATGA","AATGCAGCG","GCAATGAGA","TGGACTGCC","GGAAGGTAT","CATTATGTC","AGTCGTCCG","AGCTTCGAT","CAGTTACTG","GATCTGTTC","CCATTCTGC","ACTTAGCTT","ACTCGCTGT","ATCATTACG","GTCGTTAGA","GAGAACAGG","GAATCACAT","CATAGAGAT","TCAGTGTTC","AGCCGGATC","GTCGTTGCG","TGACCTCCT","ACTCCGGTT","CCTCTGCAT","GCACCATCG","GATACTGTG","AATCTGACC","TACTTCCAG","GTATTACTG","GGATGCTCG","GCGGAGATT","GAGTATCGC","GTAGTGGAG","TGGTCTACG","AACTGATTC","CAAGCTGCA","AACCGTGAG","GTGTACCGT","TCACTACGT","ACGTAGTAT","TGTCACATA","TAACTCCGA","CTATCCATC","GCTGAGCAG","CTTGCACAA","CTAGTTCCA","AGAGAGTGG","TCGAATAGA","TTCACTGGA","AATGCTATC","TAGATAGCC","CACAACCAG","GTATGCCTT","TACCTCACT","ATGTCGCCT","ATCTGGTAG","ACTGGACCA"]},"templates":[{"id":"sdr_seq_rna","title":"SDR-seq RNA","source":"examples/cDNA_paired_end_config.json","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":false,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"cb1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTCAGTACGTACGAGTC","TCAGTACGTACGAGTC","CAGTACGTACGAGTC","AGTACGTACGAGTC"],"blocktype":"constantRegion","blockname":"cso","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"cb2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTACTCGCAGTAGTCGACACGTC"],"blocktype":"constantRegion","blockname":"commonseq2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["TCGCCTTA","CTAGTACG","TTCTGCCT","GCTCAGGA"],"blocktype":"barcodeList","blockname":"sb","keepblock":false},{"maxerrors":0,"blockfunction":"UMI","length":8,"blocktype":"randomBarcode","blockname":"umi","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}},{"id":"sdr_seq_gdna","title":"SDR-seq gDNA","source":"examples/gDNA_paired_end_config.json","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":true,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"bc1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTCAGTACGTACGAGTC","TCAGTACGTACGAGTC","CAGTACGTACGAGTC","AGTACGTACGAGTC"],"blocktype":"constantRegion","blockname":"commonseq1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"bc2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTACTCGCAGTAGTC"],"blocktype":"constantRegion","blockname":"commonseq2","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}},{"id":"design_doc","title":"Design-doc example","source":"doc/config_format.md","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":false,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":["CCTTAACAT","AGCGTAGAA","TATAGGTGT","GGCGACTCA"],"blocktype":"barcodeList","blockname":"cb1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GGGTCAGTACGTACGAGTCCC"],"blocktype":"constantRegion","blockname":"con1","keepblock":true},{"maxerrors":0,"blockfunction":"UMI","length":6,"blocktype":"randomBarcode","blockname":"umi","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}}]}
+{"lists":{"list_1":["CCTTAACAT","AGCGTAGAA","CATAGGTGT","CACGACTCA","AGCATTCCA","TCCACCGGT","GCAGCTTGA","TAACACATC","ACGCTATGT","TAGACCATG","TTCTGAATG","CTCTTCAGC","CTGTACGAC","AAGCCAAGT","AGAATCAGA","TTGGTAACT","GTCAGCGTC","AGTGAACGG","TAATCTGGA","ACCGTCCTA","AGTTGAGCG","AAGAGAACT","GTTAGTCAA","AAGCACAAC","CTACGTTGG","CCATGCGTC","TTACTTACG","GTGTCCGTG","GACTCTCAC","AATTAGAGG","ATTAGCCAC","GGAAGTATG","CCATATCTT","CGCTGTAGT","TGAGAGGAC","ACCTGTACC","TATGCCTTC","TAGCAGAGT","CGGTAGCTT","GATAACGTC","TGTTGTCGA","ATTAGCACA","ATCCGGTCC","GCCATCGCT","GCGAAGACA","AGGTCAGCA","ACTGTGTCA","GAGACGATC","AGTCCAGTG","GTGAATGCC","CCTAAGTCT","CCGGTTGAG","GACTGCCTG","TACGGTCGT","ACCTCCTAG","CTAACCGGT","ACTCGTAGG","GTAGTTGGT","GCTACCTTA","CTACGGTAT","GATTAGTGT","CGCAATCGA","CCGGTTCTA","CCATCTAGG","AAGCAACTA","CGACCACTT","GATGCGGTT","CACTCACTA","TAGGTTAGT","ACCACTAGG","TCGCTGTAA","CAAGAGAGT","GTGTCTGGA","GATCTGAAT","GCTGATGTC","AGCCTCTAG","GATCTTCGC","AATCCTCGT","AGATATGGA","CGTATAGCG","GCTTGTCCT","ATCCAGCTG","ATCTCGTGA","CCGATGTTC","TCTTAAGTG","ATCAAGCAT","CGACGTGAT","GTATGATCT","AAGTAGGAC","TTCACCTTG","CTGAGATAG","ATGCGTGGA","AGCTTGGTG","TGCCGCTAC","GGAAGAAGC","GGAGTTAGC","TTAGATCGG","CAATTGTCT","CAGTGAGGA","GTCATTCTA","GAGCACATT","GATGTCTAG","GAGTGCATA","CTTATCTCA","AGCCAGGAC","ATAGACCGA","ACATGACTA","CAGCTTACC","GATTGGAAG","CAACGATCG","CACTAGACT","CCACACAGA","CGATTCGAG","AGCCACTTC","GTCTGAGCC","TACTACTGT","TCGTACCTT","CAATCTCCG","CCGTCAGGT","TCCAATCAT","GTGTTGGAA","GTTAGAGAC","AGTGATGCG","TAGCCAGTG","GCCTGCATC","CTGACAGCA","TCGGTATCA","GGTCGGTCT","CGAACAGAG","GCGATATGA","TTCTCCACA","CGCCATTAC","TCTAGTGAC","GTTCAGAAG","ACAGGTATC","TATACCACT","GTCACAGAG","CCGTCCACT","GTACTCTAC","GCACGTAGA","CTCGCTACG","GAGCGACTC","ACATTCCAC","ATGACACAA","CATGCCAGT","TACCATGTA","TCAGCGACC","GGACTCCTT","GTAGACTCT","AGTTGCCTT","CGTGAGACT","CTAATACGC","TCTTAGCGA","TAGTAGTCT","CATAATTGG","CGAAGAGGT","AAGTACAGA","GACTCTGGT","AGCGGTCTA","CCTCCAATC","GTAACAGTC","ATGATAGCT","ACGCTAGTG","GAGACATTG","CCTATTGGT","CCGTAGTTG","TGGTTATAC","TAGCACACG","TCAATCTAG","TGGATAGGT","TCTGTGAAG","ATAGCTTGC","TGAACCAAT","GGTGAGTTC","CCATATGCC","TCAGTGCAA","TCGTGCCAC","TGCAGTTCA","CCACTACCA","GTCCGCTCA","GCATACTCC","CGCAGTGTC","ATCGTAGTG","GCCGTCTTC","GTGTATCTG","ACTCTGCTC","TCGTCCGAT","TCAGAGCGT","GAGTTATAG","TTCCTTGAC","CTCTAGTAA","GACGTAGCA","ACAGCGGTC","TAGCACTAT","GGATACAAT","AATATCAGC","AACGGTAGC","CCAGATCAC","CGATCCAGA","GCTTCACTC","TGGTAGCAG","CATTGACAA","GACGGTGCT","CAGTCCTAA","CCGAGTACT","CTTCTCATC","GCGTGAGCT","GTTGCATGG","TATCTGTCA","GTCTACCAA","CACCAAGAT","CGTGGTACC","GCCTTAGAG","TCGGAACGA","ATTATGCAG","GGTTGCTAT","TGTCATAGC","TCAAGCGTA","TGTATGTAG","CCGATACCG","TGCTTACGG","GTAATCAGC","AGGATCTCA","TTCTGGTGC","GGAACCTAG","AGCAGACAA","AGCACCAGC","CCTCATAAC","TTCCGAGCG","ACCATACTT","TCCTTCGTA","TAGCGAGAA","GATATGGAC","GCGACACAG","TGCGATACT","ACACATCTG","ACTCTAGGA","TAGAGACTA","GTAGCATAC","TTAACGGAG","TAGCGCAGC","CACACCACA","TTGCGAACA","GTGACTCTC","AAGTTGCCA","CTGAGTCCA","CGAGCCGTT","TACGACTTG","GTCAAGATC","ACTAACCGA","TATAGTGCG","GTGGATAAG","CACCTAGCG","ATAACGACA","GCTTGGTTC","CTAGAGGTA","TCAATGGAC","ACAGAAGAG","CTAGAGTCG","GATGTTACA","CACTTCCTT","TACCTCCTC","CTTCACTGT","TCGCTTAAC","TGCTCAGCG","TCCGGAGCT","CTCGCAAGA","CTGTCTAGT","TGCTATGAA","GTGATGTGC","TGAGATCAT","GCAGCTCTT","ATCCAATGA","AGGATTACT","ACGAGAGCA","CATCGAAGC","ATTCGAAGA","GCCTTCCAT","AGTCTGGAA","CTGTTACCA","GAGATACAC","AGGTCCGTC","ATCTGCGTA","AGTCATACT","CCTGCTCCA","CCTGCGTTA","CCACGTTCT","CCTCGGTCA","CAACGTCTT","CAATACCAC","AACTCCATG","TCACCGAGG","CCTATTCAA","TTCGCATCC","CGCCACCAT","ATGCCTTCA","AAGCAATCG","TACAACACC","ACACTAACG","CATATGTCG","CCGGTGGTT","AAGGATACG","GACGCCGTA","TCATGCAGG","ATAGTCAGT","GGTACTTCC","GGTAAGGAT","CCGCATCCT","GCTACAATG","AGTCGCCGA","AGGAATTGG","CTTGATCTA","ATGAACTAG","CTGGAGCGA","CTGCTGCTT","GTGGACTGG","CACCTTCCT","CGTACATCT","CTGGTACAT","GATACACTA","TAAGCCATT","GGAGAATGA","CCATACGAT","TGGAAGATT","GAATTGTTG","GGACTATTC","TCCTGTGGA","AGACTAGTA","GATGTAAGG","CAAGAGGAG","CCAATGCCT","GCTCAGCCA","CAGCAGTAC","AGACATCCA","GTTAGATTG","CACACTGCC","TCTAGCTGG","GTTATCGAT","CTTAGAAGG","TGATGGACA","AAGTTCTCT","CGCAACCTC","GTGTCGAGC","GAGTCGTAC","CCGGATTGC","GGAGCTCAA","CAGGTTGTC","ACCTAGTTA","TTACTAGTC","GGTCCTAAG","GATCGATAC","CACTGGTCC","GAACTGCAA","TAATGTAGC","ACGTTCAAT","GCACGCATT","AATGCTGAT","GCCACGAGT","CTACGAGAA","CATCCAGGA","AGTACGAAT","TGAACGTCA","TAAGTACAC","CTCCTATCT","CAGGATCAA","AACTGCGAC","ACGGACCAT","GAATTCAGT","AGTAATCAG","GCTATGTAA","AGTATGACG","CCTTCCTCA","AATGCGTGC","GCTGTTCGG","AAGCTTGCA","TAGCTGTTG","TGTGTAGAG","CCTAGTTAG","GTATACAGA","GGTTCGCAA","CGGTTGCGA","AACAGATCG","GCATACATG","GACCGTAGT","TGCGTCTTA","ACAATTCGG","CGCATCTAC","CATGTGAAC","ATGCTTCAG","CCAATATAC","TGTTACTGA","TATCGAGCC","ACAGGAACT","GAGCCGTTA","TGCGCACTG","AGATACGTT","ACCGAGTAG","ATATAGCGT","CGTGACCAG","GGTTCTATC","GTCGACATT","TAGTAACGG","GCATTGATC","CGCTTATGA","TCCTTCAAC","TGGAACTAA","AGATGTTGG","GGATAATAC","GCGCATTAC","AATCGCCAT","GAAGTGTGA","GAGTCTTCG","ACGATGGAA","ATCTACATC","ACGACATCT","GGTTACGCA","ACAATAGGT","TATCCTCAG","TACAAGAGG","CGACAGGAA","AACGCTCAA","GCTCTGTGT","TCGCTGATT","TTGAGCTCT","GTATCCTGC","CTCCTGACG","GTTCCAACA","TGAAGACCA","GCGTTCAGA","GACTATTGA","GAACCAGTT","CGTCTGTCC","GGTAAGTGA","GCGCTACCT","TGATCGGAA","TTCCTCGGT","GCCGAACCA","CTGACGGAT","CTCTAAGAG","TCCTTAGGT","GTACCACAA","TGATTATCG","TTACGCTCG","GTGCCATGA","GCGGACGAA","ATCAGAAGC","TGTCGTACA","GTCAGTTGT","ACAAGGTAC","CACGTAGAC","TCTCGTATC","CATCCACCG","CGACAGACC","GTGAGGACG","AGCAAGTCC","ACACGTTGC","ATGCGCTAC","CCAAGCGAG","GTGAACCAC","ACGCGTGAC","ACTACCATC","ATAATGTGG","GTCCTAGTT","GGAGCATCT","AGCAACATT","TAAGGTGAT","GTTGCTCAG","GTGCTGACT","TCGTCATTC","CGGTGTTAC","TGGAGTGGA","CAAGTCGAA","CCTCTCTAG","TATCAGTGC","GAGATTCCT","TCCATCATT","TATGACCGA","ACTAAGTTC","CAACACCTA","GTCCTTCAT","GGTGTTCAT","ACAACCGGA","CACCTACGC","CGACCTAGC","CCTTCGAGC","ATTGACACG","ATGCGGATT","CCGCACTCA","TGACTGAGA","ACAGAGATG","TCGCGTCAT","CTAGTGCTG","ACCATCTAA","TCATCATCT","TCAGACAAG","ATGCCTGTC","TAAGGTCCG","TCGGATGTT","GCTTCTGAA","TCCGTATAC","AGAAGAGTC","GGAGACACA","TTCTGCCGA","ATGCAGTTC","CTGTAGAAG","TGAACGGTT","CCGCAACAC","ATCTCGAAC","AACTTAGCT","CAGCTTCGA","CGACGTACG","TACGAGTGA","CATTCAGTT","GTACGCGAT","CTTCCGGTA","TCTGGAGGA","GCCTAACGG","CCGAAGCGT","TAGCCTTGT","CTGTGGTGG","GCAGATCCG","GCTGGTTCG","AGTGAGAGA","CCGTACGGA","CCACGAAGG","AGCATATGG","ACTGGTGCT","GCAATCACG","CAGATCATT","AGCTGCACT","CCAGGAGTT","GTCTGACGT","GAATCAACC","TCTGATGAA","CCAAGTCGA","TGTGGACAA","GGATTCGTC","AATCAGGAG","CCTCGCGTT","AATACGTCT","ATGGATATC","GGTAGTGTT","AACAACTGG","TATCATGCT","GCGAGTCTA","GCGACCTGT","AATATCGCT","ACCAGCGTT","TCCACCTCA","AGAAGTCCT","GTTCACTCC","GATAGTTCT","AGGAGGTGA","GATGCAGAA","TGTACACGA","GACCAGAGA","ATTAAGACC","TTGCCAGAT","ACCATGTCT","TGTCCATAG","ATATTCGCA","GATATATCC","TGCCTGGTT","CTCAGTGAT","TACCGCGTT","TTGGACTTC","CATACGCAG","GCCAACAAT","GTGCTCGGA","TGCAGTCGG","AGATCTGAC","CATGGACTC","TACATGCAC","AGTGTGCAC","TACACGGTC","ACTGACTAC","CATAGTATG","GAGAATCAG","TCGCCAAGC","CCTGTATCT","AAGAGAGAG","ATAAGACAG","TGCCATCTC","ATCACCGCA","GTTGACGTG","GGTGAGCGT","ACGTGAATC","CATGGTTAC","TCTAGGATG","TCAAGGAGT","CTGGTCGGT","GTCTTCATA","AGGTGCGAG","CTGCGTCAC","ACGACTGCG","CGGAAGACG","CACAATAAC","GTACGTCTA","TACTAGTAG","GATTATGCG","TAATTCGTG","CTGCTTAGG","GTAACGCGA","CATTGTTCA","CCAGTCTCA","AATACCTTG","TGCATACAT","GGATTACGC","CCTTATCCG","CAGATCGAC","GACAGGTTA","ATCCTCCGA","GACATATGT","CTTGGATCA","CAGCTCTTC","AGTGTTCTG","AAGACTGGT","CTCGTGTCC","ACAGTATTG","CCTCAGGTG","CAGTCTAAC","AACCATGGT","ACGTGCTCG","TCAACACTC","CGTTACACC","TATACGTGG","ACCTAGCAC","CCATCACGA","GACTTGATT","CATCCGACA","TCTACATCC","ATCCATTAG","TGCTCCTCC","ACGAATCGC","GACCAACAG","AATGCACTT","TTGGAGAAC","GAGTCAAGG","ACCGGAAGG","CTCTGCGGT","TCTAATACC","TAACATTGG","TAACACGAG","TGAACTTGC","TCCTGAGAC","TACGAACTC","TATCGGAAC","GGTAGACAT","GTCTTATGC","CTCTGCAAG","TATGGTTGG","CTATACTAG","CAATCATAC","GTGCATCAA","AGCTATATG","ATAGCACGG","CTTCTATGA","AGTAATGGT","CTGATCCGA","TCTCGATGC","ACTTCAGTA","GCAGCAGTG","ACTACTCAT","TAGGAGGAT","CCTTGTTGC","ACATTGACA","CTGACGATG","TTGTATCAC","TGAGCTAGA","CACTGCTTA","GTCGAGTAC","GAGTTAACT","ATCACTTCC","GCACATGTT","TTACAGTGT","ATCCGACCA","TCCAGCAGC","CAAGGTGTG","CAACCGGTC","CCGATCAGC","ATTGCCGAC","TGACCTATG","CAAGTCACT","CAGTGCTGC","TCCAGAACG","TTATCGCAC","AATGTGCGT","CGATTGAAC","TGGAGAACC","CTCCACGTC","GCAACCAAC","GGTGATAGG","GTGGTTACC","ACGACGATT","GCCGCCTAA","TTGATGCTG","ACACCACAT","TAGTCGCAT","TGTCAACCT","TGATTCACC","CAGTAATGT","TACCAGCCA","GCGTCGTCT","GTGTTCCAG","AGCGCATGA","CGTAATGAC","TGATTGTGC","TCTATTAGG","ATAGAGCAG","TGATCTCGG","AGTGACGAT","TCATCTGTC","TTGAGACGG","CATATGCGA","TAGGAGCTA","CTCTGTCAA","TCTGAGATA","CAGGTATCG","GAGGTCCTT","TAGCTAAGA","ACCGAGACA","ATCTCTGCT","CCTAGTCTC","CCATGATGT","CGGAACGAG","CCGTTCCAA","TCATCAGAG","TGTATCGTG","AGACTTCGT","GCGTAACAA","GGTTCAGAC","ACTCACGAA","CGTATCGAA","ACTGTAATC","GCCACATGG","GACTCAGTG","TGGTCGCTA","TATGAAGAC","AGTTCGATA","TCGTAGGAA","GAATAAGAG","TCCTCTAGT","GCCGTTGTT","TTGACCTGA","GGTACGAGC","CGGATTCTC","GTAGAAGTT","GTGGAGGTC","TGTAGCAAG","CCGCTATCC","TTATGAGGA","AGTAGAGGA","ACGACAGTC","CGATACTCT","CTGCAAGCC","AGCGTCGTC","CGATAGGTG","TTCGCTGAG","GCTCTCCAA","CCTTAATTC","GCCGCTATC","TAGACCTAC","GCACAGTAA","ACTCCGTCG","CGTGCAAGG","GAGCTCTCA","CGAATCCTG","CAACGCACA","CCAACAACA","GCCAATGAA","CATCAATAG","TATGATGTG","CACGGATAG","ACCACGCTA","TGACAAGTT","AATACTCCG","GTCTCCAGG","TCAGTAAGC","CAAGAACCG","CGCGCACAT","GATCTAGAG","AATTCGGAA","CTTGCGACC","CTCATTAGT","GCCTTGTGA","ACTATCCTG","CAGCGACGT","AAGCCACAC","CTTGGTCAT","TTACACCTT","AACGAGGTG","GCGAACTCG","ATACCGAAG","AGTACTCTC","TACGTTGGA","TAGATCTGT","GTAATATCG","TGAGAATCC","GCTCAATGA","GACGTGGTC","GGAATTGGA","GAGCATACA","TTCAACTAC","ACCGACGGT","GCTAGCTCC","GACTGCGCA","TCCGATAAC","GGTCCTGGT","ATACGAGGT","GGATCAGGT","GAGTGTGCC","CAGAAGTGA","ACGAGCTTC","CTTATTGAG","TCACATACT","TGTAGATCG","GAACAACCA","ACATGGATT","CCTTGCTTG","CTCGAACTG","TGCAGCCTT","AGAGGACGT","GTTGACCAT","ATATGCAGC","CCACTGAAG","ATACTTGCT","AAGACTACC","AACGCCTAC","CTCGACGAT","TCCTATTCC","CAATGCATT","CAAGCGCAT","ATGAGTGTG","GATCGTTGA","CCACATTAG","TACTCGCTG","CAATCAAGT","GATCGCACT","ACCGGAGTA","TGACGGTTG","ACTTCTTGG","AAGGTCTGA","TCTACAGTT","TGATTGCTG","CCGTTAGAC","GACGTTCAG","CGTTCCATT","CGTTGATCC","CGAACAATC","TTCGGAGTC","AGCTCGTCT","TGCCAATGG","CCTACTAGA","CTGGTGACA","AGTAACGTA","AGACGCTAT","TTGCAGTCA","GAGCCATCC","TGTAACAGT","AGTTATCGC","TAATCACGC","CACTACAGG","ACCGCTGTG","GGTTAACAG","GAAGAGCAC","ACTCATTCA","ACCATTCAC","ATCATAGAC","CAACCTGGT","CACCTCGGA","TAGGATTAG","TATTCAACG","TAGGATGCC","GCCTGGAAT","CACACCTGT","GACTAGCAT","GGTAGCATC","TGGACGAGA","AGAGCCGCA","CGTGTGTGG","TGTTAAGCC","AGCGGAACA","AAGCTGGTC","TTGATCGTA","GTAACTCAT","TGTGAGTAT","CTGATGCAC","GCTACCGAG","CGTACACAC","TGCTCACAC","AGTTCAACC","CATTCCGAG","CGTTCGTAC","GCTTAGAAC","CCACCATGC","CTATGGATG","GATTAGACA","CCTCTTGTA","GAACATGAC","GCATGTAAG","GGAGATGAG","GTACCTAAC","CACTTGGAT","ACGTCTATG","ACGCACACT","CCGAATATG","TGCCACCGA","CATCCTCTC","TGAGGTCTC","CCGAGCTGA","TACTTACCA","ACGCAAGAT","GTAAGGTCC","ACCGATCGA","CGTATTCCT","AGTCAGTTG","GCACAACTC","CTCTCGATA","AGGATCATG","CGTGCTTGA","TGGTGGATC","AACTTCTGC","CCTCGACCT","GACCACTCG","TGAGACAGC","GATGCGACG","TGGAATCGT","TTGTCAACC","CGCGTGAGA","ATGGACGTT","TTAGGAAGG","CCTCGAGAG","CACATTCTG","CGCTTCACG","TCTTGGTAG","CTCAGCTGG","GATTCCTCT","AGTCTAAGC","TCACGCGAC","ATAGTGGTT","CTCGACTGC","TGAGTTAAG","TCCAACGTG","AGCTACTCA","GAGACTCGA","GATTCTCGG","GTCGTGTTA","GTAGGACGC","TACCGATTG","TCCTGTCCG","ACAAGTACA","CAGTGCCAT","AAGGTGCTG","GCGAGCAAG","CGTCATGGA","CATCTCGAT","ACCTGCAGA","CACCAGAAG","CATGGTCGA","GCACTGGAT","ACTATTGTC","GCAACTCGC","CCACGGATC","AGATCGAGT","AACACACTC","CTTCGACTG","ACGTCGCTC","TCGATTCAG","CCGATCTCT","AAGGAACAG","ATTCGCTTA","CTGAGGTTA","CTATAGCTC","TCGTGACGT","TTCCAATTC","CTGTGCTCA","CTTAACAGC","GTGCTCTTG","ACAGCATCA","AACCGCTGA","ATTCACCTC","CTAACACTG","GGATGCGAA","GAGATGTAT","TCTATGACA","ACACACGTC","GCGACAACC","GTACGAACG","GATGCTCCT","GGACGAGCA","GACACGCAA","TAAGCACTA","CCTAGCAAT","TGATAGAGG","AACTAACTG","GAACTCGTA","ATACAACCG","GAGGTGAGC","CTCGTTCAC","CCTAAGAAG","TGTCTACAC","TAGGTCAAC","ACCGTACGC","ACACAGAAC","CTGATCAAG","ACCGGTTAC","ATCTTACAG","CAGGAGCCT","GTATCGTCG","CGTGTATTC","TGTCGTGAG","ACAACGAGC","CACGTCATA","AACGTCGAG","AGGTACCAA","ATTCTCTGG","CTGCAGAGC","CAAGCCTCG","GCGCTAGAA","ATGAGGTAT","CTGTCACTT","AGACGGAGG","TGCACGATG","AGCGGTAAG","ATAGTCTCC","AGCCGTTCT","CTCCAGCGT","CACTGTATC","CATCGCTGG","TAACGGATA","GTCGTCGAC","CCTTGACGG","GATCTACTT","GATACCGGA","CGTCGTCAA","TCTCAGGAT","ATTGCGCTA","TAGTACGTA","ACTGCTAGT","CAACTCCAG","CAGTACATC","TCCACGTGC","TAGTTGACG","TGTAGGTTA","ACCGTCACG","AATCGTGTT","GCTTACGTT","CGGTGAGTC","GTTACTACT","TGCATCGGA","CCTGACCTC","TATTACAGC","CTACCTGCG","GGACAGATT","TCACTCGCT","AGTCGATCA","GATCGCGAA","GCTGGTAAC","AGTGTCTCT","TAGACCGCA","AATAGACGC","CTTCTGAGT","AGGAGCAAT","CGCACTGAA","ACTGGTCAG","GGTGCGTAG","CAATGTGCT","TGCGTGCCA","ATCAGGATG","ATAAGTTCG","AGACATATC","ACTTCTAAC","AATTGGTGA","AACTTGTCG","TGGTAACCA","TGCCGAACT","CTGGTAATC","CAGTTGAGT","CCACAAGGT","CCGCTCATG","TGATGACAG","CGCGTACTA","TCTACGCAA","ACGTATGTC","ATGAGCAGG","CACGATAGA","CGACCTGTA","GACACCGAT","CCTGCAGAT","GCTTCTACG","CTTAAGTTG","TACCTATCC","AGAGCGCGA","CCGCAGAAT","CTCAGGTAC","CGCCTGCAA","CGAATGAGT","TCTCATCGG","GTCAACTGA","GTCACTATG","TCGAACGCT","CCAGTACTC","AGGTATTCC","CTAGGTACT","CCAACGGAA","TGCTGCGTC","GTCGCAGGT","CACGGAAGT","GAACCTTCA","CACCTCAAC","TTCCATACC","ATCGAATCG","CAGTCGGTA","TCACGACAA","TCGCAAGCA","AACAATGCA","CGTTAATGG","AGACCAGCT","ACACCGCCA","TTACCTCTC","GTGCGTTCC","CGTCAGCAC","TCAGAGTCA","TTCACTCCT","ATCCACAGT","GGATCAATG","GCGGTAAGT","TCAGGACTG","AGCTCTCCG","TTGTAATGC","TGCCGACTA","GACATAACG","CTAGTCGTC","CCGCAGCTA","ATGTCCTCC","ATTGATTGG","GTATGTATC","TTCCTGCTA","GCGCTTCTC","CCAGCCAAT","GACCGCTTC","TTGCCGTAG","GGACACTGG","AAGCAGCAT","TTCATCCAA","ATCGATCCT","CTAGACATG","CAGCACGTG","GAGCAGGAA","AGAAGTAAC","ATCCTGCCT","CGCACTCTT","AGGATGCGT","TCACACTGC","TCAAGGTCG","CAGCGTAAG","ATCGCCTCT","ATTCCTACG","CTGAGTAGC","GCTCCTAGC","AGTTGTGTA","CTTAGGACT","AAGACGAAG","GACGGACTA","AGTGGAATG","AGACGCCTG","CGCGATGTA","GGTCTCATG","GTCTCTTCA","GGATACCTA","ATGGTTCGA","ATATCCGAT","TGCGTAATC","GCAGCGATA","AACGGAGAT","TACTCGACC","TGATGTGTG","TCACAGGTA","ATCCGTCTC","CTATTCCGT","TTCGTGATG","GCGGTAGTC","CGCGAGTGT","AACGTTCTT","AGCACACCT","ATAATCGAG","ATATGTCCA","ATCATGTTC","GTGCACGAG","AGTCGCGAC","CACATATCA","GAGTCACCA","TTAGTCGGA","CGGAATGCA","TTCATTCGC","CAGAGCACC","AGATCTTCA","ACCTTGAAG","TCATGCTCA","AGTTACAAG","ACGCTCTTA","GATAAGCTG","GCCGTGAAC","GGTAATCTA","ACACTGTGA","AATAACTCC","CTATCTTGA","GGAACTGCT","TGCGTATCT","GTCTTCTCG","CATAAGATC","CTCTCAGTC","GACGTCAAT","GCAGGAGAA","TATAATCGC","CACAACGCT","CCTGTTAGC","AATCCGCTG","TCGCATTCG","TGCGACGTT","ACTCTCACA","TAGACACGT","GCGTATAGG","ACATCGTCC","CTCGTCTTG","GGTTAGATG","CCACGCCAT","TGTGCTAAC","ACGATGACC","ATCAAGAGA","CGGACAAGT","TGACCAAGT","TTAACGTTC","GCCATACAA","GAGTCCAAT","CCATAAGTA","TGTGCCATG","GGTCTTGCA","GTGTCACAC","ACGGTGCCT","CGGTTCTAT","AGGAAGGTG","ATTCCGTAC","TACTGATGA","CTCTACGCA","AGGTCACGT","TTAGCGTCT","GCGATGGTG","CGACCATCA","CTGGACTAA","CTTCGTGCA","CTCCGCATT","TACAGTTAG","GGTTGAAGG","CATTGCAGA","TGACGATGA","CTCATGCCA","ATCAGTCGA","CAGCTAGTT","CGAGTAGCA","AGGTGTACA","TTCCGCCAG","TCCAGCTAT","TTATCCAAG","TATTGCTAC","ATTGGTTCC","CACAGCGAA","GTAAGTGAG","AATGCCTCA","GTCCACAAC","GGAGTACAG","GTCCGTAAG","GCGCTCTAT","GTAGCCTTG","TATGAGACC","GACGCTTGC","CATGACGTT","GTTAATTCG","GAATCGAGA","CCATTACAG","CCGCAATGG","TAGTGCACT","GTAGCTACA","GTGACGTAA","TCGTTCTCC","ATGTGACGA","CCTGTCATT","CATCTCACG","GTACAATGC","TATCTAGGT","CTTGTAACG","AAGGATCGT","AGATGAAGA","CCTGTCGAC","ACGCGACAG","GCGTGATAC","AGGATTGAG","AAGCATTGC","TATTACTCG","TGAGTGACT","GTCAATACA","TCAGCTCAG","CTTCCGTGG","TCGACGTTG","GAGGACTTA","TGGAGAGTG","GAGGTCACG","TGGATTAGC","TAAGTGTAG","CGCATAACT","TGATACCGT","ACGTACTGC","TTCCTAAGG","GTCAGACCG","ATTCATGTG","CATACAACC","TACGACCAT","GCCGAGTCT","GCTGACAGA","GGTCGGATA","GACCGGTAG","GAACTATGG","CCGACTTGG","AACAGCAGT","GACCTTGTG","CCACTTCGC","CGTGTCCGA","ATATCAGCC","CGGAGACTT","ATCGGTGGT","TAGTCAGAC","ATCTAGGTT","TGCAGATGC","CGGTTCGTA","TGCGCTGCA","GTAGAGAGC","GCATGTGGT","TCCAAGTAA","TCCTCGTCG","CATTCGAAT","GACTTCACC","ATAGCCTAA","CCATAATCG","GGTGGAGCT","TACAGGACT","GGATAGTCA","ACTTGATCT","ATGCGCCGT","TAGAGCCAG","TAGAGCGTC","ATTAGCGGT","AACAACCTA","CAACACTCC","AGCCTCGCA","TTATTCGAC","AGATGAGAT","GATTGAGTA","GTGCGAGTA","CTGCGATTC","GACAATGTT","GAAGGATCA","CTGGACACT","GTTGATGCA","TGCAACTCT","CTGCATGTT","AACGCATTG","ATGTGAGAC","TCTGCAACA","CACATGTGC","AGTTAGGTC","GCTAGTGGA","TATTGACTG","CGTGCCTAT","CTTCCTGAT","GGTGTGACC","TCAGGTGCA","CTAACTAAG","GCCTTATCT","CAGCTGGAG","TTACGGACC","ATACCGCTT","ACTTCGCAG","GCAACACCT","AGTACTACA","AGCATTGTT","TCCGATCTG","ATGCTGTCG","AACGAGAAT","GCCATTAAG","TGGTGCCTG","TTAAGTGGT","TAGTGATCC","TATGTACCT","TATACGGAT","CAGCCGCAA","ACGTGTAGT","ACTCGTCTA","CCTAGAGTA","ACAGCGTAT","GTGGTACGG","AACGATGAC","AAGCTGAGG","TCTCCGCGT","AGTCCGTGT","TGTGTCTAC","CTATTAAGG","GGATCGTTC","CTTAATCGT","CCATAGCCA","CCGACTGTT","CTTACATGC","CTAGTATAG","ACCACGGAT","TTGCTCTGC","CGAGCTTAC","ACGGTGTAC","AGTAAGCCA","AGACCACGC","GCTTACTAG","CAACTAATC","TGCCAGACG","AATTGGATC","AATCTCCTA","AGAAGCTGC","CGTCTGCTG","TAACGTGTC","CATGTCCTG","CCTCCTTGT","GATCCGCAC","TCTGCGCTG","TCATATCGC","CAGTATGAT","TGGTGGTAA","TGTGCAGTA","CCGACGTCA","ACAAGAATG","ATTGATCAC","CCAGTTACG","TGTGGTCCT","ATGCTCACC","ATGAGATCC","TTCCAGATT","CGGTCGACA","CTTACCTAG","TACGTTACC","ATGGAGAGT","TTCCAGGAG","ACTCGAGTC","GCGAAGCTC","AGAGCGGAG","GGTAACTAC","AGCACCGTG","GGAATTCAC","TAACCGTGA","TCGGACAGT","AGCGACACC","GAACGCTGT","AAGGAAGTC","CAAGTACGA","CACGCGTAA","TGCCTTCAG","ACTCCTGAG","TTCAGTGCC","GTAACCATA","TGAGCAGAT","CGCTTGTAG","AATGAGTCG","TATGTATGC","AGAGGTGAA","ACACACCGT","TTGATGAGT","TTGTTAGAG","CTACTGTCA","GTGCTAAGC","TCGTAATAG","ACTCCAACT","ATGGAGGAA","TGGTCCTAG","TATCACCTG","AAGTCATGA","AATGCAGCG","GCAATGAGA","TGGACTGCC","GGAAGGTAT","CATTATGTC","AGTCGTCCG","AGCTTCGAT","CAGTTACTG","GATCTGTTC","CCATTCTGC","ACTTAGCTT","ACTCGCTGT","ATCATTACG","GTCGTTAGA","GAGAACAGG","GAATCACAT","CATAGAGAT","TCAGTGTTC","AGCCGGATC","GTCGTTGCG","TGACCTCCT","ACTCCGGTT","CCTCTGCAT","GCACCATCG","GATACTGTG","AATCTGACC","TACTTCCAG","GTATTACTG","GGATGCTCG","GCGGAGATT","GAGTATCGC","GTAGTGGAG","TGGTCTACG","AACTGATTC","CAAGCTGCA","AACCGTGAG","GTGTACCGT","TCACTACGT","ACGTAGTAT","TGTCACATA","TAACTCCGA","CTATCCATC","GCTGAGCAG","CTTGCACAA","CTAGTTCCA","AGAGAGTGG","TCGAATAGA","TTCACTGGA","AATGCTATC","TAGATAGCC","CACAACCAG","GTATGCCTT","TACCTCACT","ATGTCGCCT","ATCTGGTAG","ACTGGACCA"]},"templates":[{"id":"sdr_seq_rna","title":"SDR-seq RNA","source":"examples/cDNA_paired_end_config.json","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":false,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"cb1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTCAGTACGTACGAGTC","TCAGTACGTACGAGTC","CAGTACGTACGAGTC","AGTACGTACGAGTC"],"blocktype":"constantRegion","blockname":"cso","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"cb2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTACTCGCAGTAGTCGACACGTC"],"blocktype":"constantRegion","blockname":"commonseq2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["TCGCCTTA","CTAGTACG","TTCTGCCT","GCTCAGGA"],"blocktype":"barcodeList","blockname":"sb","keepblock":false},{"maxerrors":0,"blockfunction":"UMI","length":8,"blocktype":"randomBarcode","blockname":"umi","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}},{"id":"sdr_seq_gdna","title":"SDR-seq gDNA","source":"examples/gDNA_paired_end_config.json","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":true,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"bc1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTCAGTACGTACGAGTC","TCAGTACGTACGAGTC","CAGTACGTACGAGTC","AGTACGTACGAGTC"],"blocktype":"constantRegion","blockname":"commonseq1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":{"$list":"list_1"},"blocktype":"barcodeList","blockname":"bc2","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GTACTCGCAGTAGTC"],"blocktype":"constantRegion","blockname":"commonseq2","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}},{"id":"simple_example","title":"Simple example: barcode, linker, UMI","source":"doc/config_format.md","config":{"unknown_read_orientation":false,"single_end_reads":false,"barcode_struct_r1":{"keep_nonbarcode":false,"blocks":[{"maxerrors":1,"blockfunction":"barcode","sequence":["CCTTAACAT","AGCGTAGAA","TATAGGTGT","GGCGACTCA"],"blocktype":"barcodeList","blockname":"cb1","keepblock":false},{"maxerrors":1,"blockfunction":"barcode","sequence":["GGGTCAGTACGTACGAGTCCC"],"blocktype":"constantRegion","blockname":"con1","keepblock":true},{"maxerrors":0,"blockfunction":"UMI","length":6,"blocktype":"randomBarcode","blockname":"umi","keepblock":false}]},"barcode_struct_r2":{"keep_nonbarcode":true,"blocks":[]}}}]}
 </script>
 <!-- SheetJS Community Edition 0.20.3 (xlsx.full.min.js), unmodified, Apache License 2.0.
      Source: https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js

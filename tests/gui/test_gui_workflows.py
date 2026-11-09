@@ -1,10 +1,10 @@
 """Tier B: clicking and typing like a user produces exactly the right file.
 
 Each test drives the real page. Downloads are compared with the canonical
-text of bcwithqc's own example configs, computed in Python.
+text of bcwithqc's own example configs, computed in Python. The page calls
+bcwithqc's blocks "regions"; the config keys keep their names.
 """
 
-import gzip
 import json
 from pathlib import Path
 
@@ -14,111 +14,69 @@ from gui_support import (
     FIXTURES_DIR,
     SAMPLE_BARCODES,
     SAMPLE_CONSTANT,
+    SIMPLE_EXAMPLE,
+    add_region,
     canonical_text,
+    click_button,
     design_doc_example,
+    download_text,
+    fill,
     generated_with,
+    open_config,
+    open_template,
+    paste_sequences,
     read_config,
+    rule_ids,
+    select_region,
+    set_order,
+    set_region_in_output_reads,
+    set_rest_in_output_reads,
+    show_read,
+    table_sequences,
+    type_sequence,
+    wait_ready,
     without_names,
 )
 
-READY = "document.getElementById('app').dataset.busy === 'false'"
+NAME_RULES = (
+    'Use letters, digits, "_", "." and "-", up to 64 characters. Two regions in '
+    "the same read can't share a name, even in different case: CB1 and cb1 clash."
+)
+CONTIGUITY_NOTE = (
+    "Regions start at base 1 and follow each other without gaps. "
+    "Anything after the last region is the rest of the read."
+)
+# The caption joins each read length to its "≥" and "nt" with a no-break space.
+NBSP = chr(0xA0)
 
 
 # ---------------------------------------------------------------------------
-# Helpers that act like a user
-
-
-def wait_ready(app):
-    app.wait_for_function(READY)
-
-
-def click_button(app, name):
-    app.get_by_role("button", name=name, exact=True).click()
-
-
-def add_block(app, kind):
-    app.click("#add_block_button")
-    app.get_by_role("menuitem", name=kind, exact=True).click()
-
-
-def select_block(app, name):
-    app.get_by_role("button", name=f"Block {name}", exact=True).click()
-
-
-def fill(app, label, value):
-    app.get_by_label(label, exact=True).fill(str(value))
-
-
-def type_sequence(app, sequence):
-    box = app.get_by_label("Add a sequence", exact=True)
-    box.fill(sequence)
-    box.press("Enter")
-
-
-def paste_sequences(app, text):
-    app.click("#add_sequences_button")
-    app.get_by_role("menuitem", name="Paste…").click()
-    dialog = app.get_by_role("dialog")
-    dialog.get_by_label("Pasted sequences").fill(text)
-    dialog.get_by_role("button", name="Import", exact=True).click()
-    wait_ready(app)
-
-
-def set_order(app, order):
-    app.get_by_role("group", name="Order").get_by_role(
-        "button", name=order, exact=True
-    ).click()
-
-
-def show_read(app, number):
-    app.get_by_role(
-        "tab", name=f"Read {number} · {'first' if number == 1 else 'second'} file"
-    ).click()
-
-
-def open_template(app, title):
-    app.click("#templates_button")
-    app.get_by_role("menuitem", name=title, exact=True).click()
-    wait_ready(app)
-
-
-def download_text(app, gzipped=False):
-    with app.expect_download() as info:
-        if gzipped:
-            app.click("#download_menu_button")
-            app.click("#download_gz_button")
-        else:
-            app.click("#download_button")
-    data = Path(info.value.path()).read_bytes()
-    return gzip.decompress(data).decode("ascii") if gzipped else data.decode("ascii")
-
-
-def rule_ids(app):
-    return app.locator("#checks .issue").evaluate_all(
-        "(items) => items.map((item) => item.dataset.rule)"
-    )
-
-
-def table_sequences(app):
-    return app.locator("table.seqs td.seq").all_inner_texts()
+# Helpers for this file
 
 
 def example(name):
+    """Return the canonical text of a bcwithqc example config, without per-sequence names."""
     return canonical_text(without_names(read_config(EXAMPLES_DIR / name)))
 
 
 def build_read(app, prefix, keep_constant):
-    """Add a 4-barcode list, a constant and a 6-nt UMI, named like pe_mini's."""
-    add_block(app, "Barcode list")
+    """Add a 4-barcode list, a constant region and a 6-nt UMI to the shown read, named like pe_mini's.
+
+    Args:
+        app: The page.
+        prefix: Text added to each region's name, such as "_r1" (bc_r1, con_r1, umi_r1).
+        keep_constant: Set the constant region to "Keep" in the output reads.
+    """
+    add_region(app, "Barcode list")
     fill(app, "Name", f"bc{prefix}")
-    paste_sequences(app, "\n".join(SAMPLE_BARCODES))
-    set_order(app, "Entered")
-    add_block(app, "Constant region")
+    assert paste_sequences(app, "\n".join(SAMPLE_BARCODES))
+    set_order(app, "As entered")
+    add_region(app, "Constant region")
     fill(app, "Name", f"con{prefix}")
     type_sequence(app, SAMPLE_CONSTANT)
     if keep_constant:
-        app.get_by_label("Keep for alignment", exact=True).check()
-    add_block(app, "Random (UMI)")
+        set_region_in_output_reads(app, "Keep")
+    add_region(app, "Random (UMI)")
     fill(app, "Name", f"umi{prefix}")
     fill(app, "Length (nt)", 6)
 
@@ -130,6 +88,8 @@ def build_read(app, prefix, keep_constant):
 def test_build_pe_mini_from_scratch(app):
     click_button(app, "Paired-end")
     build_read(app, "_r1", keep_constant=True)
+    # pe_mini leaves out the rest of Read 1; both reads output it by default.
+    set_rest_in_output_reads(app, "Leave out")
     show_read(app, 2)
     build_read(app, "_r2", keep_constant=False)
     assert rule_ids(app) == []
@@ -138,17 +98,19 @@ def test_build_pe_mini_from_scratch(app):
 
 def test_build_design_doc_example_from_scratch(app):
     click_button(app, "Paired-end")
-    add_block(app, "Barcode list")
+    add_region(app, "Barcode list")
     fill(app, "Name", "cb1")
-    paste_sequences(app, "\n".join(SAMPLE_BARCODES))
-    set_order(app, "Entered")
-    add_block(app, "Constant region")
+    assert paste_sequences(app, "\n".join(SAMPLE_BARCODES))
+    set_order(app, "As entered")
+    add_region(app, "Constant region")
     fill(app, "Name", "con1")
     type_sequence(app, SAMPLE_CONSTANT.lower())
-    app.get_by_label("Keep for alignment", exact=True).check()
-    add_block(app, "Random (UMI)")
+    set_region_in_output_reads(app, "Keep")
+    add_region(app, "Random (UMI)")
     fill(app, "Name", "umi")
     fill(app, "Length (nt)", 6)
+    # The example leaves out the rest of Read 1 and outputs all of Read 2.
+    set_rest_in_output_reads(app, "Leave out")
     assert download_text(app) == canonical_text(design_doc_example())
 
 
@@ -164,18 +126,18 @@ def test_build_se_mini_by_importing_an_xlsx(app, tmp_path):
     workbook.save(path)
 
     click_button(app, "Single-end")
-    add_block(app, "Barcode list")
+    add_region(app, "Barcode list")
     fill(app, "Name", "cb1")
     app.set_input_files("#import_input", str(path))
     wait_ready(app)
-    set_order(app, "Entered")
-    add_block(app, "Constant region")
+    set_order(app, "As entered")
+    add_region(app, "Constant region")
     type_sequence(app, SAMPLE_CONSTANT)
-    app.get_by_label("Keep for alignment", exact=True).check()
-    add_block(app, "Random (UMI)")
+    set_region_in_output_reads(app, "Keep")
+    add_region(app, "Random (UMI)")
     fill(app, "Name", "umi")
     fill(app, "Length (nt)", 6)
-    app.get_by_label("Send the rest of Read 1 to alignment").check()
+    # se_mini outputs the rest of Read 1, which is the default.
     assert download_text(app) == example("se_mini_config.json")
 
 
@@ -194,29 +156,32 @@ def test_templates_download_their_sources(app):
 
 
 def start_single_end_list(app, sequences):
+    """Choose single-end, add list bc1 with these sequences and constant region con1, then select bc1."""
     click_button(app, "Single-end")
-    add_block(app, "Barcode list")
+    add_region(app, "Barcode list")
     for sequence in sequences:
         type_sequence(app, sequence)
-    add_block(app, "Constant region")
+    add_region(app, "Constant region")
     type_sequence(app, SAMPLE_CONSTANT)
-    select_block(app, "bc1")
+    select_region(app, "bc1")
 
 
 def test_download_is_disabled_while_an_error_exists(app):
-    assert app.locator("#download_button").is_disabled()
+    download_button = app.locator("#download_button")
+    assert download_button.is_disabled()
     start_single_end_list(app, ["CCTTAACAT", "AGCGTAGAA", "CCTTAACAT"])
     assert "E04" in rule_ids(app)
-    assert app.locator("#download_button").is_disabled()
+    assert download_button.is_disabled()
+    assert download_button.get_attribute("title") == "Fix the errors in Checks first"
     app.locator("table.seqs tr").first.click()
     click_button(app, "Delete selected")
     assert "E04" not in rule_ids(app)
-    assert app.locator("#download_button").is_enabled()
+    assert download_button.is_enabled()
 
 
 def test_clicking_a_message_selects_its_rows(app):
     start_single_end_list(app, ["CCTTAACAT", "AGCGTAGAA", "CCTTAACAT", "TATAGGTGT"])
-    select_block(app, "con1")
+    select_region(app, "con1")
     app.locator('#checks .issue[data-rule="E04"]').click()
     selected = app.locator(
         'table.seqs tr[aria-selected="true"] td.seq'
@@ -229,9 +194,8 @@ def test_problem_rows_and_blocks_are_highlighted(app):
     start_single_end_list(app, ["CCTTAACAT", "CCTTAACAT", "ACCTGGA"])
     assert app.locator("table.seqs tr.err").count() == 2
     assert app.locator("table.seqs tr.warn").count() == 1
-    assert "has-error" in app.get_by_role("button", name="Block bc1").get_attribute(
-        "class"
-    )
+    region = app.get_by_role("button", name="Region bc1", exact=True)
+    assert "has-error" in region.get_attribute("class")
 
 
 def test_typed_lowercase_is_stored_uppercase(app):
@@ -240,19 +204,33 @@ def test_typed_lowercase_is_stored_uppercase(app):
 
 
 def test_contiguity_note_and_structure_caption_are_shown(app):
+    """The caption gives Read 1's length, linker combinations and read lengths, then the note.
+
+    SDR-seq RNA's Read 1 holds cb1 (9 nt), cso (4 variants of 14–17 nt), cb2
+    (9 nt), commonseq2 (1 variant, 23 nt), sb (8 nt) and umi (8 nt); each
+    allows 1 error except umi (0). Each choice of constant-region variants is
+    one linker combination. A read must be at least the shortest total minus
+    every allowed error, and is recommended to be the longest total plus every
+    allowed error.
+    """
     open_template(app, "SDR-seq RNA")
-    caption = app.locator("#structure_caption").inner_text()
-    assert caption.startswith(
-        "71–74 nt · 4 linker combinations · reads must be ≥ 67 nt"
+    shortest = 9 + 14 + 9 + 23 + 8 + 8  # 71
+    longest = 9 + 17 + 9 + 23 + 8 + 8  # 74
+    allowed_errors = 1 + 1 + 1 + 1 + 1 + 0  # 5
+    linker_combinations = 4 * 1  # cso's variants times commonseq2's
+    assert app.locator("#structure_caption").inner_text() == (
+        f"{shortest}–{longest} nt · {linker_combinations} linker combinations · "
+        f"reads ≥{NBSP}{shortest - allowed_errors}{NBSP}nt "
+        f"(≥{NBSP}{longest + allowed_errors}{NBSP}nt recommended) · {CONTIGUITY_NOTE}"
     )
-    assert "Blocks start at base 1 and must be contiguous" in caption
 
 
 # ---------------------------------------------------------------------------
-# Blocks: names, order, decoder labels, links
+# Regions: names, order, decoder labels, links
 
 
 def json_block_names(app):
+    """Return Read 1's region names in the order the JSON preview lists them."""
     app.get_by_role("button", name="▸ show").click()
     config = json.loads(app.locator("#json_preview").inner_text())
     app.get_by_role("button", name="▾ hide").click()
@@ -261,47 +239,48 @@ def json_block_names(app):
 
 def test_new_blocks_get_default_names(app):
     click_button(app, "Single-end")
-    add_block(app, "Barcode list")
-    add_block(app, "Constant region")
-    add_block(app, "Random (UMI)")
-    add_block(app, "Barcode list")
+    add_region(app, "Barcode list")
+    add_region(app, "Constant region")
+    add_region(app, "Random (UMI)")
+    add_region(app, "Barcode list")
     assert json_block_names(app) == ["bc1", "con1", "umi1", "bc2"]
 
 
 def test_move_buttons_and_drag_and_drop_reorder_the_json(app):
     click_button(app, "Single-end")
-    add_block(app, "Barcode list")
-    add_block(app, "Constant region")
-    add_block(app, "Random (UMI)")
+    add_region(app, "Barcode list")
+    add_region(app, "Constant region")
+    add_region(app, "Random (UMI)")
     click_button(app, "Move left")
     assert json_block_names(app) == ["bc1", "umi1", "con1"]
-    app.get_by_role("button", name="Block con1").drag_to(
-        app.get_by_role("button", name="Block bc1")
+    app.get_by_role("button", name="Region con1", exact=True).drag_to(
+        app.get_by_role("button", name="Region bc1", exact=True)
     )
     assert json_block_names(app) == ["con1", "bc1", "umi1"]
 
 
 def test_random_block_after_a_list_turns_its_decoder_to_free(app):
     click_button(app, "Single-end")
-    add_block(app, "Barcode list")
-    add_block(app, "Constant region")
-    list_box = app.get_by_role("button", name="Block bc1")
+    add_region(app, "Barcode list")
+    add_region(app, "Constant region")
+    list_box = app.get_by_role("button", name="Region bc1", exact=True)
     assert "Lev ≤ 1" in list_box.inner_text()
-    select_block(app, "bc1")
-    add_block(app, "Random (UMI)")
-    assert "FREE ≤ 1" in app.get_by_role("button", name="Block bc1").inner_text()
+    select_region(app, "bc1")
+    add_region(app, "Random (UMI)")
+    assert "FREE ≤ 1" in list_box.inner_text()
 
 
 def link_tags(app):
+    """Return the selected region's link tags as shown, each ending in its ✕ button."""
     return app.locator(".links .tag").all_inner_texts()
 
 
 def test_linking_three_blocks_and_unlinking(app):
     click_button(app, "Single-end")
     for _ in range(3):
-        add_block(app, "Barcode list")
-    add_block(app, "Constant region")
-    select_block(app, "bc1")
+        add_region(app, "Barcode list")
+    add_region(app, "Constant region")
+    select_region(app, "bc1")
     app.get_by_label("Add link with").select_option(label="bc2")
     app.get_by_label("Add link with").select_option(label="bc3")
     assert [tag.replace("✕", "").strip() for tag in link_tags(app)] == ["bc2", "bc3"]
@@ -311,9 +290,8 @@ def test_linking_three_blocks_and_unlinking(app):
     assert link_tags(app) == []
     assert "E12" not in rule_ids(app)
     for name in ("bc1", "bc2", "bc3"):
-        assert (
-            "link" not in app.get_by_role("button", name=f"Block {name}").inner_text()
-        )
+        region = app.get_by_role("button", name=f"Region {name}", exact=True)
+        assert "link" not in region.inner_text()
 
 
 # ---------------------------------------------------------------------------
@@ -342,7 +320,7 @@ def test_table_has_no_number_column_and_no_row_delete_buttons(app):
 
 def test_shift_click_selects_a_range_and_delete_selected_removes_it(app):
     start_single_end_list(app, SAMPLE_BARCODES)
-    set_order(app, "Entered")
+    set_order(app, "As entered")
     rows = app.locator("table.seqs tr")
     rows.nth(0).click()
     rows.nth(2).click(modifiers=["Shift"])
@@ -354,14 +332,14 @@ def test_shift_click_selects_a_range_and_delete_selected_removes_it(app):
 def test_sort_toggle_controls_display_and_file_order(app):
     entered = ["TTTTCCCC", "AAAACCCC", "GGGGCCCC", "CCCCAAA"]
     start_single_end_list(app, entered)
-    select_block(app, "con1")
+    select_region(app, "con1")
     type_sequence(app, "TTTGGGAAACCC")
-    select_block(app, "bc1")
+    select_region(app, "bc1")
     # A→Z: the 7-nt row (a warning) comes first, the rest alphabetically; the file is plain A→Z.
     assert table_sequences(app) == ["CCCCAAA", "AAAACCCC", "GGGGCCCC", "TTTTCCCC"]
     config = json.loads(download_text(app))
     assert config["barcode_struct_r1"]["blocks"][0]["sequence"] == sorted(entered)
-    set_order(app, "Entered")
+    set_order(app, "As entered")
     assert table_sequences(app) == entered
     config = json.loads(download_text(app))
     assert config["barcode_struct_r1"]["blocks"][0]["sequence"] == entered
@@ -387,9 +365,9 @@ def test_double_click_edits_a_sequence(app):
 def test_barcodes_on_read_2_only_download_with_w12(app):
     click_button(app, "Paired-end")
     show_read(app, 2)
-    add_block(app, "Barcode list")
-    paste_sequences(app, "\n".join(SAMPLE_BARCODES))
-    add_block(app, "Constant region")
+    add_region(app, "Barcode list")
+    assert paste_sequences(app, "\n".join(SAMPLE_BARCODES))
+    add_region(app, "Constant region")
     type_sequence(app, SAMPLE_CONSTANT)
     assert rule_ids(app) == ["W12"]
     config = json.loads(download_text(app))
@@ -398,8 +376,8 @@ def test_barcodes_on_read_2_only_download_with_w12(app):
 
 def test_single_block_read_downloads_with_w11(app):
     click_button(app, "Single-end")
-    add_block(app, "Barcode list")
-    paste_sequences(app, "\n".join(SAMPLE_BARCODES))
+    add_region(app, "Barcode list")
+    assert paste_sequences(app, "\n".join(SAMPLE_BARCODES))
     assert rule_ids(app) == ["W11"]
     assert app.locator("#checks .chip.temporary").count() == 1
     assert len(json.loads(download_text(app))["barcode_struct_r1"]["blocks"]) == 1
@@ -408,10 +386,14 @@ def test_single_block_read_downloads_with_w11(app):
 def test_single_end_hides_read_2_and_its_errors(app):
     open_template(app, "SDR-seq RNA")
     show_read(app, 2)
-    add_block(app, "Barcode list")
+    add_region(app, "Barcode list")
+    type_sequence(app, "ACGTN")
+    bad_character = app.locator('#checks .issue[data-rule="E03"]')
+    assert bad_character.get_attribute("data-level") == "error"
     assert app.locator("#download_button").is_disabled()
     click_button(app, "Single-end")
     assert app.get_by_role("tab").count() == 0
+    assert rule_ids(app) == []
     assert app.locator("#download_button").is_enabled()
     config = json.loads(download_text(app))
     assert "barcode_struct_r2" not in config
@@ -432,17 +414,23 @@ def test_orientation_choice_survives_a_switch_to_single_end_and_back(app):
 
 
 def test_opening_a_legacy_config_asks_the_mode_and_lists_the_changes(app):
-    app.set_input_files("#open_input", str(FIXTURES_DIR / "legacy_master_gDNA.json.gz"))
+    open_config(app, FIXTURES_DIR / "legacy_master_gDNA.json.gz")
     dialog = app.get_by_role("dialog")
     assert dialog.get_by_label("Paired-end, barcodes on one read").is_checked()
     dialog.get_by_role("button", name="Open").click()
     wait_ready(app)
     notices = app.locator("#notices").inner_text()
     assert "older format" in notices
+    assert "all of Read 2 is kept in the output reads" in notices
+    # No region in the file has keepblock.
+    assert (
+        '"In output reads" was not set in this file, so every region is '
+        '"Leave out".' in notices
+    )
     assert "names were dropped" in notices
     assert (
         app.get_by_role("group", name="Order")
-        .get_by_role("button", name="Entered")
+        .get_by_role("button", name="As entered")
         .get_attribute("aria-pressed")
         == "true"
     )
@@ -452,7 +440,7 @@ def test_opening_a_legacy_config_asks_the_mode_and_lists_the_changes(app):
 def test_opening_a_file_that_is_not_a_config_shows_an_error(app, tmp_path):
     path = tmp_path / "notes.json"
     path.write_text("[1, 2, 3]")
-    app.set_input_files("#open_input", str(path))
+    open_config(app, path)
     wait_ready(app)
     assert "not a bcwithqc config" in app.locator("#error_banner").inner_text()
 
@@ -536,26 +524,39 @@ def test_workbook_with_several_sheets_needs_sheet_and_column(app, tmp_path):
 
 
 def test_loading_a_template_over_unsaved_changes_asks_first(app):
+    """Cancel keeps the page as it is; Replace loads the template."""
     start_single_end_list(app, ["CCTTAACAT"])
-    open_template(app, "SDR-seq RNA")
+    app.click("#templates_button")
+    app.get_by_role("menuitem", name="SDR-seq RNA", exact=True).click()
     dialog = app.get_by_role("dialog")
-    dialog.get_by_role("button", name="Keep editing").click()
+    assert dialog.get_by_role("heading").inner_text() == "Replace the current config?"
+    assert dialog.locator("p").inner_text() == (
+        'Opening the template "SDR-seq RNA" replaces the config on this page. '
+        "It has changes you have not downloaded."
+    )
+    # Cancel is the default answer: the filled button, with the focus, so
+    # Enter alone replaces nothing.
+    assert dialog.locator("button.primary").all_inner_texts() == ["Cancel"]
+    assert app.evaluate("document.activeElement.textContent") == "Cancel"
+    dialog.get_by_role("button", name="Cancel", exact=True).click()
+    assert dialog.is_hidden()
     assert app.locator("#main .block-head .name").inner_text() == "bc1"
+    assert app.get_by_role("button", name="Region cb1", exact=True).count() == 0
     open_template(app, "SDR-seq RNA")
-    app.get_by_role("dialog").get_by_role("button", name="Discard changes").click()
-    wait_ready(app)
-    assert app.get_by_role("button", name="Block cb1").count() == 1
+    assert app.get_by_role("button", name="Region cb1", exact=True).count() == 1
+    assert app.get_by_role("button", name="Region bc1", exact=True).count() == 0
 
 
 def test_control_s_downloads(app):
-    open_template(app, "Design-doc example")
+    open_template(app, SIMPLE_EXAMPLE)
     with app.expect_download() as info:
         app.keyboard.press("Control+s")
+    assert info.value.suggested_filename == "simple_example.json"
     assert Path(info.value.path()).read_text() == canonical_text(design_doc_example())
 
 
 def test_closing_after_an_edit_prompts(app):
-    open_template(app, "Design-doc example")
+    open_template(app, SIMPLE_EXAMPLE)
     fill(app, "Name", "cb_renamed")
     dialogs = []
     app.on("dialog", lambda dialog: (dialogs.append(dialog.type), dialog.dismiss()))
@@ -569,6 +570,8 @@ def test_closing_after_an_edit_prompts(app):
 
 
 def test_orientation_help_opens_without_toggling_the_checkbox(app):
+    # The welcome panel has no settings; they appear once a read layout is chosen.
+    click_button(app, "Paired-end")
     checkbox = app.get_by_label("Molecules may be oriented either way")
     help_button = app.get_by_role("button", name="About molecule orientation")
     help_button.click()
@@ -586,22 +589,26 @@ def test_orientation_help_opens_without_toggling_the_checkbox(app):
 
 
 def test_name_help_lists_the_rules(app):
-    open_template(app, "Design-doc example")
-    app.get_by_role("button", name="Rules for block names").click()
-    text = app.locator("#help_name").inner_text()
-    assert (
-        "letters, digits" in text and "64 characters" in text and "CB1 and cb1" in text
-    )
+    open_template(app, SIMPLE_EXAMPLE)
+    app.get_by_role("button", name="Rules for region names").click()
+    assert app.locator("#help_name").inner_text() == NAME_RULES
     app.locator("h1").click()
     assert app.locator("#help_name").is_hidden()
 
 
 def open_with_extras(app, tmp_path, extras):
-    """Open se_mini with extra top-level keys; return (config, its dialog)."""
+    """Open se_mini with extra top-level keys and wait for the unknown-keys question.
+
+    A page that holds a config first asks whether to replace it; this
+    answers Replace.
+
+    Returns:
+        The config without the extras, and the dialog locator.
+    """
     config = without_names(read_config(EXAMPLES_DIR / "se_mini_config.json"))
     path = tmp_path / "with_extras.json"
     path.write_text(json.dumps({**config, **extras}, indent=4))
-    app.set_input_files("#open_input", str(path))
+    open_config(app, path)
     dialog = app.get_by_role("dialog")
     dialog.get_by_role("button", name="Cancel", exact=True).wait_for()
     return config, dialog
@@ -623,7 +630,10 @@ def test_opening_a_file_with_an_unknown_key_asks_whether_to_keep_it(app, tmp_pat
 def test_unknown_keys_left_out_on_opening_can_be_kept_later(app, tmp_path):
     extras = {"config_version": 2, "comment": "plate 3"}
     config, dialog = open_with_extras(app, tmp_path, extras)
-    assert '"config_version", "comment"' in dialog.inner_text()
+    assert (
+        '"config_version" at the top level, "comment" at the top level'
+        in dialog.inner_text()
+    )
     dialog.get_by_role("button", name="Leave them out", exact=True).click()
     wait_ready(app)
     keep = app.get_by_label("Keep them in the file", exact=True)
@@ -635,6 +645,7 @@ def test_unknown_keys_left_out_on_opening_can_be_kept_later(app, tmp_path):
 
 @pytest.mark.parametrize("how", ["Escape", "Cancel"])
 def test_cancelling_the_unknown_keys_question_opens_nothing(app, tmp_path, how):
+    """Answering Replace, then cancelling the unknown-keys question, keeps the template."""
     open_template(app, "SDR-seq RNA")
     _, dialog = open_with_extras(app, tmp_path, {"config_version": 2})
     if how == "Escape":
@@ -650,7 +661,7 @@ def test_a_legacy_file_with_an_unknown_key_asks_both_questions_in_turn(app, tmp_
     legacy = read_config(FIXTURES_DIR / "legacy_master_gDNA.json.gz")
     path = tmp_path / "legacy_with_comment.json"
     path.write_text(json.dumps({**legacy, "comment": "plate 3"}, indent=4))
-    app.set_input_files("#open_input", str(path))
+    open_config(app, path)
     dialog = app.get_by_role("dialog")
     dialog.get_by_role("button", name="Open", exact=True).click()
     dialog.get_by_role("button", name="Leave it out", exact=True).click()
@@ -660,12 +671,18 @@ def test_a_legacy_file_with_an_unknown_key_asks_both_questions_in_turn(app, tmp_
 
 
 def test_a_downloaded_config_reopens_without_questions(app, tmp_path):
+    """A file the page wrote opens without the older-format or unknown-keys question.
+
+    The page holds a config, so the replace question comes first and is
+    answered with Replace.
+    """
     open_template(app, "SDR-seq gDNA")
     path = tmp_path / "gDNA.json"
     path.write_text(download_text(app))
     open_template(app, "SDR-seq RNA")
-    app.set_input_files("#open_input", str(path))
+    open_config(app, path)
     wait_ready(app)
+    assert app.get_by_role("dialog").count() == 0
     assert app.locator("#error_banner").is_hidden()
     stamp = generated_with()
     made_for = f"made for {stamp['name']} {stamp['version']}"
@@ -674,10 +691,14 @@ def test_a_downloaded_config_reopens_without_questions(app, tmp_path):
 
 
 def test_shortcuts_wait_while_a_question_is_open(app, tmp_path):
+    """Ctrl/Cmd+S waits while the unknown-keys question is open, after Replace was answered."""
     open_template(app, "SDR-seq gDNA")
     downloads = []
     app.on("download", lambda download: downloads.append(download.suggested_filename))
     _, dialog = open_with_extras(app, tmp_path, {"config_version": 2})
+    assert dialog.get_by_role("heading").inner_text() == (
+        "Keep the key bcwithqc doesn't use?"
+    )
     app.keyboard.press("ControlOrMeta+s")
     assert app.locator("#app").get_attribute("data-busy") == "true"
     dialog.get_by_role("button", name="Keep it", exact=True).click()
@@ -688,5 +709,5 @@ def test_shortcuts_wait_while_a_question_is_open(app, tmp_path):
 
 def test_outputs_without_a_umi_block_say_ub_and_ur_are_not_written(app):
     open_template(app, "SDR-seq gDNA")
-    assert app.locator("#out_ub").inner_text() == "not written (no UMI block)"
-    assert app.locator("#out_ur").inner_text().startswith("not written (no UMI block)")
+    assert app.locator("#out_ub").inner_text() == "not written (no UMI region)"
+    assert app.locator("#out_ur").inner_text().startswith("not written (no UMI region)")
