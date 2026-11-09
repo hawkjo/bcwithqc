@@ -1,17 +1,17 @@
-"""Tier B: the user's second notes on the GUI, and the review fixes of round 2.
+"""Tier B: changes from the second round of hands-on testing, and review fixes.
 
-notes_on_gui_v2.txt holds the user's notes on the config builder after the
-first round of changes, ledgered V01–V15 in the plan; R01–R25 are the
-confirmed findings of the review that followed, fixed in the same round, and
-R26–R46 the findings of the round-2 dry run and second review. Each
-test is named after the ledger id it covers. Expected texts and values follow
-the behaviour agreed for each item and are written out here, not read from
-the page; read lengths are worked out by hand from the regions' lengths and
-allowed errors. V01, V05 and V08 ask for no change to the page (a remark,
-a question answered in the plan, an item for bcwithqc's own to-do list), so
-no test covers them. V04's wording, "In output reads: Keep | Leave out", is
-asserted wherever a test reads the switches. V15 is fixed with
-V11, and R02 with V12.
+A second round of hands-on testing, of the page as changed after the first
+round (test_gui_feedback_v1.py), produced notes numbered V01–V15. Code
+reviews found R01–R25 in the first round's changes, and R26–R46 in the
+second round's, together with a trial run of a manual checklist. The notes
+and findings are not part of the repo: each test is named after the item it
+covers (test_v04_…, test_r26_…), and its docstring states the behaviour it
+expects. Expected texts and values are written out here, not read from the
+page; read lengths are worked out by hand from the regions' lengths and
+allowed errors. V01, V05 and V08 asked for no change to the page (a remark,
+a question, and an item for bcwithqc's own to-do list), so no test covers
+them. V04's wording, "In output reads: Keep | Leave out", is asserted
+wherever a test reads the switches. V15 is fixed with V11, and R02 with V12.
 
 Drags from outside the page are plain events carrying a dataTransfer object,
 as in test_gui_feedback_v1.py. Keyboard use is simulated by focusing an
@@ -468,7 +468,7 @@ def test_v03_the_download_outputs_a_read_without_regions_whole(app):
 
 @pytest.mark.parametrize("number", [1, 2])
 def test_v03_deleting_the_last_region_outputs_the_whole_read_again(app, number):
-    """V03: a region enables "Leave out"; deleting the read's last one returns to Output.
+    """V03: a region enables "Leave out"; deleting the read's last one returns to Keep.
 
     Deleting a region that isn't the last keeps the choice.
     """
@@ -501,7 +501,7 @@ def test_v03_deleting_the_last_region_outputs_the_whole_read_again(app, number):
 def test_v03_a_file_that_leaves_out_a_read_without_regions_opens_as_output(
     app, tmp_path
 ):
-    """V03: a region-less Read 2 that says false opens as Output, with a notice."""
+    """V03: a region-less Read 2 that says false opens as Keep, with a notice."""
     config = make_config(
         [barcode_list("bc1"), constant_region("con1")], [], keep_r1=True, keep_r2=False
     )
@@ -639,7 +639,7 @@ def test_v06_the_sdr_seq_rna_caption_gives_minimum_and_recommended_read_lengths(
 
 
 def test_v06_lengths_show_once_every_region_is_filled_in(app):
-    """V06: the user's example: list, UMI, constant region, UMI.
+    """V06: a list, a UMI, a constant region and a second UMI.
 
     The read lengths wait until the list and the constant region have
     sequences. Then, by hand: bc1 9 nt with 1 allowed error, umi1 8 nt with
@@ -875,7 +875,7 @@ def test_r01_an_unnamed_region_of_unknown_type_is_named_region1(core):
 
 
 # ---------------------------------------------------------------------------
-# V10: step 7.2 of the checklist, a random region set to barcode
+# V10: a random region set to barcode
 
 
 def test_v10_sdr_seq_rnas_umi_set_to_barcode_goes_into_cb_as_read(app):

@@ -1,20 +1,18 @@
-"""Tier B: the user's notes on the first published GUI.
+"""Tier B: changes from the first round of hands-on testing of the GUI.
 
-notes_on_gui_v1.txt holds the user's notes on the first published config
-builder, ledgered U01–U19 in the plan. Each test names the note it covers in
-its docstring. Expected texts and values follow the behaviour agreed for each
-note and are written out here, not read from the page. U11 and U19 ask for
-example files and a verification checklist rather than page changes, so no
-test covers them.
+Hands-on testing of the first published config builder produced notes
+numbered U01–U19. The notes are not part of the repo: each test is named
+after the note it covers (test_u01_…), and its docstring states the
+behaviour it expects. Expected texts and values are written out here, not
+read from the page. U11 and U19 asked for example files and a manual
+checklist rather than page changes, so no test covers them.
 
-The user's notes on the second version (notes_on_gui_v2.txt, ledgered
-V01–V15, with the review findings R01–R25) superseded U04: a read without
-regions is always kept whole (V03), so its "Leave out" is disabled instead of
-writing keep_nonbarcode false. V04 replaced U03's "For alignment" with "In
-output reads: Keep | Leave out". Where the second version changed the texts
-or controls of another note, such as the switch label (V02, V04) or the
-questions' filled Cancel button (V11), these tests expect the second version.
-test_gui_feedback_v2.py covers the second version's notes themselves.
+A second round of testing (V01–V15, test_gui_feedback_v2.py) changed some of
+these behaviours, and these tests expect the second round's version: a read
+without regions is always kept whole (V03), which withdraws U04's option to
+leave it out; the keep switch says "In output reads: Keep | Leave out" (V02,
+V04), not U03's "For alignment"; and Cancel is the filled button in
+questions that can replace or delete work (V11).
 
 Drags from outside the page are plain events carrying a dataTransfer object
 (types, files, getData and a writable dropEffect), which every engine
