@@ -1,0 +1,2 @@
+4a36dba39b283384f96c63aa70521d73797ebd2e3df7346b7bd20c7e961d0ba4  sans_bc_gDNA_1_sequence.fq
+2b31ca90f1feec352c7aea4775d3cda5073605b3a70df2c3fda3e2d4c1fa0a6f  sans_bc_gDNA_2_sequence.fq

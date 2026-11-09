@@ -1,0 +1,1 @@
+18848c12b06315f33a1fe9ff0f3646fc841111bfc0fbbee1b62aa2eb4f30a04f  sans_bc_gDNA_1_sequence.fq
