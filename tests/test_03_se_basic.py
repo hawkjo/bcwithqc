@@ -9,6 +9,10 @@ import json
 
 import pytest
 
+# This module runs STAR. CI installs it; elsewhere the module is skipped without it.
+pytestmark = pytest.mark.skipif(
+    shutil.which("STAR") is None, reason="STAR is not on PATH"
+)
 
 # Get the directory this test script lives in
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

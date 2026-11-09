@@ -11,6 +11,11 @@ from contextlib import nullcontext
 
 import pytest
 
+# This module runs STAR. CI installs it; elsewhere the module is skipped without it.
+pytestmark = pytest.mark.skipif(
+    shutil.which("STAR") is None, reason="STAR is not on PATH"
+)
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 se_test_config = os.path.join(SCRIPT_DIR, "../examples/simulate_se_mini_config.json")
