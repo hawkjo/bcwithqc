@@ -13,14 +13,12 @@ QC_metrics/reads_summary.tsv
 intermediary_files
 intermediary_files/namepairidx_cDNA_1_sequence.pkl
 intermediary_files/rec_names_and_tags1_cDNA_1_sequence.txt
+intermediary_files/sans_bc_cDNA_2_sequence_Aligned.out.bam
 intermediary_files/with_bc.bam
 intermediary_files/with_bc.sorted.bam
 intermediary_files/with_bc.sorted.bam.bai
 intermediary_files/with_bc_umi.bam
 logs
-logs/STAR_cDNA_Log.final.out
-logs/STAR_cDNA_Log.out
-logs/STAR_cDNA_Log.progress.out
 logs/bcwithqc_count.log
 logs/bcwithqc_preprocess.log
 raw_reads_bc_matrix

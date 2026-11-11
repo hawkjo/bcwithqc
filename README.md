@@ -16,7 +16,7 @@ pip install git+https://github.com/hawkjo/bcwithqc.git
 ```
 This typically takes a few minutes. 
 
-bcwithqc does not align reads itself. Install an aligner separately; the examples and tests use the [STAR aligner](https://github.com/alexdobin/STAR) (CI uses STAR 2.7.10b).
+bcwithqc does not align reads itself. Install an aligner separately; the examples and tests use the [STAR aligner](https://github.com/alexdobin/STAR) (CI uses STAR 2.7.10b). To run the test suite, see [Running the tests](#running-the-tests).
 
 ## Usage
 
@@ -150,6 +150,42 @@ QC metrics contains:
 - `reads.tsv`  
   Detailed read-level QC: one row per read/read pair, including the total read status and the status of each barcode block.
 
+## Running the tests
 
+The tests use pytest. From the repository root, create a Python 3.10 or 3.11 environment with the `test` extra:
+```
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[test]"
+```
+With [uv](https://docs.astral.sh/uv/): `uv venv -p 3.11 .venv`, `source .venv/bin/activate`, then `uv pip install -e ".[test]"`.
 
+Five test files, `test_01` to `test_04` and `test_13`, also run the STAR aligner (bcwithqc itself never runs STAR). `test_01` and `test_02` check the counts from STAR alignments to one-gene genomes; `test_03`, `test_04` and `test_13` check that `count` runs on STAR output of the examples and of simulated reads. They are skipped when STAR is not on your `PATH`; CI installs STAR 2.7.10b and runs them. To run them locally, get the same version under `~/opt`:
+```
+mkdir -p ~/opt
+curl -L https://github.com/alexdobin/STAR/archive/2.7.10b.tar.gz | tar -xzf - -C ~/opt
+```
+- Linux: build it as CI does, `make -C ~/opt/STAR-2.7.10b/source STAR`; the program is then in `~/opt/STAR-2.7.10b/source`.
+- macOS: use the included binary in `~/opt/STAR-2.7.10b/bin/MacOSX_x86_64` (it runs under Rosetta on Apple Silicon). Homebrew's `rna-star` (2.7.11b) fails with the test genome indexes.
 
+Add that directory to `PATH` in your shell profile and open a new terminal, for example on macOS:
+```
+echo 'export PATH="$HOME/opt/STAR-2.7.10b/bin/MacOSX_x86_64:$PATH"' >> ~/.zshrc
+```
+Adding it by hand after activating the environment does not last: re-activating a virtual environment restores the `PATH` it saved when it was first activated.
+
+Then, with the environment activated:
+```
+pytest
+```
+The full suite takes about 7 minutes, or about 4 without STAR. Other ways to run it:
+- one file: `pytest tests/test_15_count_matrix_umis.py`
+- stop at the first failure: `pytest -x`
+- list skipped tests and why: `pytest -rs`
+- as CI does: `pytest --capture=tee-sys -vv`
+
+Run `pytest` with the environment activated rather than as `.venv/bin/pytest`: the pipeline tests start `python -m bcwithqc` in a subprocess, which has to find the environment's Python.
+
+`test_05` and `test_06` compare the outputs for the four example datasets with stored copies in `tests/{gDNA,cDNA}_{single,paired}_end/`, and the preprocessed reads (`sans_bc_*.fq`) with checksums stored there. They run `count` on the placeholder BAM from `preprocess --output-format-bam`, not on STAR output, because STAR builds on different platforms assign genes (the `GX` tag) to different reads from identical alignments. The placeholder BAM contains every read; `test_07` runs `count` on a BAM that lacks some reads, as an aligner's does. When a change to bcwithqc changes these outputs on purpose, rewrite the stored copies with `python tests/regenerate_expected.py` and check `git status tests/` before committing them.
+
+Two `test_06` cases are expected failures (`xfail`) because of a known bug: paired-end UMI correction counts both reads of a pair (see the `test_06` docstring). `test_00_cpu_avx512_compatibility` is skipped where `/proc/cpuinfo` is missing (macOS).

@@ -1,3 +1,24 @@
+"""Compare the paired-end examples' preprocess and count outputs with stored copies.
+
+count runs on the placeholder BAM written by ``preprocess --output-format-bam``,
+in which every read pair is aligned to one feature, ``toy_gene``, rather than on
+STAR output: from identical alignments, STAR builds on different platforms
+assign genes (the GX/GN tags) to different reads, so stored outputs made with
+STAR do not reproduce on every machine. The placeholder BAM contains every
+read; test_07 runs count on a BAM that lacks some reads, as an aligner's does.
+The reads preprocess writes for alignment (sans_bc_*.fq) are too large to
+store, so they are compared by SHA-256 checksum.
+
+The stored cDNA UMI matrix keeps a known bug: umi.get_umi_maps_from_bam_file
+counts both reads of a pair, while the count matrices count one read per pair.
+With every count doubled, UMIs that should merge, such as two single-read UMIs
+one error apart, stay separate. The matrix has 16,649 UMIs where the single-end
+example, with the same reads, has 16,589. test_umi_counts_match_single_end
+asserts the intended result and is marked xfail until the bug is fixed.
+
+The stored outputs in tests/gDNA_paired_end/ and tests/cDNA_paired_end/ are
+written by tests/regenerate_expected.py.
+"""
 import os
 import sys
 import time
@@ -5,7 +26,9 @@ import shutil
 import subprocess
 import tempfile
 from contextlib import nullcontext
+from glob import glob
 import gzip
+import hashlib
 import itertools
 
 import pytest
@@ -20,12 +43,14 @@ cDNA_input = os.path.join(SCRIPT_DIR, "../examples/cDNA_fastqs_paired_end")
 gDNA_expected = os.path.join(SCRIPT_DIR, "gDNA_paired_end")
 cDNA_expected = os.path.join(SCRIPT_DIR, "cDNA_paired_end")
 
-star_index = os.path.join(SCRIPT_DIR, "../examples/SDR001_REF_index")
+# Stored outputs of the single-end examples (test_05), which hold the same reads.
+single_end_expected = {
+    "gDNA": os.path.join(SCRIPT_DIR, "gDNA_single_end"),
+    "cDNA": os.path.join(SCRIPT_DIR, "cDNA_single_end"),
+}
+
 gDNA_config = os.path.join(SCRIPT_DIR, "../examples/gDNA_paired_end_config.json")
 cDNA_config = os.path.join(SCRIPT_DIR, "../examples/cDNA_paired_end_config.json")
-
-# Absolut Path to where STAR is installed -> THIS NEEDS TO BE ADJUSTED FOR LOCAL MACHINES!
-star_dir_local = "/home/link/local/lib/STAR-2.7.11b/source"
 
 verbosity = "-v"
 
@@ -77,30 +102,6 @@ def rmtree_with_retries(path, retries=10, delay=1.0):
     raise last_err
 
 
-def get_star_env():
-    env = os.environ.copy()
-
-    if "GITHUB_ACTIONS" in env:
-        github_star_dir = "/home/runner/work/bcwithqc/bcwithqc/STAR-2.7.10b/source"
-        star_executable = os.path.join(github_star_dir, "STAR")
-        if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
-            raise RuntimeError(f"STAR executable not found at GitHub Actions path '{star_executable}'")
-        env["PATH"] = f"{github_star_dir}:{env.get('PATH', '')}"
-    else:
-        star_executable = os.path.join(star_dir_local, "STAR")
-        if not (os.path.isfile(star_executable) and os.access(star_executable, os.X_OK)):
-            if shutil.which("STAR"):
-                # Fall back to a STAR executable already on PATH.
-                return env
-            raise RuntimeError(
-                f"STAR executable not found or not executable at '{star_executable}'. "
-                "Please set 'star_dir_local' to the correct local STAR installation path."
-            )
-        env["PATH"] = f"{star_dir_local}:{env.get('PATH', '')}"
-
-    return env
-
-
 def run_command(command, env, workdir=None):
     try:
         result = subprocess.run(
@@ -147,67 +148,32 @@ def sample_dirs(request):
     config = gDNA_config if sample_type == "gDNA" else cDNA_config
     expected_dir = gDNA_expected if sample_type == "gDNA" else cDNA_expected
 
-    env = get_star_env()
+    env = os.environ.copy()
 
-    tmp_dir = os.path.join(SCRIPT_DIR, f"tmp_{sample_type}_paired_end_STAR_out_t{threads}")
+    tmp_dir = os.path.join(SCRIPT_DIR, f"tmp_{sample_type}_paired_end_out_t{threads}")
     if os.path.exists(tmp_dir):
         rmtree_with_retries(tmp_dir)
     os.makedirs(tmp_dir, exist_ok=True)
     output_dir = tmp_dir
 
-    star_dir = os.path.join(output_dir, "STAR_files")
-    os.makedirs(star_dir, exist_ok=True)
-
     try:
-        # 1. bcwithqc preprocess
+        # 1. preprocess, also writing the placeholder BAM (see the module docstring)
         preprocess_cmd = [
             "python", "-m", "bcwithqc", "preprocess",
             input_dir,
             f"--config={config}",
             f"--output-dir={output_dir}",
             f"--threads={threads}",
+            "--output-format-bam",
             verbosity,
         ]
         preprocess_result = run_command(preprocess_cmd, env)
 
-        if sample_type == "cDNA":
-            preprocessed_fastq = os.path.join(output_dir, "sans_bc_cDNA_2_sequence.fq")
-            if not os.path.isfile(preprocessed_fastq):
-                raise FileNotFoundError(f"Expected preprocess FASTQ not found: {preprocessed_fastq}")
-            readFilesIn_line = f"--readFilesIn {preprocessed_fastq}"
-
-        if sample_type == "gDNA":
-            preprocessed_fastq_1 = os.path.join(output_dir, "sans_bc_gDNA_1_sequence.fq")
-            preprocessed_fastq_2 = os.path.join(output_dir, "sans_bc_gDNA_2_sequence.fq")
-            if not os.path.isfile(preprocessed_fastq_1):
-                raise FileNotFoundError(f"Expected preprocess FASTQ not found: {preprocessed_fastq_1}")
-            if not os.path.isfile(preprocessed_fastq_2):
-                raise FileNotFoundError(f"Expected preprocess FASTQ not found: {preprocessed_fastq_2}")
-            readFilesIn_line = f"--readFilesIn {preprocessed_fastq_1} {preprocessed_fastq_2}"
-
-        # 2. external STAR alignment
-        star_prefix = os.path.join(star_dir, f"{sample_type}_")
-        star_cmd = [
-            "STAR",
-            f"--runThreadN {threads}",
-            f"--genomeDir {star_index}",
-            readFilesIn_line,
-            f"--outFileNamePrefix {star_prefix}",
-            "--outFilterMultimapNmax 1",
-            "--outSAMtype BAM Unsorted",
-            "--outSAMattributes NH HI AS nM GX GN",
-        ]
-        star_result = run_command(star_cmd, env)
-
-        aligned_bam = f"{star_prefix}Aligned.out.bam"
-        if not os.path.isfile(aligned_bam):
-            raise FileNotFoundError(f"Expected STAR BAM not found: {aligned_bam}")
-
-        # 3. bcwithqc count from existing STAR result
+        # 2. bcwithqc count from the placeholder BAM
         count_cmd = [
             "python", "-m", "bcwithqc", "count",
             output_dir,
-            f"--STAR-output-dir={star_dir}",
+            f"--STAR-output-dir={output_dir}",
             f"--config={config}",
             f"--output-dir={output_dir}",
             f"--threads={threads}",
@@ -240,8 +206,6 @@ def get_all_paths_filtered(base_dir):
         rel_root = os.path.relpath(root, base_dir)
         if rel_root == ".":
             rel_root = ""
-
-        dirs[:] = [d for d in dirs if d != "STAR_files"]
 
         for d in dirs:
             paths.add(os.path.normpath(os.path.join(rel_root, d)))
@@ -398,3 +362,55 @@ def test_file_contents(sample_dirs):
                 )
 
             files_that_passed.append(rel_file)
+
+
+def sha256_of_file(fpath):
+    """Return the hex SHA-256 digest of a file's bytes."""
+    with open(fpath, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def test_preprocessed_fastqs(sample_dirs):
+    """The reads preprocess writes for alignment match the stored checksums."""
+    sample_type, threads, output_dir, expected_dir = sample_dirs
+    checksums_fpath = os.path.join(expected_dir, "sans_bc_sha256.txt")
+    with open(checksums_fpath) as fh:
+        expected = {fname: digest for digest, fname in (line.split() for line in fh)}
+    fastq_fpaths = glob(os.path.join(output_dir, "intermediary_files", "sans_bc_*.fq"))
+    observed = {os.path.basename(fpath): sha256_of_file(fpath) for fpath in fastq_fpaths}
+    assert observed == expected, f"Preprocessed reads differ from {checksums_fpath}"
+
+
+def assert_same_matrix_as_single_end(sample_type, output_dir, matrix_dir):
+    """Assert that a count matrix folder equals the stored single-end one.
+
+    The single-end example FASTQs hold the same 20,000 reads as the paired-end
+    ones, each made of the start of read 1 followed by read 2. preprocess finds
+    the same barcodes and UMIs in both layouts, and the placeholder BAM has one
+    feature, so both layouts should give the same counts.
+    """
+    for fname in ("barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"):
+        cmp_result = compare_gzipped_text_files(
+            os.path.join(single_end_expected[sample_type], matrix_dir, fname),
+            os.path.join(output_dir, matrix_dir, fname),
+        )
+        assert cmp_result["equal"], (
+            f"{matrix_dir}/{fname} differs from the single-end example's "
+            f"from line {cmp_result['first_diff_line']}"
+        )
+
+
+def test_read_counts_match_single_end(sample_dirs):
+    sample_type, threads, output_dir, expected_dir = sample_dirs
+    assert_same_matrix_as_single_end(sample_type, output_dir, "raw_reads_bc_matrix")
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="UMI correction counts both reads of a pair (see the module docstring)",
+)
+def test_umi_counts_match_single_end(sample_dirs):
+    sample_type, threads, output_dir, expected_dir = sample_dirs
+    if sample_type == "gDNA":
+        pytest.skip("the gDNA config has no UMI block")
+    assert_same_matrix_as_single_end(sample_type, output_dir, "raw_umis_bc_matrix")
