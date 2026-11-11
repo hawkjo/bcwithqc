@@ -49,6 +49,9 @@ test = ["pytest"]
 gui-test = [
     "pytest",
     "pytest-playwright",
+    # Playwright fixes the browser versions. 1.65.0's Firefox 159 crashes on the
+    # config builder page; raise the pin once a newer release passes tests/gui.
+    "playwright==1.64.1",
     "openpyxl",  # writes .xlsx test files
     "odfpy",  # writes .ods test files
     "xlwt",  # writes legacy .xls test files
